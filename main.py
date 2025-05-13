@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import os
 from typing import List
+import uvicorn  # necessário para rodar o servidor
 
 app = FastAPI()
 
@@ -39,3 +40,8 @@ async def processar_compra(comprovante: UploadFile = File(...), numero_rifa: int
     vendas_realizadas.append(numero_rifa)
 
     return {"message": f"Compra do bilhete {numero_rifa} realizada com sucesso!"}
+
+# 👇 Adicionado para o Render reconhecer a porta corretamente
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))  # Porta definida pelo Render
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
