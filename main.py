@@ -1,11 +1,15 @@
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles  # 👈 Importa suporte a arquivos estáticos
 import os
 from typing import List
-import uvicorn  # necessário para rodar o servidor
+import uvicorn
 
 app = FastAPI()
+
+# 👇 Monta a pasta static na rota "/static"
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Configuração do template Jinja2
 templates = Jinja2Templates(directory="templates")
@@ -28,13 +32,15 @@ async def processar_compra(comprovante: UploadFile = File(...), numero_rifa: int
         return {"message": "Número de rifa já foi vendido!"}
 
     # Verifica o tamanho do arquivo (máximo 32 KB)
-    if len(await comprovante.read()) > 32 * 1024:
+    file_data = await comprovante.read()
+    if len(file_data) > 32 * 1024:
         return {"message": "Comprovante deve ter no máximo 32 KB."}
 
     # Salva o comprovante (isso pode ser armazenado em uma pasta ou base de dados)
+    os.makedirs("comprovantes", exist_ok=True)
     comprovante_path = os.path.join("comprovantes", comprovante.filename)
     with open(comprovante_path, "wb") as f:
-        f.write(await comprovante.read())
+        f.write(file_data)
 
     # Marca o número da rifa como vendido
     vendas_realizadas.append(numero_rifa)
@@ -43,5 +49,6 @@ async def processar_compra(comprovante: UploadFile = File(...), numero_rifa: int
 
 # 👇 Adicionado para o Render reconhecer a porta corretamente
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # Porta definida pelo Render
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
+
