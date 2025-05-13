@@ -139,53 +139,59 @@
     <h1>Kwata - Sorteios e Rifas</h1>
   </header>
 
-  <div class="carousel-container">
-    <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
-    <div class="carousel-track" id="carousel-track">
-      <!-- Produto 1 -->
-      <div class="product-card">
-        <div class="product-card-inner">
-          <img src="https://via.placeholder.com/300x200" alt="Produto 1">
-          <div class="product-info">
-            <h3>Smartphone X</h3>
-            <p>Participe do sorteio e concorra a um super smartphone!</p>
-            <p><strong>Preço por bilhete:</strong> 500 Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> 200</p>
-            <button class="button" onclick="window.location.href='/comprar-rifa'">Comprar Bilhete</button>
-          </div>
-        </div>
-      </div>
+ <!-- MANTÉM TUDO COMO ESTÁ ATÉ A DIV DO CARROSSEL -->
 
-      <!-- Produto 2 -->
-      <div class="product-card">
-        <div class="product-card-inner">
-          <img src="https://via.placeholder.com/300x200" alt="Produto 2">
-          <div class="product-info">
-            <h3>Tablet Premium</h3>
-            <p>Um tablet leve, potente e ideal para o dia a dia.</p>
-            <p><strong>Preço por bilhete:</strong> 700 Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> 150</p>
-            <button class="button" onclick="window.location.href='/comprar-rifa'">Comprar Bilhete</button>
-          </div>
-        </div>
-      </div>
+<!-- MANTÉM TUDO COMO ESTÁ ATÉ A DIV DO CARROSSEL -->
 
-      <!-- Produto 3 -->
-      <div class="product-card">
-        <div class="product-card-inner">
-          <img src="https://via.placeholder.com/300x200" alt="Produto 3">
-          <div class="product-info">
-            <h3>Fones Bluetooth</h3>
-            <p>Qualidade de som e conforto para sua rotina.</p>
-            <p><strong>Preço por bilhete:</strong> 300 Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> 300</p>
-            <button class="button" onclick="window.location.href='/comprar-rifa'">Comprar Bilhete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
+<div class="carousel-container">
+  <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
+  <div class="carousel-track" id="carousel-track">
+    <!-- Produtos serão inseridos dinamicamente aqui -->
   </div>
+  <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
+</div>
+
+<script>
+  let currentIndex = 0;
+  const track = document.getElementById('carousel-track');
+
+  function moverCarrossel(direction) {
+    const totalSlides = document.querySelectorAll('.product-card').length;
+    currentIndex += direction;
+    if (currentIndex < 0) currentIndex = totalSlides - 1;
+    if (currentIndex >= totalSlides) currentIndex = 0;
+    const offset = -currentIndex * 100;
+    track.style.transform = `translateX(${offset}%)`;
+  }
+
+  // Função para criar e adicionar os cards ao carrossel
+  function criarCard(produto) {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.innerHTML = `
+      <div class="product-card-inner">
+        <img src="${produto.imagem}" alt="${produto.nome}">
+        <div class="product-info">
+          <h3>${produto.nome}</h3>
+          <p>${produto.descricao}</p>
+          <p><strong>Preço por bilhete:</strong> ${produto.preco} Kz</p>
+          <p><strong>Bilhetes disponíveis:</strong> ${produto.bilhetes}</p>
+          <button class="button" onclick="window.location.href='/comprar-rifa?id=${produto.id}'">Comprar Bilhete</button>
+        </div>
+      </div>
+    `;
+    track.appendChild(card);
+  }
+
+  // Carregar dados do JSON e preencher o carrossel
+  fetch('/static/produtos.json')
+    .then(response => response.json())
+    .then(data => {
+      data.forEach(produto => criarCard(produto));
+    })
+    .catch(error => {
+      console.error('Erro ao carregar os produtos:', error);
+    });
 
   <script>
     let currentIndex = 0;
