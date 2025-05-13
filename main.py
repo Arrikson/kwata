@@ -31,7 +31,11 @@ async def index(request: Request):
                 produtos = []
     return templates.TemplateResponse("index.html", {"request": request, "produtos": produtos})
 
-# Página de compra da rifa
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_form(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+# POST para cadastrar produto
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
@@ -43,19 +47,15 @@ async def adicionar_produto(
     preco_bilhete: float = Form(None),
     quantidade_bilhetes: int = Form(None)
 ):
-    # Cria diretório static se não existir
     os.makedirs("static", exist_ok=True)
 
-    # Salva a imagem na pasta static
     imagem_path = os.path.join("static", imagem.filename)
     with open(imagem_path, "wb") as f:
         f.write(await imagem.read())
 
-    # Caminho acessível no HTML
     imagem_url = f"/static/{imagem.filename}"
-
-    # Calcula os valores dependendo do input fornecido
     total_necessario = preco_aquisicao + lucro_desejado
+
     if preco_bilhete:
         quantidade_calculada = int(total_necessario // preco_bilhete) + 1
     elif quantidade_bilhetes:
@@ -75,7 +75,6 @@ async def adicionar_produto(
         "quantidade_bilhetes": quantidade_calculada
     }
 
-
     produtos = []
     if os.path.exists("produtos.json"):
         with open("produtos.json", "r", encoding="utf-8") as f:
@@ -91,7 +90,7 @@ async def adicionar_produto(
 
     return templates.TemplateResponse("admin.html", {"request": request, "mensagem": "Produto adicionado com sucesso!"})
 
-# Para execução local
+# Execução local
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
