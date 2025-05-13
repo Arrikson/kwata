@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Controle - Kwata</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            padding: 20px;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .resultados {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align:center">Painel de Controle - Cadastrar Produto</h2>
+
+<form action="/admin" method="post" enctype="multipart/form-data">
+    <label>Nome do Produto:</label>
+    <input type="text" name="nome" required>
+
+    <label>Descrição:</label>
+    <textarea name="descricao" rows="3" required></textarea>
+
+    <label>Imagem do Produto:</label>
+    <input type="file" name="imagem" accept="image/*" required>
+
+    <label>Preço de aquisição do produto (Kz):</label>
+    <input type="number" name="preco_aquisicao" id="preco_aquisicao" required>
+
+    <label>Lucro desejado (Kz):</label>
+    <input type="number" name="lucro_desejado" id="lucro_desejado" required>
+
+    <label>Preço por bilhete (Kz):</label>
+    <input type="number" name="preco_bilhete" id="preco_bilhete">
+
+    <label>Ou quantidade de bilhetes que deseja vender:</label>
+    <input type="number" name="quantidade_bilhetes" id="quantidade_bilhetes">
+
+    <div class="resultados">
+        <p><strong>Resultado:</strong></p>
+        <p id="resultado"></p>
+    </div>
+
+    <button type="submit">Cadastrar Produto</button>
+</form>
+
+<script>
+    const precoAquisicao = document.getElementById("preco_aquisicao");
+    const lucroDesejado = document.getElementById("lucro_desejado");
+    const precoBilhete = document.getElementById("preco_bilhete");
+    const quantidadeBilhetes = document.getElementById("quantidade_bilhetes");
+    const resultado = document.getElementById("resultado");
+
+    function calcular() {
+        const aquisicao = parseFloat(precoAquisicao.value) || 0;
+        const lucro = parseFloat(lucroDesejado.value) || 0;
+        const preco = parseFloat(precoBilhete.value);
+        const qtd = parseFloat(quantidadeBilhetes.value);
+
+        const total = aquisicao + lucro;
+
+        if (preco && !qtd) {
+            const qtd_calc = Math.ceil(total / preco);
+            resultado.innerText = `Você precisa vender pelo menos ${qtd_calc} bilhetes.`;
+        } else if (qtd && !preco) {
+            const preco_calc = Math.ceil(total / qtd);
+            resultado.innerText = `Cada bilhete precisa custar pelo menos ${preco_calc} Kz.`;
+        } else {
+            resultado.innerText = "Preencha apenas um: preço por bilhete ou quantidade de bilhetes.";
+        }
+    }
+
+    precoBilhete.addEventListener("input", calcular);
+    quantidadeBilhetes.addEventListener("input", calcular);
+    precoAquisicao.addEventListener("input", calcular);
+    lucroDesejado.addEventListener("input", calcular);
+</script>
+
+</body>
+</html>
