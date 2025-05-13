@@ -32,61 +32,6 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "produtos": produtos})
 
 # Página de compra da rifa
-
-@app.post("/admin")
-async def adicionar_produto(
-    request: Request,
-    nome: str = Form(...),
-    descricao: str = Form(...),
-    imagem: UploadFile = File(...),
-    preco_aquisicao: float = Form(...),
-    lucro_desejado: float = Form(...),
-    preco_bilhete: float = Form(None),
-    quantidade_bilhetes: int = Form(None)
-):
-    os.makedirs("static", exist_ok=True)
-
-    imagem_path = os.path.join("static", imagem.filename)
-    with open(imagem_path, "wb") as f:
-        f.write(await imagem.read())
-
-    imagem_url = f"/static/{imagem.filename}"
-
-    total_necessario = preco_aquisicao + lucro_desejado
-    if preco_bilhete:
-        quantidade_calculada = int(total_necessario // preco_bilhete) + 1
-    elif quantidade_bilhetes:
-        preco_bilhete = total_necessario / quantidade_bilhetes
-        quantidade_calculada = quantidade_bilhetes
-    else:
-        preco_bilhete = 0
-        quantidade_calculada = 0
-
-    produto = {
-        "nome": nome,
-        "descricao": descricao,
-        "imagem": imagem_url,
-        "preco_aquisicao": preco_aquisicao,
-        "lucro_desejado": lucro_desejado,
-        "preco_bilhete": round(preco_bilhete, 2),
-        "quantidade_bilhetes": quantidade_calculada
-    }
-
-    produtos = []
-    if os.path.exists("produtos.json"):
-        with open("produtos.json", "r", encoding="utf-8") as f:
-            try:
-                produtos = json.load(f)
-            except json.JSONDecodeError:
-                produtos = []
-
-    produtos.append(produto)
-
-    with open("produtos.json", "w", encoding="utf-8") as f:
-        json.dump(produtos, f, ensure_ascii=False, indent=4)
-
-    return RedirectResponse(url="/admin?sucesso=1", status_code=302)
-
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
