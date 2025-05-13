@@ -87,7 +87,6 @@ async def adicionar_produto(
 
     return RedirectResponse(url="/admin?sucesso=1", status_code=302)
 
-# Envio do formulário de produto (POST)
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
@@ -132,8 +131,8 @@ async def adicionar_produto(
         "quantidade_bilhetes": quantidade_calculada
     }
 
-    # Salva em produtos.json
-        produtos = []
+    # Corrigido: esta linha estava com indentação errada
+    produtos = []
     if os.path.exists("produtos.json"):
         with open("produtos.json", "r", encoding="utf-8") as f:
             try:
