@@ -65,7 +65,6 @@ async def adicionar_produto(
         preco_bilhete = 0
         quantidade_calculada = 0
 
-    # Cria objeto do produto
     produto = {
         "nome": nome,
         "descricao": descricao,
@@ -76,7 +75,7 @@ async def adicionar_produto(
         "quantidade_bilhetes": quantidade_calculada
     }
 
-    # Corrigido: esta linha estava com indentação errada
+
     produtos = []
     if os.path.exists("produtos.json"):
         with open("produtos.json", "r", encoding="utf-8") as f:
