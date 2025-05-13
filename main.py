@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 import os
 import json
 from typing import List
@@ -31,27 +32,6 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "produtos": produtos})
 
 # Página de compra da rifa
-@app.get("/comprar-rifa", response_class=HTMLResponse)
-async def comprar_rifa(request: Request):
-    return templates.TemplateResponse("comprar_rifa.html", {"request": request})
-
-# Processamento da compra da rifa
-@app.post("/comprar-rifa")
-async def processar_compra(comprovante: UploadFile = File(...), numero_rifa: int = Form(...)):
-    if numero_rifa in vendas_realizadas:
-        return {"message": "Número de rifa já foi vendido!"}
-
-    file_data = await comprovante.read()
-    if len(file_data) > 32 * 1024:
-        return {"message": "Comprovante deve ter no máximo 32 KB."}
-
-    os.makedirs("comprovantes", exist_ok=True)
-    comprovante_path = os.path.join("comprovantes", comprovante.filename)
-    with open(comprovante_path, "wb") as f:
-        f.write(file_data)
-
-    vendas_realizadas.append(numero_rifa)
-    return {"message": f"Compra do bilhete {numero_rifa} realizada com sucesso!"}
 
 @app.post("/admin")
 async def adicionar_produto(
@@ -105,8 +85,8 @@ async def adicionar_produto(
     with open("produtos.json", "w", encoding="utf-8") as f:
         json.dump(produtos, f, ensure_ascii=False, indent=4)
 
-    return templates.TemplateResponse("admin.html", {"request": request, "mensagem": "Produto adicionado com sucesso!"})
-    
+    return RedirectResponse(url="/admin?sucesso=1", status_code=302)
+
 # Envio do formulário de produto (POST)
 @app.post("/admin")
 async def adicionar_produto(
