@@ -78,6 +78,18 @@
       color: #333;
     }
 
+    .mensagem-sucesso {
+      background-color: var(--verde);
+      color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      max-width: 500px;
+      margin: 1rem auto;
+      text-align: center;
+      display: none;
+      font-weight: bold;
+    }
+
     @media (max-width: 600px) {
       form {
         padding: 1rem;
@@ -88,6 +100,10 @@
 <body>
 
   <h2>Painel de Controle - Cadastrar Produto</h2>
+
+  <div class="mensagem-sucesso" id="mensagem-sucesso">
+    ✅ Produto cadastrado com sucesso!
+  </div>
 
   <form action="/admin" method="post" enctype="multipart/form-data">
     <label>Nome do Produto:</label>
@@ -148,8 +164,15 @@
     quantidadeBilhetes.addEventListener("input", calcular);
     precoAquisicao.addEventListener("input", calcular);
     lucroDesejado.addEventListener("input", calcular);
+
+    // Mostrar mensagem de sucesso se estiver na URL
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('sucesso') === '1') {
+        document.getElementById("mensagem-sucesso").style.display = "block";
+      }
+    });
   </script>
 
 </body>
 </html>
-
