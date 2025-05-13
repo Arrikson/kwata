@@ -1,77 +1,204 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kwata - Sorteios e Rifas</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background-color: #5f6368;
-            padding: 1rem;
-            color: #fff;
-            text-align: center;
-        }
-        .container {
-            padding: 2rem;
-            text-align: center;
-        }
-        .product-card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            max-width: 300px;
-            margin: 0 auto;
-        }
-        .product-card img {
-            width: 100%;
-            border-radius: 8px;
-        }
-        .product-info {
-            margin-top: 1rem;
-        }
-        .button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 1rem 2rem;
-            text-align: center;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            border: none;
-        }
-        .button:hover {
-            background-color: #45a049;
-        }
-        .file-input {
-            margin-top: 1rem;
-            font-size: 16px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kwata - Sorteios e Rifas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --verde: #4CAF50;
+      --laranja: #FFA500;
+      --vermelho-claro: #FF6F61;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: var(--verde);
+      padding: 1rem 2rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header img {
+      height: 50px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      margin-left: 1rem;
+      color: white;
+    }
+
+    .carousel-container {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      max-width: 1000px;
+      margin: 2rem auto;
+    }
+
+    .carousel-track {
+      display: flex;
+      transition: transform 0.5s ease-in-out;
+    }
+
+    .product-card {
+      flex: 0 0 100%;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .product-card-inner {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      border-top: 6px solid var(--laranja);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    .product-info {
+      margin-top: 1rem;
+    }
+
+    .button {
+      background-color: var(--vermelho-claro);
+      color: white;
+      padding: 1rem 2rem;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      border: none;
+      margin-top: 1rem;
+      transition: background 0.3s;
+    }
+
+    .button:hover {
+      background-color: #e55b50;
+    }
+
+    .carousel-button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 2rem;
+      background: rgba(0, 0, 0, 0.4);
+      color: white;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      z-index: 1;
+      border-radius: 50%;
+    }
+
+    .carousel-button.left {
+      left: 10px;
+    }
+
+    .carousel-button.right {
+      right: 10px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      header h1 {
+        margin: 0.5rem 0 0 0;
+        font-size: 1.2rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Kwata - Sorteios e Rifas</h1>
-    </header>
-    <div class="container">
-        <div class="product-card">
-            <img src="https://via.placeholder.com/300x200" alt="Produto para sorteio">
-            <div class="product-info">
-                <h3>Produto Nome</h3>
-                <p>Descrição do produto para sorteio. Participe da nossa rifa e tenha a chance de ganhar!</p>
-                <p><strong>Preço por bilhete:</strong> 500 Kz</p>
-                <p><strong>Bilhetes disponíveis:</strong> 200</p>
-                <button class="button" onclick="window.location.href='/comprar-rifa'">Comprar Bilhete</button>
-            </div>
+  <header>
+    <img src="/static/logo.png" alt="Kwata Logo">
+    <h1>Kwata - Sorteios e Rifas</h1>
+  </header>
+
+  <div class="carousel-container">
+    <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
+    <div class="carousel-track" id="carousel-track">
+      <!-- Produto 1 -->
+      <div class="product-card">
+        <div class="product-card-inner">
+          <img src="https://via.placeholder.com/300x200" alt="Produto 1">
+          <div class="product-info">
+            <h3>Smartphone X</h3>
+            <p>Participe do sorteio e concorra a um super smartphone!</p>
+            <p><strong>Preço por bilhete:</strong> 500 Kz</p>
+            <p><strong>Bilhetes disponíveis:</strong> 200</p>
+            <button class="button" onclick="window.location.href='/comprar-rifa'">Comprar Bilhete</button>
+          </div>
         </div>
+      </div>
+
+      <!-- Produto 2 -->
+      <div class="product-card">
+        <div class="product-card-inner">
+          <img src="https://via.placeholder.com/300x200" alt="Produto 2">
+          <div class="product-info">
+            <h3>Tablet Premium</h3>
+            <p>Um tablet leve, potente e ideal para o dia a dia.</p>
+            <p><strong>Preço por bilhete:</strong> 700 Kz</p>
+            <p><strong>Bilhetes disponíveis:</strong> 150</p>
+            <button class="button" onclick="window.location.href='/comprar-rifa'">Comprar Bilhete</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Produto 3 -->
+      <div class="product-card">
+        <div class="product-card-inner">
+          <img src="https://via.placeholder.com/300x200" alt="Produto 3">
+          <div class="product-info">
+            <h3>Fones Bluetooth</h3>
+            <p>Qualidade de som e conforto para sua rotina.</p>
+            <p><strong>Preço por bilhete:</strong> 300 Kz</p>
+            <p><strong>Bilhetes disponíveis:</strong> 300</p>
+            <button class="button" onclick="window.location.href='/comprar-rifa'">Comprar Bilhete</button>
+          </div>
+        </div>
+      </div>
     </div>
+    <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
+  </div>
+
+  <script>
+    let currentIndex = 0;
+    const track = document.getElementById('carousel-track');
+    const totalSlides = document.querySelectorAll('.product-card').length;
+
+    function moverCarrossel(direction) {
+      currentIndex += direction;
+      if (currentIndex < 0) currentIndex = totalSlides - 1;
+      if (currentIndex >= totalSlides) currentIndex = 0;
+      const offset = -currentIndex * 100;
+      track.style.transform = `translateX(${offset}%)`;
+    }
+  </script>
 </body>
 </html>
