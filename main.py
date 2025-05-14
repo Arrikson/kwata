@@ -3,7 +3,7 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
 from fastapi import FastAPI, Request, Form, File, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -11,7 +11,7 @@ import uvicorn
 # Caminho para o arquivo de chave privada
 cred = credentials.Certificate("firebase-key.json")
 
-# Verifica se o Firebase já foi inicializado
+# Inicializa o Firebase se ainda não estiver inicializado
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred, {
         'storageBucket': cred.project_id + ".appspot.com"
@@ -40,9 +40,11 @@ async def index(request: Request):
                 produtos = []
     return templates.TemplateResponse("index.html", {"request": request, "produtos": produtos})
 
+
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
+
 
 # POST para cadastrar produto
 @app.post("/admin")
@@ -56,38 +58,45 @@ async def adicionar_produto(
     preco_bilhete: float = Form(None),
     quantidade_bilhetes: int = Form(None)
 ):
-    # Salva a imagem no Firebase Storage
-    blob = bucket.blob(imagem.filename)
-    blob.upload_from_string(await imagem.read(), content_type=imagem.content_type)
-    imagem_url = blob.public_url  # URL pública da imagem no Firebase Storage
+    try:
+        # Salva a imagem no Firebase Storage
+        blob = bucket.blob(imagem.filename)
+        blob.upload_from_string(await imagem.read(), content_type=imagem.content_type)
+        imagem_url = blob.public_url
 
-    total_necessario = preco_aquisicao + lucro_desejado
+        total_necessario = preco_aquisicao + lucro_desejado
 
-    if preco_bilhete:
-        quantidade_calculada = int(total_necessario // preco_bilhete) + 1
-    elif quantidade_bilhetes:
-        preco_bilhete = total_necessario / quantidade_bilhetes
-        quantidade_calculada = quantidade_bilhetes
-    else:
-        preco_bilhete = 0
-        quantidade_calculada = 0
+        if preco_bilhete:
+            quantidade_calculada = int(total_necessario // preco_bilhete) + 1
+        elif quantidade_bilhetes:
+            preco_bilhete = total_necessario / quantidade_bilhetes
+            quantidade_calculada = quantidade_bilhetes
+        else:
+            preco_bilhete = 0
+            quantidade_calculada = 0
 
-    produto = {
-        "nome": nome,
-        "descricao": descricao,
-        "imagem": imagem_url,
-        "preco_aquisicao": preco_aquisicao,
-        "lucro_desejado": lucro_desejado,
-        "preco_bilhete": round(preco_bilhete, 2),
-        "quantidade_bilhetes": quantidade_calculada
-    }
+        produto = {
+            "nome": nome,
+            "descricao": descricao,
+            "imagem": imagem_url,
+            "preco_aquisicao": preco_aquisicao,
+            "lucro_desejado": lucro_desejado,
+            "preco_bilhete": round(preco_bilhete, 2),
+            "quantidade_bilhetes": quantidade_calculada
+        }
 
-    # Adiciona o produto ao Firestore
-    produtos_ref = db.collection('produtos')
-    produtos_ref.add(produto)
+        produtos_ref = db.collection('produtos')
+        produtos_ref.add(produto)
 
-    # <-- Agora está corretamente dentro da função
-    return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+        return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+
+    except Exception as e:
+        # Loga o erro no terminal
+        print("Erro ao cadastrar produto:", e)
+        return templates.TemplateResponse("admin.html", {
+            "request": request,
+            "erro": "Erro ao cadastrar produto. Verifique os campos e tente novamente."
+        })
 
 # Execução local
 if __name__ == "__main__":
