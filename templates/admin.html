@@ -1,177 +1,114 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel de Controle - Kwata</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Kwata</title>
   <style>
     :root {
       --verde: #6FCF97;
       --amarelo: #F2C94C;
-      --vermelho-fraco: #F28B82;
+      --vermelho: #F28B82;
     }
 
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      font-family: 'Arial', sans-serif;
-      background: #f4f4f9;
-      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
       padding: 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
       color: #333;
     }
 
-    h2 {
-      text-align: center;
-      color: var(--verde);
-      margin-bottom: 1.5rem;
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+      max-width: 700px;
+      margin: 0 auto;
     }
 
-    form {
-      background: white;
-      padding: 1.5rem;
+    .tile {
+      padding: 2rem 1rem;
       border-radius: 12px;
-      max-width: 500px;
-      margin: auto;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    label {
+      color: white;
       font-weight: bold;
-      display: block;
-      margin-top: 1rem;
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin-top: 0.5rem;
-      font-size: 1rem;
-    }
-
-    button {
-      margin-top: 1.5rem;
-      width: 100%;
-      padding: 0.75rem;
-      background-color: var(--verde);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #5ab981;
-    }
-
-    .resultados {
-      background-color: var(--amarelo);
-      padding: 1rem;
-      border-radius: 10px;
-      margin-top: 1rem;
-      color: #333;
-    }
-
-    .mensagem-sucesso {
-      background-color: var(--verde);
-      color: white;
-      padding: 1rem;
-      border-radius: 8px;
-      max-width: 500px;
-      margin: 1rem auto;
       text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.3s;
+    }
+
+    .tile:hover {
+      transform: scale(1.05);
+      filter: brightness(1.1);
+    }
+
+    .verde { background-color: var(--verde); }
+    .amarelo { background-color: var(--amarelo); color: #333; }
+    .vermelho { background-color: var(--vermelho); }
+
+    /* Ocultar o formulário inicialmente */
+    #formulario-produto {
       display: none;
-      font-weight: bold;
+      margin-top: 2rem;
+    }
+
+    iframe {
+      border: none;
+      width: 100%;
+      max-width: 700px;
+      height: 1000px;
+      display: block;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
     @media (max-width: 600px) {
-      form {
-        padding: 1rem;
+      .tile {
+        font-size: 0.9rem;
+        padding: 1.5rem 1rem;
+      }
+
+      iframe {
+        height: 1100px;
       }
     }
   </style>
 </head>
 <body>
 
-  <h2>Painel de Controle - Cadastrar Produto</h2>
+  <h1>Painel de Controle - Kwata</h1>
 
-  <div class="mensagem-sucesso" id="mensagem-sucesso">
-    ✅ Produto cadastrado com sucesso!
+  <div class="menu-grid">
+    <div class="tile verde" onclick="abrirFormulario()">Cadastrar Produto</div>
+    <div class="tile amarelo">Relatórios</div>
+    <div class="tile vermelho">Vendas</div>
+    <div class="tile verde">Estoque</div>
+    <div class="tile amarelo">Configurações</div>
+    <!-- Adicione mais blocos conforme necessário -->
   </div>
 
-  <form action="/admin" method="post" enctype="multipart/form-data">
-    <label>Nome do Produto:</label>
-    <input type="text" name="nome" required>
-
-    <label>Descrição:</label>
-    <textarea name="descricao" rows="3" required></textarea>
-
-    <label>Imagem do Produto:</label>
-    <input type="file" name="imagem" accept="image/*" required>
-
-    <label>Preço de aquisição do produto (Kz):</label>
-    <input type="number" name="preco_aquisicao" id="preco_aquisicao" required>
-
-    <label>Lucro desejado (Kz):</label>
-    <input type="number" name="lucro_desejado" id="lucro_desejado" required>
-
-    <label>Preço por bilhete (Kz):</label>
-    <input type="number" name="preco_bilhete" id="preco_bilhete">
-
-    <label>Ou quantidade de bilhetes que deseja vender:</label>
-    <input type="number" name="quantidade_bilhetes" id="quantidade_bilhetes">
-
-    <div class="resultados">
-      <p><strong>Resultado:</strong></p>
-      <p id="resultado"></p>
-    </div>
-
-    <button type="submit">Cadastrar Produto</button>
-  </form>
+  <!-- Container do formulário (como iframe) -->
+  <div id="formulario-produto">
+    <iframe src="cadastro-produto.html"></iframe>
+  </div>
 
   <script>
-    const precoAquisicao = document.getElementById("preco_aquisicao");
-    const lucroDesejado = document.getElementById("lucro_desejado");
-    const precoBilhete = document.getElementById("preco_bilhete");
-    const quantidadeBilhetes = document.getElementById("quantidade_bilhetes");
-    const resultado = document.getElementById("resultado");
-
-    function calcular() {
-      const aquisicao = parseFloat(precoAquisicao.value) || 0;
-      const lucro = parseFloat(lucroDesejado.value) || 0;
-      const preco = parseFloat(precoBilhete.value);
-      const qtd = parseFloat(quantidadeBilhetes.value);
-      const total = aquisicao + lucro;
-
-      if (preco && !qtd) {
-        const qtd_calc = Math.ceil(total / preco);
-        resultado.innerText = `Você precisa vender pelo menos ${qtd_calc} bilhetes.`;
-      } else if (qtd && !preco) {
-        const preco_calc = Math.ceil(total / qtd);
-        resultado.innerText = `Cada bilhete precisa custar pelo menos ${preco_calc} Kz.`;
-      } else {
-        resultado.innerText = "Preencha apenas um: preço por bilhete ou quantidade de bilhetes.";
-      }
+    function abrirFormulario() {
+      document.getElementById("formulario-produto").style.display = "block";
+      window.scrollTo({ top: document.getElementById("formulario-produto").offsetTop, behavior: 'smooth' });
     }
-
-    precoBilhete.addEventListener("input", calcular);
-    quantidadeBilhetes.addEventListener("input", calcular);
-    precoAquisicao.addEventListener("input", calcular);
-    lucroDesejado.addEventListener("input", calcular);
-
-    // Mostrar mensagem de sucesso se estiver na URL
-    window.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('sucesso') === '1') {
-        document.getElementById("mensagem-sucesso").style.display = "block";
-      }
-    });
   </script>
 
 </body>
