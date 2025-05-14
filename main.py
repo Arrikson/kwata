@@ -86,7 +86,8 @@ async def adicionar_produto(
     produtos_ref = db.collection('produtos')
     produtos_ref.add(produto)
 
-return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+    # <-- Agora está corretamente dentro da função
+    return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
 # Execução local
 if __name__ == "__main__":
