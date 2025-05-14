@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kwata - Sorteios e Rifas</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
       --verde: #4CAF50;
@@ -139,72 +144,69 @@
     <h1>Kwata - Sorteios e Rifas</h1>
   </header>
 
- <!-- MANTÉM TUDO COMO ESTÁ ATÉ A DIV DO CARROSSEL -->
-
-<!-- MANTÉM TUDO COMO ESTÁ ATÉ A DIV DO CARROSSEL -->
-
-<div class="carousel-container">
-  <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
-  <div class="carousel-track" id="carousel-track">
-    <!-- Produtos serão inseridos dinamicamente aqui -->
+  <div class="carousel-container">
+    <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
+    <div class="carousel-track" id="carousel-track">
+      <!-- Produtos serão carregados aqui -->
+    </div>
+    <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
   </div>
-  <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
-</div>
-
-<script>
-  let currentIndex = 0;
-  const track = document.getElementById('carousel-track');
-
-  function moverCarrossel(direction) {
-    const totalSlides = document.querySelectorAll('.product-card').length;
-    currentIndex += direction;
-    if (currentIndex < 0) currentIndex = totalSlides - 1;
-    if (currentIndex >= totalSlides) currentIndex = 0;
-    const offset = -currentIndex * 100;
-    track.style.transform = `translateX(${offset}%)`;
-  }
-
-  // Função para criar e adicionar os cards ao carrossel
-  function criarCard(produto) {
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    card.innerHTML = `
-      <div class="product-card-inner">
-        <img src="${produto.imagem}" alt="${produto.nome}">
-        <div class="product-info">
-          <h3>${produto.nome}</h3>
-          <p>${produto.descricao}</p>
-          <p><strong>Preço por bilhete:</strong> ${produto.preco} Kz</p>
-          <p><strong>Bilhetes disponíveis:</strong> ${produto.bilhetes}</p>
-          <button class="button" onclick="window.location.href='/comprar-rifa?id=${produto.id}'">Comprar Bilhete</button>
-        </div>
-      </div>
-    `;
-    track.appendChild(card);
-  }
-
-  // Carregar dados do JSON e preencher o carrossel
-  fetch('/static/produtos.json')
-    .then(response => response.json())
-    .then(data => {
-      data.forEach(produto => criarCard(produto));
-    })
-    .catch(error => {
-      console.error('Erro ao carregar os produtos:', error);
-    });
 
   <script>
+    // 1. CONFIGURAÇÃO DO FIREBASE
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwtVGJBjGgYUiuNVPI-Y3gMeLhOWnSWCQ",
+      authDomain: "kwata-48ab2.firebaseapp.com",
+      projectId: "kwata-48ab2",
+      storageBucket: "kwata-48ab2.firebasestorage.app",
+      messagingSenderId: "654204246057",
+      appId:  "1:654204246057:web:48c7a39dc294dc41a62438"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 2. LÓGICA DO CARROSSEL
     let currentIndex = 0;
-    const track = document.getElementById('carousel-track');
-    const totalSlides = document.querySelectorAll('.product-card').length;
 
     function moverCarrossel(direction) {
+      const totalSlides = document.querySelectorAll('.product-card').length;
       currentIndex += direction;
       if (currentIndex < 0) currentIndex = totalSlides - 1;
       if (currentIndex >= totalSlides) currentIndex = 0;
       const offset = -currentIndex * 100;
-      track.style.transform = `translateX(${offset}%)`;
+      document.getElementById('carousel-track').style.transform = `translateX(${offset}%)`;
     }
+
+    // 3. CRIAR CARD DO PRODUTO
+    function criarCard(produto) {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <div class="product-card-inner">
+          <img src="${produto.imagem}" alt="${produto.nome}">
+          <div class="product-info">
+            <h3>${produto.nome}</h3>
+            <p>${produto.descricao}</p>
+            <p><strong>Preço por bilhete:</strong> ${produto.preco} Kz</p>
+            <p><strong>Bilhetes disponíveis:</strong> ${produto.bilhetes}</p>
+            <button class="button" onclick="window.location.href='/comprar-rifa?id=${produto.id}'">Comprar Bilhete</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('carousel-track').appendChild(card);
+    }
+
+    // 4. BUSCAR PRODUTOS DO FIRESTORE
+    db.collection("produtos").get().then((querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        const produto = doc.data();
+        produto.id = doc.id;
+        criarCard(produto);
+      });
+    }).catch((error) => {
+      console.error("Erro ao carregar produtos:", error);
+    });
   </script>
 </body>
 </html>
