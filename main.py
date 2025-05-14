@@ -10,9 +10,12 @@ import uvicorn
 
 # Caminho para o arquivo de chave privada
 cred = credentials.Certificate("firebase-key.json")
-firebase_admin.initialize_app(cred, {
-    'storageBucket': cred.project_id + ".appspot.com"
-})
+
+# Verifica se o Firebase já foi inicializado
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred, {
+        'storageBucket': cred.project_id + ".appspot.com"
+    })
 
 # Inicializa Firestore e Storage
 db = firestore.client()
@@ -23,7 +26,6 @@ app = FastAPI()
 # Monta a pasta static na rota "/static"
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Configuração do template Jinja2
 templates = Jinja2Templates(directory="templates")
 
 # Página inicial
