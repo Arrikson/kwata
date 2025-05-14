@@ -86,7 +86,9 @@ async def adicionar_produto(
     produtos_ref = db.collection('produtos')
     produtos_ref.add(produto)
 
-    return templates.TemplateResponse("admin.html", {"request": request, "mensagem": "Produto adicionado com sucesso!"})
+    from fastapi.responses import RedirectResponse
+
+return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
 # Execução local
 if __name__ == "__main__":
