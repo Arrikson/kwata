@@ -1,12 +1,22 @@
+import os
+import json
+import firebase_admin
+from firebase_admin import credentials, firestore, storage
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-import os
-import json
-from typing import List
 import uvicorn
+
+# Inicializa o Firebase Admin
+cred = credentials.Certificate("path/to/your/serviceAccountKey.json")  # Substitua com o caminho do seu arquivo .json
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'your-project-id.appspot.com'  # Substitua com seu Storage Bucket
+})
+
+# Inicializa Firestore e Storage
+db = firestore.client()
+bucket = storage.bucket()
 
 app = FastAPI()
 
@@ -15,9 +25,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Configuração do template Jinja2
 templates = Jinja2Templates(directory="templates")
-
-# Lista para armazenar os bilhetes já vendidos
-vendas_realizadas = []
 
 # Página inicial
 @app.get("/", response_class=HTMLResponse)
@@ -47,13 +54,11 @@ async def adicionar_produto(
     preco_bilhete: float = Form(None),
     quantidade_bilhetes: int = Form(None)
 ):
-    os.makedirs("static", exist_ok=True)
+    # Salva a imagem no Firebase Storage
+    blob = bucket.blob(imagem.filename)
+    blob.upload_from_string(await imagem.read(), content_type=imagem.content_type)
+    imagem_url = blob.public_url  # URL pública da imagem no Firebase Storage
 
-    imagem_path = os.path.join("static", imagem.filename)
-    with open(imagem_path, "wb") as f:
-        f.write(await imagem.read())
-
-    imagem_url = f"/static/{imagem.filename}"
     total_necessario = preco_aquisicao + lucro_desejado
 
     if preco_bilhete:
@@ -75,18 +80,9 @@ async def adicionar_produto(
         "quantidade_bilhetes": quantidade_calculada
     }
 
-    produtos = []
-    if os.path.exists("produtos.json"):
-        with open("produtos.json", "r", encoding="utf-8") as f:
-            try:
-                produtos = json.load(f)
-            except json.JSONDecodeError:
-                produtos = []
-
-    produtos.append(produto)
-
-    with open("produtos.json", "w", encoding="utf-8") as f:
-        json.dump(produtos, f, ensure_ascii=False, indent=4)
+    # Adiciona o produto ao Firestore
+    produtos_ref = db.collection('produtos')
+    produtos_ref.add(produto)
 
     return templates.TemplateResponse("admin.html", {"request": request, "mensagem": "Produto adicionado com sucesso!"})
 
