@@ -8,11 +8,10 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-# Inicializa o Firebase Admin com a variável de ambiente
-firebase_config = json.loads(os.environ["FIREBASE_CONFIG"])
-cred = credentials.Certificate(firebase_config)
+# Caminho para o arquivo de chave privada
+cred = credentials.Certificate("firebase-key.json")
 firebase_admin.initialize_app(cred, {
-    'storageBucket': firebase_config["project_id"] + ".appspot.com"
+    'storageBucket': cred.project_id + ".appspot.com"
 })
 
 # Inicializa Firestore e Storage
