@@ -86,8 +86,6 @@ async def adicionar_produto(
     produtos_ref = db.collection('produtos')
     produtos_ref.add(produto)
 
-    from fastapi.responses import RedirectResponse
-
 return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
 # Execução local
