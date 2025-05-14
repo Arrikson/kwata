@@ -8,10 +8,11 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-# Inicializa o Firebase Admin
-cred = credentials.Certificate("path/to/your/serviceAccountKey.json")  # Substitua com o caminho do seu arquivo .json
+# Inicializa o Firebase Admin com a variável de ambiente
+firebase_config = json.loads(os.environ["FIREBASE_CONFIG"])
+cred = credentials.Certificate(firebase_config)
 firebase_admin.initialize_app(cred, {
-    'storageBucket': 'your-project-id.appspot.com'  # Substitua com seu Storage Bucket
+    'storageBucket': firebase_config["project_id"] + ".appspot.com"
 })
 
 # Inicializa Firestore e Storage
@@ -90,4 +91,3 @@ async def adicionar_produto(
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
-
