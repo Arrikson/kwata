@@ -8,24 +8,28 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-# Caminho para o arquivo de chave privada
-cred = credentials.Certificate("firebase-key.json")
+# Caminho da chave do Firebase
+FIREBASE_KEY_PATH = "firebase-key.json"
 
 # Inicializa o Firebase se ainda não estiver inicializado
 if not firebase_admin._apps:
+    if not os.path.exists(FIREBASE_KEY_PATH):
+        raise FileNotFoundError("Arquivo firebase-key.json não encontrado. Coloque-o na raiz do projeto.")
+    
+    cred = credentials.Certificate(FIREBASE_KEY_PATH)
     firebase_admin.initialize_app(cred, {
-        'storageBucket': cred.project_id + ".appspot.com"
+        'storageBucket': f"{cred.project_id}.appspot.com"
     })
 
-# Inicializa Firestore e Storage
+# Firestore e Storage
 db = firestore.client()
 bucket = storage.bucket()
 
+# Inicializa FastAPI
 app = FastAPI()
 
-# Monta a pasta static na rota "/static"
+# Pasta de arquivos estáticos e templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 templates = Jinja2Templates(directory="templates")
 
 # Página inicial
@@ -40,13 +44,16 @@ async def index(request: Request):
                 produtos = []
     return templates.TemplateResponse("index.html", {"request": request, "produtos": produtos})
 
-
+# Página do formulário de admin
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
-    return templates.TemplateResponse("admin.html", {"request": request})
+    sucesso = request.query_params.get("sucesso")
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "sucesso": sucesso
+    })
 
-
-# POST para cadastrar produto
+# Cadastro de produto
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
@@ -59,9 +66,10 @@ async def adicionar_produto(
     quantidade_bilhetes: int = Form(None)
 ):
     try:
-        # Salva a imagem no Firebase Storage
-        blob = bucket.blob(imagem.filename)
+        # Salvar imagem no Firebase Storage
+        blob = bucket.blob(f"produtos/{imagem.filename}")
         blob.upload_from_string(await imagem.read(), content_type=imagem.content_type)
+        blob.make_public()  # Torna a imagem acessível publicamente
         imagem_url = blob.public_url
 
         total_necessario = preco_aquisicao + lucro_desejado
@@ -85,13 +93,12 @@ async def adicionar_produto(
             "quantidade_bilhetes": quantidade_calculada
         }
 
-        produtos_ref = db.collection('produtos')
-        produtos_ref.add(produto)
+        # Salva no Firestore
+        db.collection('produtos').add(produto)
 
         return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
     except Exception as e:
-        # Loga o erro no terminal
         print("Erro ao cadastrar produto:", e)
         return templates.TemplateResponse("admin.html", {
             "request": request,
