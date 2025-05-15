@@ -227,7 +227,6 @@ async def processar_pagamento(
             "erro": "Erro ao processar o pagamento. Tente novamente."
         })
 
-
 @app.get("/registros", response_class=HTMLResponse)
 async def listar_registros(request: Request):
     try:
