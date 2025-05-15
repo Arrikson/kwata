@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pagamento da Rifa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      padding: 1rem;
+      background-color: #f0f0f5;
+    }
+    h1 { color: #333; }
+    label { display: block; margin-top: 1rem; font-weight: bold; }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .button:hover {
+      background-color: #45a049;
+    }
+    #produto-info {
+      margin-bottom: 2rem;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Pagamento da Rifa</h1>
+  <div id="produto-info">
+    <h2 id="nome-produto">Carregando produto...</h2>
+    <p><strong>Preço:</strong> <span id="preco-produto">--</span> Kz</p>
+    <label for="bilhete">Escolha o número do bilhete:</label>
+    <select id="bilhete"></select>
+  </div>
+
+  <form id="form-pagamento">
+    <label for="nome">Nome completo:</label>
+    <input type="text" id="nome" required>
+
+    <label for="bi">Nº do B.I:</label>
+    <input type="text" id="bi" required>
+
+    <label for="telefone">Telefone:</label>
+    <input type="tel" id="telefone" required>
+
+    <label for="latitude">Latitude:</label>
+    <input type="text" id="latitude" readonly>
+
+    <label for="longitude">Longitude:</label>
+    <input type="text" id="longitude" readonly>
+
+    <label for="comprovativo">Comprovativo de pagamento (máx. 32 KB):</label>
+    <input type="file" id="comprovativo" accept="image/*,application/pdf" required>
+
+    <button type="submit" class="button">Enviar Comprovativo</button>
+  </form>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCwtVGJBjGgYUiuNVPI-Y3gMeLhOWnSWCQ",
+      authDomain: "kwata-48ab2.firebaseapp.com",
+      projectId: "kwata-48ab2",
+      storageBucket: "kwata-48ab2.appspot.com",
+      messagingSenderId: "654204246057",
+      appId: "1:654204246057:web:48c7a39dc294dc41a62438"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const produtoId = urlParams.get('id');
+
+    if (!produtoId) {
+      alert("Produto não encontrado.");
+    }
+
+    const nomeEl = document.getElementById('nome-produto');
+    const precoEl = document.getElementById('preco-produto');
+    const bilheteSelect = document.getElementById('bilhete');
+
+    db.collection("produtos").doc(produtoId).get().then(doc => {
+      if (doc.exists) {
+        const produto = doc.data();
+        nomeEl.textContent = produto.nome;
+        precoEl.textContent = produto.preco;
+
+        const vendidos = produto.bilhetes_vendidos || [];
+        const total = produto.total_bilhetes || 0;
+
+        for (let i = 1; i <= total; i++) {
+          if (!vendidos.includes(i)) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `Bilhete nº ${i}`;
+            bilheteSelect.appendChild(option);
+          }
+        }
+      } else {
+        nomeEl.textContent = "Produto não encontrado.";
+      }
+    });
+
+    // Geolocalização
+    navigator.geolocation.getCurrentPosition(pos => {
+      document.getElementById('latitude').value = pos.coords.latitude;
+      document.getElementById('longitude').value = pos.coords.longitude;
+    }, err => {
+      alert("Erro ao obter localização. Permissão negada?");
+    });
+
+    document.getElementById('form-pagamento').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const file = document.getElementById('comprovativo').files[0];
+      if (file.size > 32768) {
+        alert("O comprovativo excede o tamanho máximo de 32 KB.");
+        return;
+      }
+
+      // Aqui você pode adicionar a lógica de envio para o Firebase Storage ou backend
+      alert("Comprovativo pronto para envio. (Integração com backend ou Firebase Storage necessária.)");
+    });
+  </script>
+</body>
+</html>
+
+
