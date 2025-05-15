@@ -92,131 +92,161 @@
       border-radius: 8px;
       color: #d32f2f;
     }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 0.8rem;
-      }
-
-      h1 {
-        font-size: 1.4rem;
-      }
-
-      input, select {
-        font-size: 1rem;
-      }
-
-      .button {
-        font-size: 1rem;
-      }
-    }
   </style>
 </head>
 <body>
 
-  <h1>Pagamento da Rifa</h1>
+<h1>Pagamento da Rifa</h1>
 
-  <div id="produto-info">
-    <h2 id="nome-produto">Carregando produto...</h2>
-    <p><strong>Preço:</strong> <span id="preco-produto">--</span> Kz</p>
-    <label for="bilhete">Escolha o número do bilhete:</label>
-    <select id="bilhete"></select>
-  </div>
+<div id="produto-info">
+  <h2 id="nome-produto">Carregando produto...</h2>
+  <p><strong>Preço:</strong> <span id="preco-produto">--</span> Kz</p>
+  <label for="bilhete">Escolha o número do bilhete:</label>
+  <select id="bilhete"></select>
+</div>
 
-  <form id="form-pagamento">
-    <label for="nome">Nome completo:</label>
-    <input type="text" id="nome" required>
+<form id="form-pagamento">
+  <label for="nome">Nome completo:</label>
+  <input type="text" id="nome" required>
 
-    <label for="bi">Nº do B.I:</label>
-    <input type="text" id="bi" required>
+  <label for="bi">Nº do B.I:</label>
+  <input type="text" id="bi" required>
 
-    <label for="telefone">Telefone:</label>
-    <input type="tel" id="telefone" required>
+  <label for="telefone">Telefone:</label>
+  <input type="tel" id="telefone" required>
 
-    <label for="latitude">Latitude:</label>
-    <input type="text" id="latitude" readonly>
+  <label for="latitude">Latitude:</label>
+  <input type="text" id="latitude" readonly>
 
-    <label for="longitude">Longitude:</label>
-    <input type="text" id="longitude" readonly>
+  <label for="longitude">Longitude:</label>
+  <input type="text" id="longitude" readonly>
 
-    <label for="comprovativo">Comprovativo de pagamento (máx. 32 KB):</label>
-    <input type="file" id="comprovativo" accept="image/*,application/pdf" required>
+  <label for="comprovativo">Comprovativo de pagamento (máx. 32 KB):</label>
+  <input type="file" id="comprovativo" accept="image/*,application/pdf" required>
 
-    <button type="submit" class="button">Enviar Comprovativo</button>
+  <button type="submit" class="button">Enviar Comprovativo</button>
 
-    <div id="mensagem-erro" class="erro" style="display: none;"></div>
-  </form>
+  <div id="mensagem-erro" class="erro" style="display: none;"></div>
+</form>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCwtVGJBjGgYUiuNVPI-Y3gMeLhOWnSWCQ",
-      authDomain: "kwata-48ab2.firebaseapp.com",
-      projectId: "kwata-48ab2",
-      storageBucket: "kwata-48ab2.appspot.com",
-      messagingSenderId: "654204246057",
-      appId: "1:654204246057:web:48c7a39dc294dc41a62438"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+<!-- Dependências -->
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const produtoId = urlParams.get('id');
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCwtVGJBjGgYUiuNVPI-Y3gMeLhOWnSWCQ",
+    authDomain: "kwata-48ab2.firebaseapp.com",
+    projectId: "kwata-48ab2",
+    storageBucket: "kwata-48ab2.appspot.com",
+    messagingSenderId: "654204246057",
+    appId: "1:654204246057:web:48c7a39dc294dc41a62438"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-    const nomeEl = document.getElementById('nome-produto');
-    const precoEl = document.getElementById('preco-produto');
-    const bilheteSelect = document.getElementById('bilhete');
+  const urlParams = new URLSearchParams(window.location.search);
+  const produtoId = urlParams.get('id');
 
-    if (!produtoId) {
-      nomeEl.textContent = "Produto não encontrado.";
-    } else {
-      db.collection("produtos").doc(produtoId).get().then(doc => {
-        if (doc.exists) {
-          const produto = doc.data();
-          nomeEl.textContent = produto.nome;
-          precoEl.textContent = produto.preco;
+  const nomeEl = document.getElementById('nome-produto');
+  const precoEl = document.getElementById('preco-produto');
+  const bilheteSelect = document.getElementById('bilhete');
+  let produtoAtual = null;
 
-          const vendidos = produto.bilhetes_vendidos || [];
-          const total = produto.total_bilhetes || 0;
+  if (!produtoId) {
+    nomeEl.textContent = "Produto não encontrado.";
+  } else {
+    db.collection("produtos").doc(produtoId).get().then(doc => {
+      if (doc.exists) {
+        produtoAtual = doc.data();
+        nomeEl.textContent = produtoAtual.nome;
+        precoEl.textContent = produtoAtual.preco;
 
-          for (let i = 1; i <= total; i++) {
-            if (!vendidos.includes(i)) {
-              const option = document.createElement('option');
-              option.value = i;
-              option.textContent = `Bilhete nº ${i}`;
-              bilheteSelect.appendChild(option);
-            }
+        const vendidos = produtoAtual.bilhetes_vendidos || [];
+        const total = produtoAtual.total_bilhetes || 0;
+
+        for (let i = 1; i <= total; i++) {
+          if (!vendidos.includes(i)) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `Bilhete nº ${i}`;
+            bilheteSelect.appendChild(option);
           }
-        } else {
-          nomeEl.textContent = "Produto não encontrado.";
         }
-      });
+      } else {
+        nomeEl.textContent = "Produto não encontrado.";
+      }
+    });
+  }
+
+  // Localização automática
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('latitude').value = pos.coords.latitude;
+    document.getElementById('longitude').value = pos.coords.longitude;
+  }, err => {
+    alert("Erro ao obter localização. Permissão negada?");
+  });
+
+  document.getElementById('form-pagamento').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const file = document.getElementById('comprovativo').files[0];
+    const erroEl = document.getElementById('mensagem-erro');
+    erroEl.style.display = "none";
+    erroEl.textContent = "";
+
+    if (file.size > 32768) {
+      erroEl.style.display = "block";
+      erroEl.textContent = "O comprovativo excede o tamanho máximo de 32 KB.";
+      return;
     }
 
-    // Geolocalização
-    navigator.geolocation.getCurrentPosition(pos => {
-      document.getElementById('latitude').value = pos.coords.latitude;
-      document.getElementById('longitude').value = pos.coords.longitude;
-    }, err => {
-      alert("Erro ao obter localização. Permissão negada?");
-    });
+    const nome = document.getElementById('nome').value;
+    const bi = document.getElementById('bi').value;
+    const telefone = document.getElementById('telefone').value;
+    const latitude = document.getElementById('latitude').value;
+    const longitude = document.getElementById('longitude').value;
+    const numeroBilhete = parseInt(document.getElementById('bilhete').value);
+    const codigoVerificacao = uuid.v4();
 
-    document.getElementById('form-pagamento').addEventListener('submit', (e) => {
-      e.preventDefault();
+    try {
+      // Atualiza os bilhetes vendidos no Firebase
+      const docRef = db.collection("produtos").doc(produtoId);
+      await docRef.update({
+        bilhetes_vendidos: firebase.firestore.FieldValue.arrayUnion(numeroBilhete)
+      });
 
-      const file = document.getElementById('comprovativo').files[0];
-      const erroEl = document.getElementById('mensagem-erro');
-      erroEl.style.display = "none";
-      erroEl.textContent = "";
+      // Gera PDF com os dados
+      const { PDFDocument, rgb } = PDFLib;
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([600, 400]);
 
-      if (file.size > 32768) {
-        erroEl.style.display = "block";
-        erroEl.textContent = "O comprovativo excede o tamanho máximo de 32 KB.";
-        return;
-      }
+      const fontSize = 14;
+      page.drawText(`Comprovativo da Rifa`, { x: 200, y: 360, size: 18, color: rgb(0, 0.53, 0) });
+      page.drawText(`Nome: ${nome}`, { x: 50, y: 320, size: fontSize });
+      page.drawText(`Nº do B.I: ${bi}`, { x: 50, y: 300, size: fontSize });
+      page.drawText(`Telefone: ${telefone}`, { x: 50, y: 280, size: fontSize });
+      page.drawText(`Latitude: ${latitude}`, { x: 50, y: 260, size: fontSize });
+      page.drawText(`Longitude: ${longitude}`, { x: 50, y: 240, size: fontSize });
+      page.drawText(`Número do Bilhete: ${numeroBilhete}`, { x: 50, y: 220, size: fontSize });
+      page.drawText(`Código de Verificação: ${codigoVerificacao}`, { x: 50, y: 200, size: fontSize, color: rgb(0.2, 0.2, 0.8) });
 
-      alert("Comprovativo pronto para envio. (Integração com backend ou Firebase Storage necessária.)");
-    });
-  </script>
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `comprovativo-rifa-${numeroBilhete}.pdf`;
+      link.click();
+
+      alert("Comprovativo enviado com sucesso! PDF gerado.");
+      document.getElementById('form-pagamento').reset();
+    } catch (error) {
+      erroEl.style.display = "block";
+      erroEl.textContent = "Erro ao processar pagamento. Tente novamente.";
+      console.error(error);
+    }
+  });
+</script>
 
 </body>
 </html>
