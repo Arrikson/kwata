@@ -105,6 +105,38 @@ async def adicionar_produto(
             "erro": "Erro ao cadastrar produto. Verifique os campos e tente novamente."
         })
 
+@app.post("/admin")
+async def admin_post(
+    # seus parâmetros aqui...
+):
+    try:
+        print("🔧 ROTA /admin ACIONADA")
+        
+        # Adicione esse print logo após a leitura da imagem:
+        conteudo_imagem = await imagem.read()
+        print("📷 Imagem carregada:", imagem.filename)
+
+        blob = bucket.blob(f"produtos/{imagem.filename}")
+        blob.upload_from_string(conteudo_imagem, content_type=imagem.content_type)
+        blob.make_public()
+        imagem_url = blob.public_url
+
+        print("📤 Imagem enviada:", imagem_url)
+
+        # Lógica do preço/bilhetes aqui...
+
+        print("📝 Produto a ser salvo:", produto)
+
+        db.collection('produtos').add(produto)
+
+        print("✅ Produto salvo no Firestore!")
+
+        return RedirectResponse("/", status_code=303)
+    except Exception as e:
+        print("❌ ERRO AO SALVAR PRODUTO:", str(e))
+        return {"erro": str(e)}
+
+
 # Execução local
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
