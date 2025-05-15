@@ -17,8 +17,6 @@ import io
 from reportlab.pdfgen import canvas
 
 
-
-
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
 
