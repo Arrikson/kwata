@@ -140,6 +140,11 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
+# ✅ Rota GET para exibir a página no navegador
+@app.get("/pagamento-rifa.html")
+async def exibir_pagina_pagamento(request: Request):
+    return templates.TemplateResponse("pagamento-rifa.html", {"request": request})
+
 @app.post("/pagamento-rifa.html")
 async def processar_pagamento(
     request: Request,
