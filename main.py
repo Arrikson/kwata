@@ -140,7 +140,7 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
-@app.post("/pagamento-rifa")
+@app.post("/pagamento-rifa.html")
 async def processar_pagamento(
     request: Request,
     nome: str = Form(...),
