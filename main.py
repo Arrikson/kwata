@@ -203,13 +203,14 @@ async def processar_pagamento(
     nome: str = Form(...),
     produto_id: str = Form(...),
     quantidade_bilhetes: int = Form(...),
-    numeros_bilhetes: List[int] = Form(...),  # Lista de números escolhidos
+    numeros_bilhetes: List[int] = Form(...),
     bi: str = Form(...),
     localizacao: str = Form(...),
     latitude: float = Form(...),
     longitude: float = Form(...),
     comprovativo: UploadFile = File(...)
 ):
+    
     try:
         conteudo = await comprovativo.read()
 
