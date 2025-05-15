@@ -288,6 +288,37 @@ async def processar_pagamento(
             novos_bilhetes = dados_produto.get("bilhetes_vendidos", 0) + quantidade_bilhetes
             produto_ref.update({"bilhetes_vendidos": novos_bilhetes})
 
+        # ⬇️ IMPORTANTE: certifique-se de que a pasta 'static/comprovativos' exista
+import os
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from io import BytesIO
+
+# Criar código único
+codigo_unico = f"{nome[:3].upper()}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+# Caminho local do PDF na pasta static
+caminho_pasta = os.path.join("static", "comprovativos")
+os.makedirs(caminho_pasta, exist_ok=True)  # Garante que a pasta exista
+pdf_path = os.path.join(caminho_pasta, f"{codigo_unico}.pdf")
+
+# Gerar PDF com os dados da compra
+buffer = BytesIO()
+c = canvas.Canvas(buffer, pagesize=A4)
+c.drawString(100, 800, f"Comprovativo de Compra - Rifa")
+c.drawString(100, 780, f"Nome: {nome}")
+c.drawString(100, 760, f"BI: {bi}")
+c.drawString(100, 740, f"Produto ID: {produto_id}")
+c.drawString(100, 720, f"Bilhetes: {', '.join(map(str, numeros_bilhetes))}")
+c.drawString(100, 700, f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+c.drawString(100, 680, f"Código Único: {codigo_unico}")
+c.save()
+
+# Salvar buffer no ficheiro local
+with open(pdf_path, "wb") as f:
+    f.write(buffer.getvalue())
+
+
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "sucesso": "Pagamento registrado com sucesso!"
