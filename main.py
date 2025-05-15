@@ -166,7 +166,6 @@ async def processar_pagamento(
                 "erro": "O comprovativo é maior que 32 KB. Envie um arquivo menor."
             })
 
-        import hashlib
         hash_comprovativo = hashlib.sha256(conteudo).hexdigest()
 
         comprovativos_ref = db.collection("comprovativos").document(hash_comprovativo)
@@ -188,9 +187,26 @@ async def processar_pagamento(
             "data_envio": datetime.now()
         }
 
+        # Salva o pagamento
         db.collection("pagamentos").add(pagamento_data)
+
+        # ✅ Novo: Salvar também na coleção 'compras'
+        compra_data = {
+            "nome": nome,
+            "bi": bi,
+            "produto_id": produto_id,
+            "quantidade_bilhetes": quantidade_bilhetes,
+            "localizacao": localizacao,
+            "latitude": latitude,
+            "longitude": longitude,
+            "data_compra": datetime.now()
+        }
+        db.collection("compras").add(compra_data)
+
+        # Marca o comprovativo como usado
         db.collection("comprovativos").document(hash_comprovativo).set({"usado": True})
 
+        # Atualiza os bilhetes vendidos
         produto_ref = db.collection("produtos").document(produto_id)
         produto_doc = produto_ref.get()
         if produto_doc.exists:
@@ -205,12 +221,12 @@ async def processar_pagamento(
 
     except Exception as e:
         print("❌ Erro ao processar pagamento:", e)
-        import traceback
         traceback.print_exc()
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "erro": "Erro ao processar o pagamento. Tente novamente."
         })
+
 
 @app.get("/registros", response_class=HTMLResponse)
 async def listar_registros(request: Request):
