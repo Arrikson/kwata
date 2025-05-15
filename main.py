@@ -230,12 +230,12 @@ async def processar_pagamento(
 @app.get("/registros", response_class=HTMLResponse)
 async def listar_registros(request: Request):
     try:
-        pagamentos_ref = db.collection("pagamentos").stream()
         registros = []
 
+        # 🔹 1. Coletar dados da coleção "pagamentos"
+        pagamentos_ref = db.collection("pagamentos").stream()
         for doc in pagamentos_ref:
             data = doc.to_dict()
-
             produto_id = data.get("produto_id")
             produto_nome = "Desconhecido"
 
@@ -255,6 +255,33 @@ async def listar_registros(request: Request):
                 "quantidade_bilhetes": data.get("quantidade_bilhetes"),
                 "data_envio": data.get("data_envio")
             })
+
+        # 🔹 2. Coletar dados da coleção "compras"
+        compras_ref = db.collection("compras").stream()
+        for doc in compras_ref:
+            data = doc.to_dict()
+            produto_id = data.get("produto_id")
+            produto_nome = "Desconhecido"
+
+            if produto_id:
+                produto_doc = db.collection("produtos").document(produto_id).get()
+                if produto_doc.exists:
+                    produto_nome = produto_doc.to_dict().get("nome", "Sem Nome")
+
+            registros.append({
+                "nome": data.get("nome"),
+                "bi": data.get("bi"),
+                "telefone": data.get("telefone", "N/A"),
+                "localizacao": data.get("localizacao"),
+                "latitude": data.get("latitude"),
+                "longitude": data.get("longitude"),
+                "produto": produto_nome,
+                "quantidade_bilhetes": data.get("quantidade_bilhetes"),
+                "data_envio": data.get("data_compra")  # campo diferente em compras
+            })
+
+        # 🔹 3. Ordenar por data mais recente
+        registros.sort(key=lambda x: x["data_envio"] or "", reverse=True)
 
         return templates.TemplateResponse("registros.html", {
             "request": request,
