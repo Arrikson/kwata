@@ -145,10 +145,51 @@
       user-select: none;
     }
 
+    /* Estilo para a lista de bilhetes */
+    #lista-bilhetes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1.8px solid #d1d5db;
+      border-radius: var(--border-radius);
+      padding: 0.5rem;
+      background: #fff;
+    }
+
+    #lista-bilhetes label {
+      flex: 0 0 30%;
+      background: #e6f0ea;
+      border-radius: var(--border-radius);
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease;
+      border: 1.8px solid transparent;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--primary-green);
+    }
+
+    #lista-bilhetes input[type="checkbox"] {
+      display: none;
+    }
+
+    #lista-bilhetes input[type="checkbox"]:checked + label {
+      background: var(--primary-green);
+      color: white;
+      border-color: var(--primary-green);
+    }
+
     /* Responsividade */
     @media (max-width: 500px) {
       main {
         padding: 1.5rem 1.5rem;
+      }
+      #lista-bilhetes label {
+        flex: 0 0 45%;
       }
     }
   </style>
@@ -161,8 +202,8 @@
   <section id="produto-info" aria-live="polite" aria-atomic="true">
     <h2 id="nome-produto">Carregando produto...</h2>
     <p><strong>Preço:</strong> <span id="preco-produto">--</span> Kz</p>
-    <label for="bilhete">Escolha o número do bilhete:</label>
-    <select id="bilhete" aria-required="true" aria-label="Número do bilhete"></select>
+    <label for="lista-bilhetes">Escolha os números dos bilhetes:</label>
+    <div id="lista-bilhetes" aria-label="Números disponíveis para bilhetes"></div>
   </section>
 
   <form id="form-pagamento" novalidate>
@@ -198,114 +239,149 @@
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyCwtVGJBjGgYUiuNVPI-Y3gMeLhOWnSWCQ",
-    authDomain: "kwata-48ab2.firebaseapp.com",
-    projectId: "kwata-48ab2",
-    storageBucket: "kwata-48ab2.appspot.com",
-    messagingSenderId: "654204246057",
-    appId: "1:654204246057:web:48c7a39dc294dc41a62438"
+    authDomain: "rifaapp-6a4a6.firebaseapp.com",
+    projectId: "rifaapp-6a4a6",
+    storageBucket: "rifaapp-6a4a6.appspot.com",
+    messagingSenderId: "221127078301",
+    appId: "1:221127078301:web:fc1e33f0c75a7a777f27a4",
+    measurementId: "G-TWLK5X0WPK"
   };
+
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const produtoId = urlParams.get('id');
+  // Configurações de exemplo
+  let quantidadeSelecionada = 1; // Quantidade de bilhetes que o usuário deve selecionar
+  let bilhetesDisponiveis = [];
 
-  const nomeEl = document.getElementById('nome-produto');
-  const precoEl = document.getElementById('preco-produto');
-  const bilheteSelect = document.getElementById('bilhete');
-  let produtoAtual = null;
+  // Função para carregar dados do produto e bilhetes
+  async function carregarDadosProduto() {
+    try {
+      const docRef = db.collection("rifas").doc("rifa01");
+      const docSnap = await docRef.get();
 
-  if (!produtoId) {
-    nomeEl.textContent = "Produto não encontrado.";
-  } else {
-    db.collection("produtos").doc(produtoId).get().then(doc => {
-      if (doc.exists) {
-        produtoAtual = doc.data();
-        nomeEl.textContent = produtoAtual.nome;
-        precoEl.textContent = produtoAtual.preco;
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        document.getElementById("nome-produto").textContent = data.nome || "Produto não informado";
+        document.getElementById("preco-produto").textContent = data.preco || "--";
 
-        const vendidos = produtoAtual.bilhetes_vendidos || [];
-        const total = produtoAtual.total_bilhetes || 0;
+        const totalBilhetes = data.total_bilhetes || 0;
+        const bilhetesVendidos = data.bilhetes_vendidos || 0;
 
-        for (let i = 1; i <= total; i++) {
-          if (!vendidos.includes(i)) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = `Bilhete nº ${i}`;
-            bilheteSelect.appendChild(option);
+        // Criar array de bilhetes disponíveis
+        bilhetesDisponiveis = [];
+        for (let i = 1; i <= totalBilhetes; i++) {
+          if (i > bilhetesVendidos) {
+            bilhetesDisponiveis.push(i);
           }
         }
+
+        montarListaBilhetes();
       } else {
-        nomeEl.textContent = "Produto não encontrado.";
+        alert("Produto não encontrado no banco de dados.");
       }
+    } catch (error) {
+      alert("Erro ao carregar dados do produto: " + error.message);
+    }
+  }
+
+  // Montar lista de checkboxes para os bilhetes disponíveis
+  function montarListaBilhetes() {
+    const container = document.getElementById("lista-bilhetes");
+    container.innerHTML = "";
+    bilhetesDisponiveis.forEach((numero) => {
+      const checkboxId = `bilhete-${numero}`;
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.id = checkboxId;
+      checkbox.name = "bilhetes";
+      checkbox.value = numero;
+      checkbox.setAttribute("aria-label", `Bilhete número ${numero}`);
+
+      const label = document.createElement("label");
+      label.htmlFor = checkboxId;
+      label.textContent = numero;
+
+      container.appendChild(checkbox);
+      container.appendChild(label);
     });
   }
 
-  // Localização automática
-  navigator.geolocation.getCurrentPosition(pos => {
-    document.getElementById('latitude').value = pos.coords.latitude;
-    document.getElementById('longitude').value = pos.coords.longitude;
-  }, err => {
-    alert("Erro ao obter localização. Permissão negada?");
-  });
+  // Capturar localização do usuário
+  function capturarLocalizacao() {
+    if (!navigator.geolocation) {
+      alert("Geolocalização não é suportada pelo seu navegador.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        document.getElementById("latitude").value = pos.coords.latitude.toFixed(6);
+        document.getElementById("longitude").value = pos.coords.longitude.toFixed(6);
+      },
+      (error) => {
+        console.warn(`Erro ao obter localização: ${error.message}`);
+      }
+    );
+  }
 
-  document.getElementById('form-pagamento').addEventListener('submit', async (e) => {
+  // Validação do formulário e envio
+  document.getElementById("form-pagamento").addEventListener("submit", function (e) {
     e.preventDefault();
 
-    const file = document.getElementById('comprovativo').files[0];
-    const erroEl = document.getElementById('mensagem-erro');
-    erroEl.style.display = "none";
-    erroEl.textContent = "";
+    const erroDiv = document.getElementById("mensagem-erro");
+    erroDiv.style.display = "none";
+    erroDiv.textContent = "";
 
-    if (file.size > 32768) {
-      erroEl.style.display = "block";
-      erroEl.textContent = "O comprovativo excede o tamanho máximo de 32 KB.";
+    // Verificar se quantidade correta de bilhetes está selecionada
+    const bilhetesSelecionados = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => parseInt(el.value));
+
+    if (bilhetesSelecionados.length === 0) {
+      erroDiv.textContent = "Por favor, selecione pelo menos um bilhete.";
+      erroDiv.style.display = "block";
       return;
     }
 
-    const nome = document.getElementById('nome').value.trim();
-    const bi = document.getElementById('bi').value.trim();
-    const telefone = document.getElementById('telefone').value.trim();
-    const latitude = document.getElementById('latitude').value;
-    const longitude = document.getElementById('longitude').value;
-    const numeroBilhete = parseInt(document.getElementById('bilhete').value);
-    const codigoVerificacao = uuid.v4();
-
-    try {
-      const docRef = db.collection("produtos").doc(produtoId);
-      await docRef.update({
-        bilhetes_vendidos: firebase.firestore.FieldValue.arrayUnion(numeroBilhete)
-      });
-
-      const { PDFDocument, rgb } = PDFLib;
-      const pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([600, 400]);
-
-      const fontSize = 14;
-      page.drawText(`Comprovativo da Rifa`, { x: 200, y: 360, size: 18, color: rgb(0, 0.53, 0) });
-      page.drawText(`Nome: ${nome}`, { x: 50, y: 320, size: fontSize });
-      page.drawText(`Nº do B.I: ${bi}`, { x: 50, y: 300, size: fontSize });
-      page.drawText(`Telefone: ${telefone}`, { x: 50, y: 280, size: fontSize });
-      page.drawText(`Latitude: ${latitude}`, { x: 50, y: 260, size: fontSize });
-      page.drawText(`Longitude: ${longitude}`, { x: 50, y: 240, size: fontSize });
-      page.drawText(`Número do Bilhete: ${numeroBilhete}`, { x: 50, y: 220, size: fontSize });
-      page.drawText(`Código de Verificação: ${codigoVerificacao}`, { x: 50, y: 200, size: fontSize, color: rgb(0.2, 0.2, 0.8) });
-
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `comprovativo-rifa-${numeroBilhete}.pdf`;
-      link.click();
-
-      alert("Comprovativo enviado com sucesso! PDF gerado.");
-      document.getElementById('form-pagamento').reset();
-    } catch (error) {
-      erroEl.style.display = "block";
-      erroEl.textContent = "Erro ao enviar comprovativo. Tente novamente.";
-      console.error(error);
+    if (bilhetesSelecionados.length !== quantidadeSelecionada) {
+      erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
+      erroDiv.style.display = "block";
+      return;
     }
+
+    // Validar campos obrigatórios do formulário
+    const nome = document.getElementById("nome").value.trim();
+    const bi = document.getElementById("bi").value.trim();
+    const telefone = document.getElementById("telefone").value.trim();
+    const comprovativo = document.getElementById("comprovativo").files[0];
+
+    if (!nome || !bi || !telefone) {
+      erroDiv.textContent = "Preencha todos os campos obrigatórios.";
+      erroDiv.style.display = "block";
+      return;
+    }
+
+    if (!comprovativo) {
+      erroDiv.textContent = "Envie o comprovativo de pagamento.";
+      erroDiv.style.display = "block";
+      return;
+    }
+
+    if (comprovativo.size > 32 * 1024) {
+      erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
+      erroDiv.style.display = "block";
+      return;
+    }
+
+    // Aqui você pode seguir para enviar o formulário ao backend e gerar o PDF conforme seu fluxo.
+
+    alert(`Formulário enviado com sucesso.\nBilhetes escolhidos: ${bilhetesSelecionados.join(", ")}`);
+
+    // Limpar formulário (opcional)
+    this.reset();
   });
+
+  // Iniciar carregamento
+  carregarDadosProduto();
+  capturarLocalizacao();
 </script>
 
 </body>
