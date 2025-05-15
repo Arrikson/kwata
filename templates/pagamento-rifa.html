@@ -8,46 +8,114 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
+    :root {
+      --verde: #4CAF50;
+      --amarelo: #FFC107;
+      --vermelho-fraco: rgba(244, 67, 54, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Roboto', sans-serif;
+      background-color: #f9f9f9;
       padding: 1rem;
-      background-color: #f0f0f5;
+      margin: 0;
     }
-    h1 { color: #333; }
-    label { display: block; margin-top: 1rem; font-weight: bold; }
+
+    h1 {
+      color: var(--verde);
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    #produto-info {
+      background: white;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 2rem;
+    }
+
+    #produto-info h2 {
+      color: #333;
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+      color: #333;
+    }
+
     input, select {
       width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.3rem;
-      border-radius: 5px;
+      padding: 0.75rem;
+      margin-top: 0.4rem;
+      border-radius: 8px;
       border: 1px solid #ccc;
+      font-size: 1rem;
+      transition: border-color 0.3s;
     }
+
+    input:focus, select:focus {
+      border-color: var(--verde);
+      outline: none;
+    }
+
     .button {
-      background-color: #4CAF50;
-      color: white;
+      background-color: var(--amarelo);
+      color: #000;
       padding: 1rem;
       margin-top: 1.5rem;
       width: 100%;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      transition: background-color 0.3s;
     }
+
     .button:hover {
-      background-color: #45a049;
+      background-color: #e0a800;
     }
-    #produto-info {
-      margin-bottom: 2rem;
-      background: #fff;
+
+    .erro {
+      background-color: var(--vermelho-fraco);
+      border-left: 4px solid #f44336;
       padding: 1rem;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-top: 1rem;
+      border-radius: 8px;
+      color: #d32f2f;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 0.8rem;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+      }
+
+      input, select {
+        font-size: 1rem;
+      }
+
+      .button {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
 <body>
 
   <h1>Pagamento da Rifa</h1>
+
   <div id="produto-info">
     <h2 id="nome-produto">Carregando produto...</h2>
     <p><strong>Preço:</strong> <span id="preco-produto">--</span> Kz</p>
@@ -75,6 +143,8 @@
     <input type="file" id="comprovativo" accept="image/*,application/pdf" required>
 
     <button type="submit" class="button">Enviar Comprovativo</button>
+
+    <div id="mensagem-erro" class="erro" style="display: none;"></div>
   </form>
 
   <script>
@@ -92,35 +162,35 @@
     const urlParams = new URLSearchParams(window.location.search);
     const produtoId = urlParams.get('id');
 
-    if (!produtoId) {
-      alert("Produto não encontrado.");
-    }
-
     const nomeEl = document.getElementById('nome-produto');
     const precoEl = document.getElementById('preco-produto');
     const bilheteSelect = document.getElementById('bilhete');
 
-    db.collection("produtos").doc(produtoId).get().then(doc => {
-      if (doc.exists) {
-        const produto = doc.data();
-        nomeEl.textContent = produto.nome;
-        precoEl.textContent = produto.preco;
+    if (!produtoId) {
+      nomeEl.textContent = "Produto não encontrado.";
+    } else {
+      db.collection("produtos").doc(produtoId).get().then(doc => {
+        if (doc.exists) {
+          const produto = doc.data();
+          nomeEl.textContent = produto.nome;
+          precoEl.textContent = produto.preco;
 
-        const vendidos = produto.bilhetes_vendidos || [];
-        const total = produto.total_bilhetes || 0;
+          const vendidos = produto.bilhetes_vendidos || [];
+          const total = produto.total_bilhetes || 0;
 
-        for (let i = 1; i <= total; i++) {
-          if (!vendidos.includes(i)) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = `Bilhete nº ${i}`;
-            bilheteSelect.appendChild(option);
+          for (let i = 1; i <= total; i++) {
+            if (!vendidos.includes(i)) {
+              const option = document.createElement('option');
+              option.value = i;
+              option.textContent = `Bilhete nº ${i}`;
+              bilheteSelect.appendChild(option);
+            }
           }
+        } else {
+          nomeEl.textContent = "Produto não encontrado.";
         }
-      } else {
-        nomeEl.textContent = "Produto não encontrado.";
-      }
-    });
+      });
+    }
 
     // Geolocalização
     navigator.geolocation.getCurrentPosition(pos => {
@@ -134,15 +204,20 @@
       e.preventDefault();
 
       const file = document.getElementById('comprovativo').files[0];
+      const erroEl = document.getElementById('mensagem-erro');
+      erroEl.style.display = "none";
+      erroEl.textContent = "";
+
       if (file.size > 32768) {
-        alert("O comprovativo excede o tamanho máximo de 32 KB.");
+        erroEl.style.display = "block";
+        erroEl.textContent = "O comprovativo excede o tamanho máximo de 32 KB.";
         return;
       }
 
-      // Aqui você pode adicionar a lógica de envio para o Firebase Storage ou backend
       alert("Comprovativo pronto para envio. (Integração com backend ou Firebase Storage necessária.)");
     });
   </script>
+
 </body>
 </html>
 
