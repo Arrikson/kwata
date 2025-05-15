@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
 from datetime import datetime
 import traceback  # ✅ Para exibir erros completos
+import hashlib
 
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
