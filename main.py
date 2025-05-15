@@ -1,12 +1,13 @@
 import os
 import json
 import firebase_admin
-from firebase_admin import credentials, firestore, storage
+from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+from uuid import uuid4
 
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
@@ -17,13 +18,10 @@ if not firebase_admin._apps:
         raise FileNotFoundError("Arquivo firebase-key.json não encontrado. Coloque-o na raiz do projeto.")
     
     cred = credentials.Certificate(FIREBASE_KEY_PATH)
-    firebase_admin.initialize_app(cred, {
-        'storageBucket': f"{cred.project_id}.appspot.com"
-    })
+    firebase_admin.initialize_app(cred)
 
-# Firestore e Storage
+# Firestore
 db = firestore.client()
-bucket = storage.bucket()
 
 # Inicializa FastAPI
 app = FastAPI()
@@ -31,6 +29,10 @@ app = FastAPI()
 # Pasta de arquivos estáticos e templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# Garante que a pasta de uploads exista
+UPLOAD_DIR = "static/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Página inicial
 @app.get("/", response_class=HTMLResponse)
@@ -69,11 +71,15 @@ async def adicionar_produto(
         conteudo_imagem = await imagem.read()
         print("📷 Imagem carregada:", imagem.filename)
 
-        blob = bucket.blob(f"produtos/{imagem.filename}")
-        blob.upload_from_string(conteudo_imagem, content_type=imagem.content_type)
-        blob.make_public()
-        imagem_url = blob.public_url
-        print("📤 Imagem enviada:", imagem_url)
+        # Salvar imagem localmente
+        ext = os.path.splitext(imagem.filename)[-1]
+        nome_arquivo = f"{uuid4().hex}{ext}"
+        caminho_imagem = os.path.join(UPLOAD_DIR, nome_arquivo)
+        with open(caminho_imagem, "wb") as f:
+            f.write(conteudo_imagem)
+
+        imagem_url = f"/static/uploads/{nome_arquivo}"
+        print("📤 Imagem salva localmente em:", imagem_url)
 
         total_necessario = preco_aquisicao + lucro_desejado
 
@@ -109,7 +115,6 @@ async def adicionar_produto(
             "request": request,
             "erro": "Erro ao cadastrar produto. Verifique os campos e tente novamente."
         })
-
 
 # Execução local
 if __name__ == "__main__":
