@@ -53,7 +53,6 @@ async def admin_form(request: Request):
         "sucesso": sucesso
     })
 
-# Cadastro de produto
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
@@ -66,11 +65,15 @@ async def adicionar_produto(
     quantidade_bilhetes: int = Form(None)
 ):
     try:
-        # Salvar imagem no Firebase Storage
+        print("🔧 ROTA /admin ACIONADA")
+        conteudo_imagem = await imagem.read()
+        print("📷 Imagem carregada:", imagem.filename)
+
         blob = bucket.blob(f"produtos/{imagem.filename}")
-        blob.upload_from_string(await imagem.read(), content_type=imagem.content_type)
-        blob.make_public()  # Torna a imagem acessível publicamente
+        blob.upload_from_string(conteudo_imagem, content_type=imagem.content_type)
+        blob.make_public()
         imagem_url = blob.public_url
+        print("📤 Imagem enviada:", imagem_url)
 
         total_necessario = preco_aquisicao + lucro_desejado
 
@@ -93,48 +96,19 @@ async def adicionar_produto(
             "quantidade_bilhetes": quantidade_calculada
         }
 
-        # Salva no Firestore
+        print("📝 Produto a ser salvo:", produto)
+
         db.collection('produtos').add(produto)
+        print("✅ Produto salvo no Firestore!")
 
         return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
     except Exception as e:
-        print("Erro ao cadastrar produto:", e)
+        print("❌ ERRO AO SALVAR PRODUTO:", str(e))
         return templates.TemplateResponse("admin.html", {
             "request": request,
             "erro": "Erro ao cadastrar produto. Verifique os campos e tente novamente."
         })
-
-@app.post("/admin")
-async def admin_post(
-    # seus parâmetros aqui...
-):
-    try:
-        print("🔧 ROTA /admin ACIONADA")
-        
-        # Adicione esse print logo após a leitura da imagem:
-        conteudo_imagem = await imagem.read()
-        print("📷 Imagem carregada:", imagem.filename)
-
-        blob = bucket.blob(f"produtos/{imagem.filename}")
-        blob.upload_from_string(conteudo_imagem, content_type=imagem.content_type)
-        blob.make_public()
-        imagem_url = blob.public_url
-
-        print("📤 Imagem enviada:", imagem_url)
-
-        # Lógica do preço/bilhetes aqui...
-
-        print("📝 Produto a ser salvo:", produto)
-
-        db.collection('produtos').add(produto)
-
-        print("✅ Produto salvo no Firestore!")
-
-        return RedirectResponse("/", status_code=303)
-    except Exception as e:
-        print("❌ ERRO AO SALVAR PRODUTO:", str(e))
-        return {"erro": str(e)}
 
 
 # Execução local
