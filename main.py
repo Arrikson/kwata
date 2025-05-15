@@ -203,7 +203,7 @@ async def processar_pagamento(
     nome: str = Form(...),
     produto_id: str = Form(...),
     quantidade_bilhetes: int = Form(...),
-    numeros_bilhetes: List[int] = Form(...),  # NOVO: Lista de números escolhidos
+    numeros_bilhetes: List[int] = Form(...),  # Lista de números escolhidos
     bi: str = Form(...),
     localizacao: str = Form(...),
     latitude: float = Form(...),
@@ -229,7 +229,7 @@ async def processar_pagamento(
                 "erro": "Este comprovativo já foi usado anteriormente."
             })
 
-        # 🔎 VERIFICAR se os bilhetes escolhidos já foram comprados
+        # Verificar se os bilhetes escolhidos já foram comprados
         compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
         bilhetes_indisponiveis = set()
         for compra in compras_ref:
@@ -288,30 +288,29 @@ async def processar_pagamento(
             novos_bilhetes = dados_produto.get("bilhetes_vendidos", 0) + quantidade_bilhetes
             produto_ref.update({"bilhetes_vendidos": novos_bilhetes})
 
-# Criar código único
-codigo_unico = f"{nome[:3].upper()}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        # Criar código único
+        codigo_unico = f"{nome[:3].upper()}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-# Caminho local do PDF na pasta static
-caminho_pasta = os.path.join("static", "comprovativos")
-os.makedirs(caminho_pasta, exist_ok=True)  # Garante que a pasta exista
-pdf_path = os.path.join(caminho_pasta, f"{codigo_unico}.pdf")
+        # Caminho local do PDF na pasta static
+        caminho_pasta = os.path.join("static", "comprovativos")
+        os.makedirs(caminho_pasta, exist_ok=True)  # Garante que a pasta exista
+        pdf_path = os.path.join(caminho_pasta, f"{codigo_unico}.pdf")
 
-# Gerar PDF com os dados da compra
-buffer = BytesIO()
-c = canvas.Canvas(buffer, pagesize=A4)
-c.drawString(100, 800, f"Comprovativo de Compra - Rifa")
-c.drawString(100, 780, f"Nome: {nome}")
-c.drawString(100, 760, f"BI: {bi}")
-c.drawString(100, 740, f"Produto ID: {produto_id}")
-c.drawString(100, 720, f"Bilhetes: {', '.join(map(str, numeros_bilhetes))}")
-c.drawString(100, 700, f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-c.drawString(100, 680, f"Código Único: {codigo_unico}")
-c.save()
+        # Gerar PDF com os dados da compra
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        c.drawString(100, 800, f"Comprovativo de Compra - Rifa")
+        c.drawString(100, 780, f"Nome: {nome}")
+        c.drawString(100, 760, f"BI: {bi}")
+        c.drawString(100, 740, f"Produto ID: {produto_id}")
+        c.drawString(100, 720, f"Bilhetes: {', '.join(map(str, numeros_bilhetes))}")
+        c.drawString(100, 700, f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        c.drawString(100, 680, f"Código Único: {codigo_unico}")
+        c.save()
 
-# Salvar buffer no ficheiro local
-with open(pdf_path, "wb") as f:
-    f.write(buffer.getvalue())
-
+        # Salvar buffer no ficheiro local
+        with open(pdf_path, "wb") as f:
+            f.write(buffer.getvalue())
 
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
