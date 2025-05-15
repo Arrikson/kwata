@@ -33,7 +33,8 @@ templates = Jinja2Templates(directory="templates")
 UPLOAD_DIR = os.path.join("static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Página inicial
+# ... (todo o código acima permanece igual até a função index)
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
@@ -42,6 +43,17 @@ async def index(request: Request):
         for doc in produtos_ref:
             data = doc.to_dict()
             data["id"] = doc.id
+
+            # Garantir que o campo bilhetes_vendidos existe
+            bilhetes_vendidos = data.get("bilhetes_vendidos", 0)
+            quantidade_total = data.get("quantidade_bilhetes", 0)
+
+            # Calcular bilhetes disponíveis
+            bilhetes_disponiveis = max(quantidade_total - bilhetes_vendidos, 0)
+
+            data["bilhetes_disponiveis"] = bilhetes_disponiveis
+            data["preco_bilhete"] = data.get("preco_bilhete", 0)
+
             produtos.append(data)
     except Exception as e:
         print("❌ Erro ao buscar produtos do Firestore:", e)
@@ -51,6 +63,18 @@ async def index(request: Request):
         "request": request,
         "produtos": produtos
     })
+
+# ... (continuação da função /admin POST)
+        produto = {
+            "nome": nome,
+            "descricao": descricao,
+            "imagem": imagem_url,
+            "preco_aquisicao": preco_aquisicao,
+            "lucro_desejado": lucro_desejado,
+            "preco_bilhete": round(preco_bilhete, 2),
+            "quantidade_bilhetes": quantidade_calculada,
+            "bilhetes_vendidos": 0  # <<< novo campo
+        }
 
 # Página do formulário de admin
 @app.get("/admin", response_class=HTMLResponse)
