@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
 from datetime import datetime
 from google.protobuf.timestamp_pb2 import Timestamp
+import traceback  # ✅ Para exibir erros completos
 
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
@@ -55,6 +56,7 @@ async def index(request: Request):
             produtos.append(data)
     except Exception as e:
         print("❌ Erro ao buscar produtos do Firestore:", e)
+        traceback.print_exc()
         produtos = []
 
     return templates.TemplateResponse("index.html", {
@@ -87,6 +89,16 @@ async def adicionar_produto(
     try:
         print("🔧 ROTA /admin ACIONADA")
 
+        # Verifica e imprime a data recebida
+        print("📅 data_limite recebido:", data_limite)
+
+        # Converter a string data_limite para datetime
+        data_limite_dt = datetime.fromisoformat(data_limite)
+
+        # Converter para Timestamp do Firestore
+        timestamp_limite = Timestamp()
+        timestamp_limite.FromDatetime(data_limite_dt)
+
         # Salva a imagem no servidor
         conteudo_imagem = await imagem.read()
         ext = os.path.splitext(imagem.filename)[-1]
@@ -110,13 +122,6 @@ async def adicionar_produto(
             preco_bilhete = 0
             quantidade_calculada = 0
 
-        # Converter a string data_limite para datetime
-        # Espera o formato ISO 8601 vindo do input datetime-local: 'YYYY-MM-DDTHH:MM'
-        data_limite_dt = datetime.fromisoformat(data_limite)
-
-        # Converter para Timestamp do Firestore
-        timestamp_limite = Timestamp.from_datetime(data_limite_dt)
-
         produto = {
             "nome": nome,
             "descricao": descricao,
@@ -129,6 +134,8 @@ async def adicionar_produto(
             "data_limite": timestamp_limite  # salva como Timestamp no Firestore
         }
 
+        print("📝 Produto a ser salvo:", produto)
+
         db.collection('produtos').add(produto)
         print("✅ Produto salvo no Firestore!")
 
@@ -136,8 +143,10 @@ async def adicionar_produto(
 
     except Exception as e:
         print("❌ ERRO AO SALVAR PRODUTO:", str(e))
+        traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
+
