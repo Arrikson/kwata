@@ -30,31 +30,40 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-
 UPLOAD_DIR = os.path.join("static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Página inicial
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    produtos = []
-    if os.path.exists("produtos.json"):
-        with open("produtos.json", "r", encoding="utf-8") as f:
-            try:
-                produtos = json.load(f)
-            except json.JSONDecodeError:
-                produtos = []
-    return templates.TemplateResponse("index.html", {"request": request, "produtos": produtos})
+    try:
+        produtos_ref = db.collection('produtos').stream()
+        produtos = []
+        for doc in produtos_ref:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            produtos.append(data)
+    except Exception as e:
+        print("❌ Erro ao buscar produtos do Firestore:", e)
+        produtos = []
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "produtos": produtos
+    })
 
 # Página do formulário de admin
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
     sucesso = request.query_params.get("sucesso")
+    erro = request.query_params.get("erro")
     return templates.TemplateResponse("admin.html", {
         "request": request,
-        "sucesso": sucesso
+        "sucesso": sucesso,
+        "erro": erro
     })
 
+# Cadastro de novo produto
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
@@ -68,13 +77,12 @@ async def adicionar_produto(
 ):
     try:
         print("🔧 ROTA /admin ACIONADA")
-        conteudo_imagem = await imagem.read()
-        print("📷 Imagem carregada:", imagem.filename)
 
-        # Salvar imagem localmente
+        conteudo_imagem = await imagem.read()
         ext = os.path.splitext(imagem.filename)[-1]
         nome_arquivo = f"{uuid4().hex}{ext}"
         caminho_imagem = os.path.join(UPLOAD_DIR, nome_arquivo)
+
         with open(caminho_imagem, "wb") as f:
             f.write(conteudo_imagem)
 
@@ -102,8 +110,6 @@ async def adicionar_produto(
             "quantidade_bilhetes": quantidade_calculada
         }
 
-        print("📝 Produto a ser salvo:", produto)
-
         db.collection('produtos').add(produto)
         print("✅ Produto salvo no Firestore!")
 
@@ -111,10 +117,7 @@ async def adicionar_produto(
 
     except Exception as e:
         print("❌ ERRO AO SALVAR PRODUTO:", str(e))
-        return templates.TemplateResponse("admin.html", {
-            "request": request,
-            "erro": "Erro ao cadastrar produto. Verifique os campos e tente novamente."
-        })
+        return RedirectResponse(url="/admin?erro=1", status_code=303)
 
 # Execução local
 if __name__ == "__main__":
