@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kwata - Sorteios e Rifas</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
@@ -16,17 +14,13 @@
       --laranja: #FFA500;
       --vermelho-claro: #FF6F61;
     }
-
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f4f4f9;
       margin: 0;
       padding: 0;
     }
-
     header {
       background-color: var(--verde);
       padding: 1rem 2rem;
@@ -35,17 +29,12 @@
       align-items: center;
       justify-content: space-between;
     }
-
-    header img {
-      height: 50px;
-    }
-
+    header img { height: 50px; }
     header h1 {
       font-size: 1.5rem;
       margin-left: 1rem;
       color: white;
     }
-
     .carousel-container {
       position: relative;
       overflow: hidden;
@@ -53,12 +42,10 @@
       max-width: 1000px;
       margin: 2rem auto;
     }
-
     .carousel-track {
       display: flex;
       transition: transform 0.5s ease-in-out;
     }
-
     .product-card {
       flex: 0 0 100%;
       padding: 1rem;
@@ -66,7 +53,6 @@
       flex-direction: column;
       align-items: center;
     }
-
     .product-card-inner {
       background: #fff;
       border-radius: 12px;
@@ -77,17 +63,14 @@
       text-align: center;
       border-top: 6px solid var(--laranja);
     }
-
     .product-card img {
       width: 100%;
       height: auto;
       border-radius: 8px;
     }
-
     .product-info {
       margin-top: 1rem;
     }
-
     .button {
       background-color: var(--vermelho-claro);
       color: white;
@@ -99,11 +82,9 @@
       margin-top: 1rem;
       transition: background 0.3s;
     }
-
     .button:hover {
       background-color: #e55b50;
     }
-
     .carousel-button {
       position: absolute;
       top: 50%;
@@ -117,15 +98,13 @@
       z-index: 1;
       border-radius: 50%;
     }
-
-    .carousel-button.left {
-      left: 10px;
+    .carousel-button.left { left: 10px; }
+    .carousel-button.right { right: 10px; }
+    .contador {
+      font-weight: bold;
+      color: var(--laranja);
+      margin-top: 10px;
     }
-
-    .carousel-button.right {
-      right: 10px;
-    }
-
     @media (max-width: 600px) {
       header {
         flex-direction: column;
@@ -147,13 +126,12 @@
   <div class="carousel-container">
     <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
     <div class="carousel-track" id="carousel-track">
-      <!-- Produtos serão carregados aqui -->
+      <!-- Produtos aqui -->
     </div>
     <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
   </div>
 
   <script>
-    // 1. CONFIGURAÇÃO DO FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyCwtVGJBjGgYUiuNVPI-Y3gMeLhOWnSWCQ",
       authDomain: "kwata-48ab2.firebaseapp.com",
@@ -162,11 +140,9 @@
       messagingSenderId: "654204246057",
       appId:  "1:654204246057:web:48c7a39dc294dc41a62438"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 2. LÓGICA DO CARROSSEL
     let currentIndex = 0;
 
     function moverCarrossel(direction) {
@@ -178,34 +154,59 @@
       document.getElementById('carousel-track').style.transform = `translateX(${offset}%)`;
     }
 
-    // 3. CRIAR CARD DO PRODUTO
+    function formatarTempo(ms) {
+      const totalSegundos = Math.floor(ms / 1000);
+      const dias = Math.floor(totalSegundos / 86400);
+      const horas = Math.floor((totalSegundos % 86400) / 3600);
+      const minutos = Math.floor((totalSegundos % 3600) / 60);
+      const segundos = totalSegundos % 60;
+      return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+    }
+
     function criarCard(produto) {
       const card = document.createElement('div');
       card.className = 'product-card';
+      const bilhetesRestantes = produto.total_bilhetes - (produto.bilhetes_vendidos || 0);
+      const dataLimite = produto.data_limite ? produto.data_limite.toDate() : null;
+      const contadorId = `contador-${produto.id}`;
+
       card.innerHTML = `
         <div class="product-card-inner">
           <img src="${produto.imagem}" alt="${produto.nome}">
           <div class="product-info">
             <h3>${produto.nome}</h3>
             <p>${produto.descricao}</p>
-            <p><strong>Preço por bilhete:</strong> ${produto.preco} Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> ${produto.bilhetes}</p>
-            <button class="button" onclick="window.location.href='/comprar-rifa?id=${produto.id}'">Comprar Bilhete</button>
+            <p><strong>Preço:</strong> ${produto.preco} Kz</p>
+            <p><strong>Bilhetes disponíveis:</strong> ${bilhetesRestantes}</p>
+            <p class="contador" id="${contadorId}">Carregando contador...</p>
+            <button class="button" onclick="window.location.href='/pagamento-rifa.html?id=${produto.id}'">Comprar Bilhete</button>
           </div>
         </div>
       `;
+
       document.getElementById('carousel-track').appendChild(card);
+
+      if (dataLimite) {
+        setInterval(() => {
+          const agora = new Date();
+          const diff = dataLimite - agora;
+          const el = document.getElementById(contadorId);
+          if (diff > 0) {
+            el.textContent = "Sorteio em: " + formatarTempo(diff);
+          } else {
+            el.textContent = "Sorteio encerrado!";
+          }
+        }, 1000);
+      }
     }
 
-    // 4. BUSCAR PRODUTOS DO FIRESTORE
-    db.collection("produtos").get().then((querySnapshot) => {
-      querySnapshot.forEach((doc) => {
+    db.collection("produtos").onSnapshot(snapshot => {
+      document.getElementById('carousel-track').innerHTML = "";
+      snapshot.forEach(doc => {
         const produto = doc.data();
         produto.id = doc.id;
         criarCard(produto);
       });
-    }).catch((error) => {
-      console.error("Erro ao carregar produtos:", error);
     });
   </script>
 </body>
