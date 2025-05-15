@@ -1,4 +1,4 @@
-import os
+import os 
 import json
 import firebase_admin
 import uvicorn
@@ -9,7 +9,6 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
 from datetime import datetime
-from google.protobuf.timestamp_pb2 import Timestamp
 import traceback  # ✅ Para exibir erros completos
 
 # Caminho da chave do Firebase
@@ -88,16 +87,10 @@ async def adicionar_produto(
 ):
     try:
         print("🔧 ROTA /admin ACIONADA")
-
-        # Verifica e imprime a data recebida
         print("📅 data_limite recebido:", data_limite)
 
-        # Converter a string data_limite para datetime
+        # ✅ Converter diretamente para datetime (Firestore aceita datetime)
         data_limite_dt = datetime.fromisoformat(data_limite)
-
-        # Converter para Timestamp do Firestore
-        timestamp_limite = Timestamp()
-        timestamp_limite.FromDatetime(data_limite_dt)
 
         # Salva a imagem no servidor
         conteudo_imagem = await imagem.read()
@@ -131,7 +124,7 @@ async def adicionar_produto(
             "preco_bilhete": round(preco_bilhete, 2),
             "quantidade_bilhetes": quantidade_calculada,
             "bilhetes_vendidos": 0,
-            "data_limite": timestamp_limite  # salva como Timestamp no Firestore
+            "data_limite": data_limite_dt  # ✅ usar datetime, não Timestamp
         }
 
         print("📝 Produto a ser salvo:", produto)
