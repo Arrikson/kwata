@@ -207,6 +207,49 @@ async def processar_pagamento(
             "erro": "Erro ao processar o pagamento. Tente novamente."
         })
 
+@app.get("/registros", response_class=HTMLResponse)
+async def listar_registros(request: Request):
+    try:
+        pagamentos_ref = db.collection("pagamentos").stream()
+        registros = []
+
+        for doc in pagamentos_ref:
+            data = doc.to_dict()
+
+            produto_id = data.get("produto_id")
+            produto_nome = "Desconhecido"
+
+            if produto_id:
+                produto_doc = db.collection("produtos").document(produto_id).get()
+                if produto_doc.exists:
+                    produto_nome = produto_doc.to_dict().get("nome", "Sem Nome")
+
+            registros.append({
+                "nome": data.get("nome"),
+                "bi": data.get("bi"),
+                "telefone": data.get("telefone", "N/A"),
+                "localizacao": data.get("localizacao"),
+                "latitude": data.get("latitude"),
+                "longitude": data.get("longitude"),
+                "produto": produto_nome,
+                "quantidade_bilhetes": data.get("quantidade_bilhetes"),
+                "data_envio": data.get("data_envio")
+            })
+
+        return templates.TemplateResponse("registros.html", {
+            "request": request,
+            "registros": registros
+        })
+
+    except Exception as e:
+        print("❌ Erro ao listar registros:", e)
+        import traceback
+        traceback.print_exc()
+        return templates.TemplateResponse("registros.html", {
+            "request": request,
+            "registros": [],
+            "erro": "Erro ao carregar os registros."
+        })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
