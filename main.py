@@ -140,6 +140,74 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
+@app.post("/pagamento-rifa")
+async def processar_pagamento(
+    request: Request,
+    nome: str = Form(...),
+    produto_id: str = Form(...),
+    quantidade_bilhetes: int = Form(...),
+    bi: str = Form(...),
+    localizacao: str = Form(...),
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    comprovativo: UploadFile = File(...)
+):
+    try:
+        conteudo = await comprovativo.read()
+
+        if len(conteudo) > 32 * 1024:
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "O comprovativo é maior que 32 KB. Envie um arquivo menor."
+            })
+
+        import hashlib
+        hash_comprovativo = hashlib.sha256(conteudo).hexdigest()
+
+        comprovativos_ref = db.collection("comprovativos").document(hash_comprovativo)
+        doc = comprovativos_ref.get()
+        if doc.exists:
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "Este comprovativo já foi usado anteriormente."
+            })
+
+        pagamento_data = {
+            "nome": nome,
+            "produto_id": produto_id,
+            "quantidade_bilhetes": quantidade_bilhetes,
+            "bi": bi,
+            "localizacao": localizacao,
+            "latitude": latitude,
+            "longitude": longitude,
+            "data_envio": datetime.now()
+        }
+
+        db.collection("pagamentos").add(pagamento_data)
+        db.collection("comprovativos").document(hash_comprovativo).set({"usado": True})
+
+        produto_ref = db.collection("produtos").document(produto_id)
+        produto_doc = produto_ref.get()
+        if produto_doc.exists:
+            dados_produto = produto_doc.to_dict()
+            novos_bilhetes = dados_produto.get("bilhetes_vendidos", 0) + quantidade_bilhetes
+            produto_ref.update({"bilhetes_vendidos": novos_bilhetes})
+
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "sucesso": "Pagamento registrado com sucesso!"
+        })
+
+    except Exception as e:
+        print("❌ Erro ao processar pagamento:", e)
+        import traceback
+        traceback.print_exc()
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "erro": "Erro ao processar o pagamento. Tente novamente."
+        })
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
