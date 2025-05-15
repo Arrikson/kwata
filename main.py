@@ -1,13 +1,16 @@
 import os
 import json
 import firebase_admin
+import uvicorn
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import uvicorn
 from uuid import uuid4
+from datetime import datetime
+from google.cloud.firestore_v1 import Timestamp
+
 
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
@@ -97,7 +100,8 @@ async def adicionar_produto(
     preco_aquisicao: float = Form(...),
     lucro_desejado: float = Form(...),
     preco_bilhete: float = Form(None),
-    quantidade_bilhetes: int = Form(None)
+    quantidade_bilhetes: int = Form(None),
+    data_limite: str = Form(...)  # ← novo campo do formulário
 ):
     try:
         print("🔧 ROTA /admin ACIONADA")
@@ -124,6 +128,10 @@ async def adicionar_produto(
             preco_bilhete = 0
             quantidade_calculada = 0
 
+        # Convertendo data_limite para datetime
+        data_limite_dt = datetime.fromisoformat(data_limite)
+        timestamp_limite = Timestamp.from_datetime(data_limite_dt)
+
         produto = {
             "nome": nome,
             "descricao": descricao,
@@ -131,7 +139,9 @@ async def adicionar_produto(
             "preco_aquisicao": preco_aquisicao,
             "lucro_desejado": lucro_desejado,
             "preco_bilhete": round(preco_bilhete, 2),
-            "quantidade_bilhetes": quantidade_calculada
+            "quantidade_bilhetes": quantidade_calculada,
+            "bilhetes_vendidos": 0,
+            "data_limite": timestamp_limite  # ← novo campo Firestore Timestamp
         }
 
         db.collection('produtos').add(produto)
