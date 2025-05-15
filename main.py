@@ -30,8 +30,8 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Garante que a pasta de uploads exista
-UPLOAD_DIR = "static/uploads"
+
+UPLOAD_DIR = os.path.join("static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Página inicial
