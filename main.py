@@ -15,6 +15,8 @@ from fastapi import Form
 from typing import List
 import io
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from io import BytesIO
 
 
 # Caminho da chave do Firebase
@@ -285,12 +287,6 @@ async def processar_pagamento(
             dados_produto = produto_doc.to_dict()
             novos_bilhetes = dados_produto.get("bilhetes_vendidos", 0) + quantidade_bilhetes
             produto_ref.update({"bilhetes_vendidos": novos_bilhetes})
-
-        # ⬇️ IMPORTANTE: certifique-se de que a pasta 'static/comprovativos' exista
-import os
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from io import BytesIO
 
 # Criar código único
 codigo_unico = f"{nome[:3].upper()}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
