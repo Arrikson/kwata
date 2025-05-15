@@ -11,7 +11,6 @@ from uuid import uuid4
 from datetime import datetime
 from google.cloud.firestore_v1 import Timestamp
 
-
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
 
@@ -36,8 +35,6 @@ templates = Jinja2Templates(directory="templates")
 UPLOAD_DIR = os.path.join("static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# ... (todo o código acima permanece igual até a função index)
-
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
@@ -47,11 +44,9 @@ async def index(request: Request):
             data = doc.to_dict()
             data["id"] = doc.id
 
-            # Garantir que o campo bilhetes_vendidos existe
             bilhetes_vendidos = data.get("bilhetes_vendidos", 0)
             quantidade_total = data.get("quantidade_bilhetes", 0)
 
-            # Calcular bilhetes disponíveis
             bilhetes_disponiveis = max(quantidade_total - bilhetes_vendidos, 0)
 
             data["bilhetes_disponiveis"] = bilhetes_disponiveis
@@ -67,19 +62,6 @@ async def index(request: Request):
         "produtos": produtos
     })
 
-# ... (continuação da função /admin POST)
-        produto = {
-            "nome": nome,
-            "descricao": descricao,
-            "imagem": imagem_url,
-            "preco_aquisicao": preco_aquisicao,
-            "lucro_desejado": lucro_desejado,
-            "preco_bilhete": round(preco_bilhete, 2),
-            "quantidade_bilhetes": quantidade_calculada,
-            "bilhetes_vendidos": 0  # <<< novo campo
-        }
-
-# Página do formulário de admin
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
     sucesso = request.query_params.get("sucesso")
@@ -90,7 +72,6 @@ async def admin_form(request: Request):
         "erro": erro
     })
 
-# Cadastro de novo produto
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
@@ -101,11 +82,12 @@ async def adicionar_produto(
     lucro_desejado: float = Form(...),
     preco_bilhete: float = Form(None),
     quantidade_bilhetes: int = Form(None),
-    data_limite: str = Form(...)  # ← novo campo do formulário
+    data_limite: str = Form(...)  # novo campo vindo do formulário
 ):
     try:
         print("🔧 ROTA /admin ACIONADA")
 
+        # Salva a imagem no servidor
         conteudo_imagem = await imagem.read()
         ext = os.path.splitext(imagem.filename)[-1]
         nome_arquivo = f"{uuid4().hex}{ext}"
@@ -128,8 +110,11 @@ async def adicionar_produto(
             preco_bilhete = 0
             quantidade_calculada = 0
 
-        # Convertendo data_limite para datetime
+        # Converter a string data_limite para datetime
+        # Espera o formato ISO 8601 vindo do input datetime-local: 'YYYY-MM-DDTHH:MM'
         data_limite_dt = datetime.fromisoformat(data_limite)
+
+        # Converter para Timestamp do Firestore
         timestamp_limite = Timestamp.from_datetime(data_limite_dt)
 
         produto = {
@@ -141,7 +126,7 @@ async def adicionar_produto(
             "preco_bilhete": round(preco_bilhete, 2),
             "quantidade_bilhetes": quantidade_calculada,
             "bilhetes_vendidos": 0,
-            "data_limite": timestamp_limite  # ← novo campo Firestore Timestamp
+            "data_limite": timestamp_limite  # salva como Timestamp no Firestore
         }
 
         db.collection('produtos').add(produto)
@@ -153,7 +138,6 @@ async def adicionar_produto(
         print("❌ ERRO AO SALVAR PRODUTO:", str(e))
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
-# Execução local
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
