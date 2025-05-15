@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Registros de Compradores</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h2 {
+            color: #444;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-size: 14px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        .erro {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h2>Registros de Compradores de Rifas</h2>
+
+    {% if erro %}
+        <p class="erro">{{ erro }}</p>
+    {% endif %}
+
+    {% if registros %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>B.I.</th>
+                    <th>Telefone</th>
+                    <th>Localização</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Produto</th>
+                    <th>Bilhetes</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    <td>{{ r.nome }}</td>
+                    <td>{{ r.bi }}</td>
+                    <td>{{ r.telefone }}</td>
+                    <td>{{ r.localizacao }}</td>
+                    <td>{{ r.latitude }}</td>
+                    <td>{{ r.longitude }}</td>
+                    <td>{{ r.produto }}</td>
+                    <td>{{ r.quantidade_bilhetes }}</td>
+                    <td>{{ r.data_envio.strftime('%d/%m/%Y %H:%M') if r.data_envio }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Nenhum registro encontrado.</p>
+    {% endif %}
+</body>
+</html>
