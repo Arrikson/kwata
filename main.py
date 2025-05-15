@@ -11,6 +11,9 @@ from uuid import uuid4
 from datetime import datetime
 import traceback  # ✅ Para exibir erros completos
 import hashlib
+from fastapi import Form
+from typing import List
+
 
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
@@ -142,8 +145,53 @@ async def adicionar_produto(
 
 # ✅ Rota GET para exibir a página no navegador
 @app.get("/pagamento-rifa.html")
-async def exibir_pagina_pagamento(request: Request):
-    return templates.TemplateResponse("pagamento-rifa.html", {"request": request})
+async def exibir_pagamento(request: Request, produto_id: str):
+    try:
+        # 🔹 Obter os dados do produto
+        produto_ref = db.collection("produtos").document(produto_id)
+        produto_doc = produto_ref.get()
+
+        if not produto_doc.exists:
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "Produto não encontrado."
+            })
+
+        dados_produto = produto_doc.to_dict()
+        quantidade_bilhetes = dados_produto.get("quantidade_bilhetes", 0)
+        preco_bilhete = dados_produto.get("preco_bilhete", 0.0)
+
+        # 🔹 Obter todos os números já comprados para este produto
+        compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
+        bilhetes_comprados = []
+
+        for compra in compras_ref:
+            data = compra.to_dict()
+            qtd = int(data.get("quantidade_bilhetes", 0))
+
+            # ⚠️ Se um comprador escolheu mais de um bilhete, você precisa definir como os números são armazenados.
+            # Supondo que os bilhetes escolhidos sejam informados em uma lista no futuro, isso deve ser adaptado.
+            # Por agora, vamos supor que cada compra é de 1 bilhete e os números comprados são armazenados assim:
+            numero = data.get("numero_bilhete")
+            if numero:
+                bilhetes_comprados.append(int(numero))
+
+        # 🔹 Gerar lista de bilhetes disponíveis (1 até quantidade_bilhetes, excluindo os já comprados)
+        bilhetes_disponiveis = [i for i in range(1, quantidade_bilhetes + 1) if i not in bilhetes_comprados]
+
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "produto_id": produto_id,
+            "preco_bilhete": preco_bilhete,
+            "bilhetes_disponiveis": bilhetes_disponiveis
+        })
+
+    except Exception as e:
+        print("❌ Erro ao carregar dados do pagamento:", e)
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "erro": "Erro ao carregar os dados. Tente novamente."
+        })
 
 @app.post("/pagamento-rifa.html")
 async def processar_pagamento(
@@ -151,6 +199,7 @@ async def processar_pagamento(
     nome: str = Form(...),
     produto_id: str = Form(...),
     quantidade_bilhetes: int = Form(...),
+    numeros_bilhetes: List[int] = Form(...),  # NOVO: Lista de números escolhidos
     bi: str = Form(...),
     localizacao: str = Form(...),
     latitude: float = Form(...),
@@ -176,26 +225,47 @@ async def processar_pagamento(
                 "erro": "Este comprovativo já foi usado anteriormente."
             })
 
+        # 🔎 VERIFICAR se os bilhetes escolhidos já foram comprados
+        compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
+        bilhetes_indisponiveis = set()
+        for compra in compras_ref:
+            dados = compra.to_dict()
+            bilhetes = dados.get("numeros_bilhetes", [])
+            bilhetes_indisponiveis.update(bilhetes)
+
+        if any(numero in bilhetes_indisponiveis for numero in numeros_bilhetes):
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "Um ou mais bilhetes selecionados já foram comprados por outra pessoa. Atualize a página e tente novamente."
+            })
+
+        if len(numeros_bilhetes) != quantidade_bilhetes:
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": f"A quantidade de bilhetes selecionados ({len(numeros_bilhetes)}) não corresponde ao número informado ({quantidade_bilhetes})."
+            })
+
+        # Salvar o pagamento
         pagamento_data = {
             "nome": nome,
             "produto_id": produto_id,
             "quantidade_bilhetes": quantidade_bilhetes,
+            "numeros_bilhetes": numeros_bilhetes,
             "bi": bi,
             "localizacao": localizacao,
             "latitude": latitude,
             "longitude": longitude,
             "data_envio": datetime.now()
         }
-
-        # Salva o pagamento
         db.collection("pagamentos").add(pagamento_data)
 
-        # ✅ Novo: Salvar também na coleção 'compras'
+        # Salvar a compra
         compra_data = {
             "nome": nome,
             "bi": bi,
             "produto_id": produto_id,
             "quantidade_bilhetes": quantidade_bilhetes,
+            "numeros_bilhetes": numeros_bilhetes,
             "localizacao": localizacao,
             "latitude": latitude,
             "longitude": longitude,
@@ -203,10 +273,10 @@ async def processar_pagamento(
         }
         db.collection("compras").add(compra_data)
 
-        # Marca o comprovativo como usado
+        # Marcar comprovativo como usado
         db.collection("comprovativos").document(hash_comprovativo).set({"usado": True})
 
-        # Atualiza os bilhetes vendidos
+        # Atualizar contagem de bilhetes vendidos
         produto_ref = db.collection("produtos").document(produto_id)
         produto_doc = produto_ref.get()
         if produto_doc.exists:
