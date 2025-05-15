@@ -13,6 +13,10 @@ import traceback  # ✅ Para exibir erros completos
 import hashlib
 from fastapi import Form
 from typing import List
+import io
+from reportlab.pdfgen import canvas
+
+
 
 
 # Caminho da chave do Firebase
