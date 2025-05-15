@@ -17,6 +17,7 @@ import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from io import BytesIO
+from fastapi import Query
 
 
 # Caminho da chave do Firebase
@@ -147,9 +148,14 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
-# ✅ Rota GET para exibir a página no navegador
 @app.get("/pagamento-rifa.html")
-async def exibir_pagamento(request: Request, produto_id: str):
+async def exibir_pagamento(request: Request, produto_id: str = Query(default=None)):
+    if not produto_id:
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "erro": "Nenhum produto selecionado. Volte à página anterior e selecione um produto."
+        })
+
     try:
         # 🔹 Obter os dados do produto
         produto_ref = db.collection("produtos").document(produto_id)
@@ -171,16 +177,10 @@ async def exibir_pagamento(request: Request, produto_id: str):
 
         for compra in compras_ref:
             data = compra.to_dict()
-            qtd = int(data.get("quantidade_bilhetes", 0))
+            numeros = data.get("numeros_bilhetes", [])
+            bilhetes_comprados.extend(numeros)
 
-            # ⚠️ Se um comprador escolheu mais de um bilhete, você precisa definir como os números são armazenados.
-            # Supondo que os bilhetes escolhidos sejam informados em uma lista no futuro, isso deve ser adaptado.
-            # Por agora, vamos supor que cada compra é de 1 bilhete e os números comprados são armazenados assim:
-            numero = data.get("numero_bilhete")
-            if numero:
-                bilhetes_comprados.append(int(numero))
-
-        # 🔹 Gerar lista de bilhetes disponíveis (1 até quantidade_bilhetes, excluindo os já comprados)
+        # 🔹 Gerar lista de bilhetes disponíveis
         bilhetes_disponiveis = [i for i in range(1, quantidade_bilhetes + 1) if i not in bilhetes_comprados]
 
         return templates.TemplateResponse("pagamento-rifa.html", {
@@ -195,135 +195,6 @@ async def exibir_pagamento(request: Request, produto_id: str):
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "erro": "Erro ao carregar os dados. Tente novamente."
-        })
-
-@app.post("/pagamento-rifa.html")
-async def processar_pagamento(
-    request: Request,
-    nome: str = Form(...),
-    produto_id: str = Form(...),
-    quantidade_bilhetes: int = Form(...),
-    numeros_bilhetes: List[int] = Form(...),
-    bi: str = Form(...),
-    localizacao: str = Form(...),
-    latitude: float = Form(...),
-    longitude: float = Form(...),
-    comprovativo: UploadFile = File(...)
-):
-    
-    try:
-        conteudo = await comprovativo.read()
-
-        if len(conteudo) > 32 * 1024:
-            return templates.TemplateResponse("pagamento-rifa.html", {
-                "request": request,
-                "erro": "O comprovativo é maior que 32 KB. Envie um arquivo menor."
-            })
-
-        hash_comprovativo = hashlib.sha256(conteudo).hexdigest()
-
-        comprovativos_ref = db.collection("comprovativos").document(hash_comprovativo)
-        doc = comprovativos_ref.get()
-        if doc.exists:
-            return templates.TemplateResponse("pagamento-rifa.html", {
-                "request": request,
-                "erro": "Este comprovativo já foi usado anteriormente."
-            })
-
-        # Verificar se os bilhetes escolhidos já foram comprados
-        compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
-        bilhetes_indisponiveis = set()
-        for compra in compras_ref:
-            dados = compra.to_dict()
-            bilhetes = dados.get("numeros_bilhetes", [])
-            bilhetes_indisponiveis.update(bilhetes)
-
-        if any(numero in bilhetes_indisponiveis for numero in numeros_bilhetes):
-            return templates.TemplateResponse("pagamento-rifa.html", {
-                "request": request,
-                "erro": "Um ou mais bilhetes selecionados já foram comprados por outra pessoa. Atualize a página e tente novamente."
-            })
-
-        if len(numeros_bilhetes) != quantidade_bilhetes:
-            return templates.TemplateResponse("pagamento-rifa.html", {
-                "request": request,
-                "erro": f"A quantidade de bilhetes selecionados ({len(numeros_bilhetes)}) não corresponde ao número informado ({quantidade_bilhetes})."
-            })
-
-        # Salvar o pagamento
-        pagamento_data = {
-            "nome": nome,
-            "produto_id": produto_id,
-            "quantidade_bilhetes": quantidade_bilhetes,
-            "numeros_bilhetes": numeros_bilhetes,
-            "bi": bi,
-            "localizacao": localizacao,
-            "latitude": latitude,
-            "longitude": longitude,
-            "data_envio": datetime.now()
-        }
-        db.collection("pagamentos").add(pagamento_data)
-
-        # Salvar a compra
-        compra_data = {
-            "nome": nome,
-            "bi": bi,
-            "produto_id": produto_id,
-            "quantidade_bilhetes": quantidade_bilhetes,
-            "numeros_bilhetes": numeros_bilhetes,
-            "localizacao": localizacao,
-            "latitude": latitude,
-            "longitude": longitude,
-            "data_compra": datetime.now()
-        }
-        db.collection("compras").add(compra_data)
-
-        # Marcar comprovativo como usado
-        db.collection("comprovativos").document(hash_comprovativo).set({"usado": True})
-
-        # Atualizar contagem de bilhetes vendidos
-        produto_ref = db.collection("produtos").document(produto_id)
-        produto_doc = produto_ref.get()
-        if produto_doc.exists:
-            dados_produto = produto_doc.to_dict()
-            novos_bilhetes = dados_produto.get("bilhetes_vendidos", 0) + quantidade_bilhetes
-            produto_ref.update({"bilhetes_vendidos": novos_bilhetes})
-
-        # Criar código único
-        codigo_unico = f"{nome[:3].upper()}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-        # Caminho local do PDF na pasta static
-        caminho_pasta = os.path.join("static", "comprovativos")
-        os.makedirs(caminho_pasta, exist_ok=True)  # Garante que a pasta exista
-        pdf_path = os.path.join(caminho_pasta, f"{codigo_unico}.pdf")
-
-        # Gerar PDF com os dados da compra
-        buffer = BytesIO()
-        c = canvas.Canvas(buffer, pagesize=A4)
-        c.drawString(100, 800, f"Comprovativo de Compra - Rifa")
-        c.drawString(100, 780, f"Nome: {nome}")
-        c.drawString(100, 760, f"BI: {bi}")
-        c.drawString(100, 740, f"Produto ID: {produto_id}")
-        c.drawString(100, 720, f"Bilhetes: {', '.join(map(str, numeros_bilhetes))}")
-        c.drawString(100, 700, f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-        c.drawString(100, 680, f"Código Único: {codigo_unico}")
-        c.save()
-
-        # Salvar buffer no ficheiro local
-        with open(pdf_path, "wb") as f:
-            f.write(buffer.getvalue())
-
-        return templates.TemplateResponse("pagamento-rifa.html", {
-            "request": request,
-            "sucesso": "Pagamento registrado com sucesso!"
-        })
-
-    except Exception as e:
-        print("❌ Erro ao processar pagamento:", e)
-        traceback.print_exc()
-        return templates.TemplateResponse("pagamento-rifa.html", {
-            "request": request,
-            "erro": "Erro ao processar o pagamento. Tente novamente."
         })
 
 @app.get("/registros", response_class=HTMLResponse)
