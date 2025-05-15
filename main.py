@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
 from datetime import datetime
-from google.cloud.firestore_v1 import Timestamp
+from google.protobuf.timestamp_pb2 import Timestamp
 
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
