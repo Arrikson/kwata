@@ -194,73 +194,81 @@
   </main>
 
   <script>
-    const quantidadeSelecionada = 1; // ajuste conforme regra do seu app
+  const quantidadeSelecionada = 1; // ajuste conforme regra do seu app
 
-    function capturarLocalizacao(event) {
-      const btn = event.target;
-      if (!navigator.geolocation) {
-        alert("Geolocalização não é suportada pelo seu navegador.");
-        return;
+  function capturarLocalizacao(event) {
+    const btn = event.target;
+    if (!navigator.geolocation) {
+      alert("Geolocalização não é suportada pelo seu navegador.");
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Capturando localização...";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        document.getElementById("latitude").value = pos.coords.latitude.toFixed(6);
+        document.getElementById("longitude").value = pos.coords.longitude.toFixed(6);
+        btn.textContent = "Localização Capturada";
+        btn.style.backgroundColor = "#16a34a";
+      },
+      (error) => {
+        alert(`Erro ao obter localização: ${error.message}`);
+        btn.disabled = false;
+        btn.textContent = "Tentar novamente";
       }
-      btn.disabled = true;
-      btn.textContent = "Capturando localização...";
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          document.getElementById("latitude").value = pos.coords.latitude.toFixed(6);
-          document.getElementById("longitude").value = pos.coords.longitude.toFixed(6);
-          btn.textContent = "Localização Capturada";
-          btn.style.backgroundColor = "#16a34a";
-        },
-        (error) => {
-          alert(`Erro ao obter localização: ${error.message}`);
-          btn.disabled = false;
-          btn.textContent = "Tentar novamente";
-        }
-      );
+    );
+  }
+
+  const form = document.getElementById("form-pagamento");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const erroDiv = document.getElementById("mensagem-erro");
+    erroDiv.style.display = "none";
+    erroDiv.textContent = "";
+
+    // Captura bilhetes via checkboxes e select e junta numa lista única
+    const bilhetesCheckbox = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => el.value);
+    const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => opt.value);
+    const bilhetesSelecionados = Array.from(new Set([...bilhetesCheckbox, ...bilhetesSelect]));
+
+    if (bilhetesSelecionados.length !== quantidadeSelecionada) {
+      erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
+      erroDiv.style.display = "block";
+      return;
     }
 
-    const form = document.getElementById("form-pagamento");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    const nome = document.getElementById("nome").value.trim();
+    const bi = document.getElementById("bi").value.trim();
+    const telefone = document.getElementById("telefone").value.trim();
+    const latitude = document.getElementById("latitude").value.trim();
+    const longitude = document.getElementById("longitude").value.trim();
+    const comprovativo = document.getElementById("comprovativo").files[0];
 
-      const erroDiv = document.getElementById("mensagem-erro");
-      erroDiv.style.display = "none";
-      erroDiv.textContent = "";
+    if (!nome || !bi || !telefone) {
+      erroDiv.textContent = "Preencha todos os campos obrigatórios.";
+      erroDiv.style.display = "block";
+      return;
+    }
 
-      // Captura bilhetes via checkboxes e select e junta numa lista única
-      const bilhetesCheckbox = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => el.value);
-      const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => opt.value);
-      const bilhetesSelecionados = Array.from(new Set([...bilhetesCheckbox, ...bilhetesSelect]));
+    if (!comprovativo) {
+      erroDiv.textContent = "Envie o comprovativo de pagamento.";
+      erroDiv.style.display = "block";
+      return;
+    }
 
-      if (bilhetesSelecionados.length !== quantidadeSelecionada) {
-        erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
-        erroDiv.style.display = "block";
-        return;
-      }
+    if (comprovativo.size > 32 * 1024) {
+      erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
+      erroDiv.style.display = "block";
+      return;
+    }
 
-      const nome = document.getElementById("nome").value.trim();
-      const bi = document.getElementById("bi").value.trim();
-      const telefone = document.getElementById("telefone").value.trim();
-      const comprovativo = document.getElementById("comprovativo").files[0];
+    // Aqui você pode continuar a lógica para enviar os dados para o backend,
+    // por exemplo usando fetch e FormData
 
-      if (!nome || !bi || !telefone) {
-        erroDiv.textContent = "Preencha todos os campos obrigatórios.";
-        erroDiv.style.display = "block";
-        return;
-      }
-
-      if (!comprovativo) {
-        erroDiv.textContent = "Envie o comprovativo de pagamento.";
-        erroDiv.style.display = "block";
-        return;
-      }
-
-      if (comprovativo.size > 32 * 1024) {
-        erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
-        erroDiv.style.display = "block";
-        return;
-      }
-      </script>
+    alert("Formulário válido e pronto para enviar!");
+  });
+</script>
 </body>
 </html>
 
