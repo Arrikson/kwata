@@ -20,6 +20,7 @@ from io import BytesIO
 from fastapi import Query
 
 
+
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
 
@@ -157,7 +158,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         })
 
     try:
-        # 🔹 Obter os dados do produto
+        # 🔹 Obter os dados do produto pelo ID
         produto_ref = db.collection("produtos").document(produto_id)
         produto_doc = produto_ref.get()
 
@@ -171,7 +172,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         quantidade_bilhetes = dados_produto.get("quantidade_bilhetes", 0)
         preco_bilhete = dados_produto.get("preco_bilhete", 0.0)
 
-        # 🔹 Obter todos os números já comprados para este produto
+        # 🔹 Obter todos os números de bilhetes já comprados para este produto
         compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
         bilhetes_comprados = []
 
@@ -180,8 +181,11 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
             numeros = data.get("numeros_bilhetes", [])
             bilhetes_comprados.extend(numeros)
 
-        # 🔹 Gerar lista de bilhetes disponíveis
-        bilhetes_disponiveis = [i for i in range(1, quantidade_bilhetes + 1) if i not in bilhetes_comprados]
+        # 🔹 Calcular os bilhetes ainda disponíveis
+        bilhetes_disponiveis = [
+            i for i in range(1, quantidade_bilhetes + 1)
+            if i not in bilhetes_comprados
+        ]
 
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
@@ -191,10 +195,12 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         })
 
     except Exception as e:
-        print("❌ Erro ao carregar dados do pagamento:", e)
+        print("❌ Erro ao carregar dados do pagamento:")
+        traceback.print_exc()  # Exibe detalhes do erro no terminal
+
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
-            "erro": "Erro ao carregar os dados. Tente novamente."
+            "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
 
 @app.get("/registros", response_class=HTMLResponse)
