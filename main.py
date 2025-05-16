@@ -419,6 +419,53 @@ def adicionar_comprovativo(comprovativo: Comprovativo):
 
     return {"mensagem": "Comprovativo adicionado com sucesso", "id": novo_comprovativo["id"]}
 
+@app.post("/comprovativos/")
+async def enviar_comprovativo(
+    nome: str = Form(...),
+    bi: str = Form(...),
+    telefone: str = Form(...),
+    latitude: str = Form(""),
+    longitude: str = Form(""),
+    bilhetes: List[int] = Form(...),
+    comprovativo: UploadFile = File(...)
+):
+    # Validar tamanho do arquivo
+    contents = await comprovativo.read()
+    if len(contents) > 32 * 1024:
+        raise HTTPException(status_code=400, detail="Comprovativo maior que 32 KB.")
+
+    # Salvar arquivo no Storage Firebase
+    ext = comprovativo.filename.split(".")[-1]
+    filename = f"comprovativos/{uuid.uuid4()}.{ext}"
+    blob = bucket.blob(filename)
+    blob.upload_from_string(contents, content_type=comprovativo.content_type)
+    url_comprovativo = blob.generate_signed_url(expiration=datetime.utcnow() + timedelta(days=365))
+
+    # Salvar dados no Firestore
+    doc_ref = db.collection("comprovativo-comprados").document()
+    doc_ref.set({
+        "nome": nome,
+        "bi": bi,
+        "telefone": telefone,
+        "latitude": latitude,
+        "longitude": longitude,
+        "bilhetes": bilhetes,
+        "timestamp": datetime.utcnow(),
+        "url_comprovativo": url_comprovativo
+    })
+
+    return JSONResponse({"msg": "Comprovativo enviado com sucesso."})
+
+@app.get("/comprovativos/")
+def listar_comprovativos():
+    docs = db.collection("comprovativo-comprados").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
+    lista = []
+    for doc in docs:
+        d = doc.to_dict()
+        d["id"] = doc.id
+        lista.append(d)
+    return lista
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
