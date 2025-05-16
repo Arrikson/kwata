@@ -176,7 +176,7 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         dados_produto = doc.to_dict()
         nome_produto = dados_produto.get("nome", "Produto")
         quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
-        preco_bilhete = float(dados_produto.get("preco_bilhete", 0.0))
+        preco_bilhete = float(dados_produto.get("preco_bilhete", 0.00))
         preco_total = float(dados_produto.get("preco", preco_bilhete * quantidade_bilhetes))
 
         # Consulta compras no Firebase
