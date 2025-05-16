@@ -6,7 +6,28 @@
   <title>Pagamento da Rifa</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-    /* ... (seu estilo CSS existente) ... */
+    body {
+      font-family: 'Inter', sans-serif;
+      padding: 2rem;
+      background-color: #f9fafb;
+      color: #111827;
+    }
+    h1, h2, h3 {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.6rem;
+      font-size: 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+    }
     .button {
       display: block;
       width: 100%;
@@ -29,10 +50,27 @@
       color: #b91c1c;
       border-radius: 6px;
       padding: 1rem;
-      margin-bottom: 1rem;
+      margin-top: 1rem;
       font-weight: 600;
       text-align: center;
       border: 1px solid #fecaca;
+    }
+    #lista-bilhetes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 0.5rem;
+    }
+    #lista-bilhetes input {
+      margin-right: 5px;
+    }
+    .invisivel {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
     }
   </style>
 </head>
@@ -84,8 +122,8 @@
         <button type="button" class="button" onclick="capturarLocalizacao()">Capturar Localização</button>
 
         <label for="comprovativo">Envie o comprovativo de pagamento</label>
-        <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required />
-        <small>Só comprovativo em PDF.</small>
+        <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required />
+        <small>Só comprovativo em PDF. Máximo: 32 KB.</small>
 
         <button type="submit" class="button">Enviar Comprovativo</button>
         <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
@@ -99,7 +137,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
 
   <script>
-    // Configuração do Firebase
     const firebaseConfig = {
       apiKey: "SUA_API_KEY",
       authDomain: "SEU_AUTH_DOMAIN",
@@ -109,12 +146,11 @@
       appId: "SEU_APP_ID"
     };
 
-    // Inicializar Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const storage = firebase.storage();
 
-    const quantidadeSelecionada = 1; // ajuste conforme regra do seu app
+    const quantidadeSelecionada = 1;
 
     function capturarLocalizacao() {
       const btn = event.target;
@@ -181,6 +217,12 @@
         return;
       }
 
+      if (comprovativo.type !== "application/pdf") {
+        erroDiv.textContent = "O comprovativo deve ser um arquivo PDF.";
+        erroDiv.style.display = "block";
+        return;
+      }
+
       if (comprovativo.size > 32 * 1024) {
         erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
         erroDiv.style.display = "block";
@@ -188,13 +230,11 @@
       }
 
       try {
-        // Upload do comprovativo para o Firebase Storage
         const storageRef = storage.ref();
         const comprovativoRef = storageRef.child(`comprovativos/${Date.now()}_${comprovativo.name}`);
         await comprovativoRef.put(comprovativo);
         const comprovativoURL = await comprovativoRef.getDownloadURL();
 
-        // Salvar dados no Firestore
         await db.collection("comprovativo-comprados").add({
           nome,
           bi,
@@ -206,7 +246,6 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Redirecionar para a página sorteio-data
         window.location.href = "/sorteio-data";
       } catch (error) {
         erroDiv.textContent = "Erro ao enviar os dados. Tente novamente.";
