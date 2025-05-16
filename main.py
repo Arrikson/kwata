@@ -20,6 +20,8 @@ from io import BytesIO
 from fastapi import Query
 from fastapi.responses import JSONResponse
 from pathlib import Path
+from google.cloud.firestore_v1 import DocumentSnapshot
+from google.protobuf.timestamp_pb2 import Timestamp
 
 
 
@@ -205,6 +207,25 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
 
+def converter_valores_json(data):
+    """
+    Função recursiva que converte tipos não serializáveis (ex: datas) para strings.
+    """
+    if isinstance(data, dict):
+        return {k: converter_valores_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [converter_valores_json(i) for i in data]
+    elif hasattr(data, "ToDatetime"):  # objeto Firestore Timestamp
+        return data.ToDatetime().isoformat()
+    elif hasattr(data, "timestamp"):  # para protobuf Timestamp
+        return data.timestamp().isoformat()
+    # Caso para objetos datetime do python comum
+    elif hasattr(data, "isoformat"):
+        try:
+            return data.isoformat()
+        except:
+            pass
+    return data
 
 @app.get("/gerar-produto-refletidos")
 async def gerar_arquivo_produtos():
@@ -215,11 +236,12 @@ async def gerar_arquivo_produtos():
         for doc in produtos_ref:
             produto = doc.to_dict()
             produto["id"] = doc.id
+            produto = converter_valores_json(produto)  # converte valores antes do dump
             lista_produtos.append(produto)
 
-        # 🔹 Salvar diretamente em /static
         pasta_static = Path("static")
-        pasta_static.mkdir(exist_ok=True)  # Garante que a pasta exista
+        pasta_static.mkdir(exist_ok=True)
+
         caminho_arquivo = pasta_static / "produto-refletidos.json"
 
         with open(caminho_arquivo, "w", encoding="utf-8") as f:
@@ -232,9 +254,10 @@ async def gerar_arquivo_produtos():
         })
 
     except Exception as e:
-        print("❌ Erro ao gerar arquivo de produtos:", e)
+        erro_completo = traceback.format_exc()
+        print("❌ Erro ao gerar arquivo de produtos:", erro_completo)
         return JSONResponse(
-            {"erro": "Não foi possível gerar o arquivo de produtos."},
+            {"erro": "Não foi possível gerar o arquivo de produtos.", "detalhes": str(e)},
             status_code=500
         )
 
