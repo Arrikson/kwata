@@ -154,7 +154,7 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
-@app.get("/pagamento-rifa.html")
+@app.get("/pagamento-rifa.html", response_class=HTMLResponse)
 async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)):
     if not produto_id:
         return templates.TemplateResponse("pagamento-rifa.html", {
@@ -163,18 +163,18 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         })
 
     try:
-        # Carrega os dados do produto
-        with open(CAMINHO_ARQUIVO, "r", encoding="utf-8") as f:
-            produtos = json.load(f)
+        # Busca o produto diretamente do Firebase
+        doc_ref = db.collection("produtos").document(produto_id)
+        doc = doc_ref.get()
 
-        dados_produto = next((p for p in produtos if p.get("id") == produto_id), None)
-
-        if not dados_produto:
+        if not doc.exists:
             return templates.TemplateResponse("pagamento-rifa.html", {
                 "request": request,
-                "erro": "Produto não encontrado no arquivo JSON."
+                "erro": "Produto não encontrado no Firebase."
             })
 
+        dados_produto = doc.to_dict()
+        nome_produto = dados_produto.get("nome", "Produto")
         quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
         preco_bilhete = float(dados_produto.get("preco_bilhete", 0.0))
         preco_total = float(dados_produto.get("preco", preco_bilhete * quantidade_bilhetes))
@@ -192,7 +192,7 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
             if i not in bilhetes_comprados
         ]
 
-        # Renderiza template com dados
+        # Renderiza o template com os dados
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "produto_id": produto_id,
@@ -202,14 +202,12 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
             "bilhetes_disponiveis": bilhetes_disponiveis
         })
 
-
     except Exception as e:
-        print(f"❌ Erro ao carregar dados: {e}")
+        print(f"❌ Erro ao carregar dados do Firebase: {e}")
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
-
 
 def converter_valores_json(data):
     """
