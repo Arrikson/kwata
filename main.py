@@ -156,6 +156,9 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
+# 🔹 Caminho do arquivo JSON
+CAMINHO_ARQUIVO = "gerar-produto-refletidos.json"
+
 @app.get("/pagamento-rifa.html")
 async def exibir_pagamento(request: Request, produto_id: str = Query(default=None)):
     if not produto_id:
@@ -166,7 +169,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
 
     try:
         # 🔹 Carrega os dados do JSON local
-        with open(caminho_arquivo, "r", encoding="utf-8") as f:
+        with open(CAMINHO_ARQUIVO, "r", encoding="utf-8") as f:
             produtos = json.load(f)
 
         # 🔹 Busca o produto com o ID correspondente
@@ -211,6 +214,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
             "request": request,
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
+
 
 def converter_valores_json(data):
     """
