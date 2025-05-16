@@ -4,37 +4,137 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pagamento da Rifa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
-    .erro {
-      color: red;
-      margin-top: 10px;
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background-color: #f5f7fa;
+      color: #333;
     }
+
+    main {
+      max-width: 600px;
+      margin: 3rem auto;
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    h1, h2, h3 {
+      color: #111827;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin: 1rem 0 0.3rem;
+      font-weight: 600;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1rem;
+      background-color: #f9fafb;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background-color: #fff;
+    }
+
+    #lista-bilhetes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 0.5rem;
+    }
+
+    #lista-bilhetes label {
+      margin: 0;
+    }
+
+    #lista-bilhetes input[type="checkbox"] {
+      margin-right: 4px;
+    }
+
     .button {
-      margin-top: 20px;
-      padding: 10px 20px;
+      display: block;
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background-color: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    .button:hover {
+      background-color: #2563eb;
+    }
+
+    small {
+      display: block;
+      margin-top: 0.25rem;
+      color: #6b7280;
+      font-size: 0.85rem;
+    }
+
+    .erro {
+      color: #dc2626;
+      margin-top: 1rem;
+      font-weight: 500;
+    }
+
+    @media (max-width: 600px) {
+      main {
+        padding: 1.5rem;
+        margin: 1rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
+
 <main>
   <h1>Pagamento da Rifa</h1>
 
   <section id="produto-info" aria-live="polite" aria-atomic="true">
     <h2 id="nome-produto">{{ nome_produto }}</h2>
-    <h2>Preço total do produto: {{ preco }} KZ</h2>
+    <h3>Preço total do produto: {{ preco }} KZ</h3>
     <h3>Preço por bilhete: {{ preco_bilhete }} KZ</h3>
 
-    <label for="bilhetes">Escolha os números dos bilhetes:</label>
+    <label for="bilhetes">Escolha os números dos bilhetes (modo lista):</label>
     <select id="bilhetes" name="numeros_bilhetes" multiple>
       {% for numero in bilhetes_disponiveis %}
         <option value="{{ numero }}">{{ numero }}</option>
       {% endfor %}
     </select>
 
-    <label for="lista-bilhetes">Escolha os números dos bilhetes:</label>
+    <label for="lista-bilhetes">Ou escolha visualmente:</label>
     <div id="lista-bilhetes" aria-label="Números disponíveis para bilhetes">
       {% for numero in bilhetes_disponiveis %}
-        <input type="checkbox" id="bilhete-{{ numero }}" name="bilhetes" value="{{ numero }}" aria-label="Bilhete número {{ numero }}">
+        <input type="checkbox" id="bilhete-{{ numero }}" name="bilhetes" value="{{ numero }}" />
         <label for="bilhete-{{ numero }}">{{ numero }}</label>
       {% endfor %}
     </div>
@@ -51,30 +151,23 @@
     <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
 
     <label for="latitude">Latitude:</label>
-    <input type="text" id="latitude" name="latitude" readonly aria-readonly="true" />
+    <input type="text" id="latitude" name="latitude" readonly />
 
     <label for="longitude">Longitude:</label>
-    <input type="text" id="longitude" name="longitude" readonly aria-readonly="true" />
+    <input type="text" id="longitude" name="longitude" readonly />
 
     <label for="comprovativo">Envie o comprovativo de pagamento</label>
-    <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required aria-describedby="fileHelp" />
-    <small id="fileHelp" style="color:#6b7280; font-size: 0.85rem;">Máximo 32 KB. Imagem ou PDF.</small>
+    <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required />
+    <small>Máximo 32 KB. Imagem ou PDF.</small>
 
-    <button type="submit" class="button" aria-live="polite">Enviar Comprovativo</button>
-
+    <button type="submit" class="button">Enviar Comprovativo</button>
     <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
   </form>
 </main>
 
-<!-- Dependências JS -->
-<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
-
 <script>
-  // Configurações
-  const quantidadeSelecionada = 1; // Ajuste conforme necessário
+  const quantidadeSelecionada = 1;
 
-  // Capturar localização do usuário
   function capturarLocalizacao() {
     if (!navigator.geolocation) {
       alert("Geolocalização não é suportada pelo seu navegador.");
@@ -91,7 +184,6 @@
     );
   }
 
-  // Validação do formulário e envio
   document.getElementById("form-pagamento").addEventListener("submit", function (e) {
     e.preventDefault();
 
@@ -136,16 +228,13 @@
       return;
     }
 
-    // Envio de dados para o backend seria feito aqui via fetch() ou similar
-
     alert(`Formulário enviado com sucesso.\nBilhetes escolhidos: ${bilhetesSelecionados.join(", ")}`);
     this.reset();
   });
 
-  // Inicialização
   capturarLocalizacao();
 </script>
+
 </body>
 </html>
-
 
