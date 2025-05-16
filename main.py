@@ -205,30 +205,30 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
 
+
 @app.get("/gerar-produto-refletidos")
 async def gerar_arquivo_produtos():
     try:
-        # 🔹 Referência à coleção "produtos"
         produtos_ref = db.collection("produtos").stream()
 
-        # 🔹 Lista para armazenar os produtos
         lista_produtos = []
-
         for doc in produtos_ref:
             produto = doc.to_dict()
-            produto["id"] = doc.id  # Inclui o ID do documento
+            produto["id"] = doc.id
             lista_produtos.append(produto)
 
-        # 🔹 Caminho para salvar o arquivo JSON
-        caminho_arquivo = Path("produto-refletidos.json")
+        # 🔹 Salvar diretamente em /static
+        pasta_static = Path("static")
+        pasta_static.mkdir(exist_ok=True)  # Garante que a pasta exista
+        caminho_arquivo = pasta_static / "produto-refletidos.json"
 
-        # 🔹 Grava os dados no arquivo
         with open(caminho_arquivo, "w", encoding="utf-8") as f:
             json.dump(lista_produtos, f, ensure_ascii=False, indent=4)
 
         return JSONResponse({
-            "mensagem": "Arquivo produto-refletidos.json gerado com sucesso.",
-            "quantidade": len(lista_produtos)
+            "mensagem": "Arquivo produto-refletidos.json gerado com sucesso na pasta /static.",
+            "quantidade": len(lista_produtos),
+            "url": "/static/produto-refletidos.json"
         })
 
     except Exception as e:
