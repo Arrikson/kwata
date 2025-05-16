@@ -196,10 +196,12 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "produto_id": produto_id,
+            "nome_produto": nome_produto,
             "preco": preco_total,
             "preco_bilhete": preco_bilhete,
             "bilhetes_disponiveis": bilhetes_disponiveis
         })
+
 
     except Exception as e:
         print(f"❌ Erro ao carregar dados: {e}")
