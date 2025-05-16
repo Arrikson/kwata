@@ -153,7 +153,6 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
-
 @app.get("/pagamento-rifa.html")
 async def exibir_pagamento(request: Request, produto_id: str = Query(default=None)):
     if not produto_id:
@@ -163,22 +162,25 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         })
 
     try:
-        # 🔹 Obter os dados do produto pelo ID
-        produto_ref = db.collection("produtos").document(produto_id)
-        produto_doc = produto_ref.get()
+        # 🔹 Carrega os dados do JSON local
+        caminho_json = os.path.join("caminho/para/seu/arquivo", "gerar-produto-refletidos.json")
+        with open(caminho_json, "r", encoding="utf-8") as f:
+            produtos = json.load(f)
 
-        if not produto_doc.exists:
+        # 🔹 Busca o produto com o ID correspondente
+        dados_produto = next((p for p in produtos if p.get("id") == produto_id), None)
+
+        if not dados_produto:
             return templates.TemplateResponse("pagamento-rifa.html", {
                 "request": request,
-                "erro": "Produto não encontrado."
+                "erro": "Produto não encontrado no arquivo JSON."
             })
 
-        dados_produto = produto_doc.to_dict()
         quantidade_bilhetes = dados_produto.get("quantidade_bilhetes", 0)
         preco_bilhete = dados_produto.get("preco_bilhete", 0.0)
-        preco_total = dados_produto.get("preco", 0.0)  # 💰 Pega o preço total do produto
+        preco_total = dados_produto.get("preco", 0.0)
 
-        # 🔹 Obter todos os números de bilhetes já comprados para este produto
+        # 🔹 Carrega bilhetes já comprados (do Firebase, se ainda quiser manter)
         compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
         bilhetes_comprados = []
 
@@ -187,7 +189,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
             numeros = data.get("numeros_bilhetes", [])
             bilhetes_comprados.extend(numeros)
 
-        # 🔹 Calcular os bilhetes ainda disponíveis
+        # 🔹 Calcular bilhetes disponíveis
         bilhetes_disponiveis = [
             i for i in range(1, quantidade_bilhetes + 1)
             if i not in bilhetes_comprados
@@ -196,20 +198,17 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "produto_id": produto_id,
-            "preco": preco_total,  # 🔹 Passa o preço total ao template
+            "preco": preco_total,
             "preco_bilhete": preco_bilhete,
             "bilhetes_disponiveis": bilhetes_disponiveis
         })
 
     except Exception as e:
-        print("❌ Erro ao carregar dados do pagamento:")
-        traceback.print_exc()
-
+        print("❌ Erro ao carregar dados do pagamento:", e)
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
-
 
 def converter_valores_json(data):
     """
