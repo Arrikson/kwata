@@ -192,9 +192,7 @@
       </form>
     {% endif %}
   </main>
-
-  <!-- ... resto do HTML acima permanece igual ... -->
-
+  
 <script>
 const quantidadeSelecionada = 1; // ajuste conforme necessário
 
@@ -274,30 +272,28 @@ form.addEventListener("submit", async (e) => {
 
   // Adiciona os bilhetes selecionados
   bilhetesSelecionados.forEach((numero, i) => {
-    formData.append(`bilhetes`, numero);
+    formData.append("bilhetes", numero);
   });
 
   try {
-    const resposta = await fetch("/enviar-comprovativo", {
+    const resposta = await fetch("/enviar", {
       method: "POST",
-      body: formData
+      body: formData,
     });
 
-    const resultado = await resposta.json();
-
-    if (resposta.ok) {
-      alert("Comprovativo enviado com sucesso!");
-      window.location.href = "/sorteio-data"; // redireciona
-    } else {
-      erroDiv.textContent = resultado.detail || "Erro ao enviar os dados.";
+    if (!resposta.ok) {
+      const textoErro = await resposta.text();
+      erroDiv.textContent = textoErro || "Erro ao enviar os dados.";
       erroDiv.style.display = "block";
+      return;
     }
 
+    window.location.href = "/sorteio-data";
   } catch (err) {
-    erroDiv.textContent = "Erro de conexão com o servidor.";
+    erroDiv.textContent = "Erro ao enviar o formulário. Tente novamente.";
     erroDiv.style.display = "block";
   }
-
+});
 </script>
 </body>
 </html>
