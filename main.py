@@ -242,7 +242,7 @@ async def gerar_arquivo_produtos():
         for doc in produtos_ref:
             produto = doc.to_dict()
             produto["id"] = doc.id
-            produto = converter_valores_json(produto)  # converte valores antes do dump
+            produto = converter_valores_json(produto)
             lista_produtos.append(produto)
 
         pasta_static = Path("static")
@@ -253,10 +253,12 @@ async def gerar_arquivo_produtos():
         with open(caminho_arquivo, "w", encoding="utf-8") as f:
             json.dump(lista_produtos, f, ensure_ascii=False, indent=4)
 
+        # Retornar conteúdo dos produtos e info
         return JSONResponse({
             "mensagem": "Arquivo produto-refletidos.json gerado com sucesso na pasta /static.",
             "quantidade": len(lista_produtos),
-            "url": "/static/produto-refletidos.json"
+            "url": "/static/produto-refletidos.json",
+            "produtos": lista_produtos  # adiciona produtos no json de resposta
         })
 
     except Exception as e:
@@ -266,6 +268,29 @@ async def gerar_arquivo_produtos():
             {"erro": "Não foi possível gerar o arquivo de produtos.", "detalhes": str(e)},
             status_code=500
         )
+
+@app.get("/produtos")
+async def listar_produtos():
+    try:
+        produtos_ref = db.collection("produtos").stream()
+
+        lista_produtos = []
+        for doc in produtos_ref:
+            produto = doc.to_dict()
+            produto["id"] = doc.id
+            produto = converter_valores_json(produto)
+            lista_produtos.append(produto)
+
+        return JSONResponse(content=lista_produtos)
+
+    except Exception as e:
+        erro_completo = traceback.format_exc()
+        print("❌ Erro ao buscar produtos:", erro_completo)
+        return JSONResponse(
+            {"erro": "Não foi possível buscar os produtos.", "detalhes": str(e)},
+            status_code=500
+        )
+
 
 @app.get("/registros", response_class=HTMLResponse)
 async def listar_registros(request: Request):
