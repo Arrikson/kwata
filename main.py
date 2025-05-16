@@ -471,6 +471,19 @@ def listar_comprovativos():
         lista.append(d)
     return lista
 
+@app.post("/enviar-comprovativo")
+async def receber_comprovativo(
+    nome: str = Form(...),
+    bi: str = Form(...),
+    telefone: str = Form(...),
+    latitude: str = Form(...),
+    longitude: str = Form(...),
+    bilhetes: list[str] = Form(...),
+    comprovativo: UploadFile = File(...)
+):
+    # Aqui você pode salvar o comprovativo, bilhetes e os dados no Firestore, por exemplo
+    return {"message": "Dados recebidos com sucesso"}
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
