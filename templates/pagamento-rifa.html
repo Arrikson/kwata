@@ -180,7 +180,7 @@
         <small>Só comprovativo em PDF.</small>
 
         <!-- Botão para capturar a localização -->
-        <button type="button" onclick="capturarLocalizacao()" class="button" style="margin-bottom: 10px;">
+        <button type="button" onclick="capturarLocalizacao(event)" class="button" style="margin-bottom: 10px;">
           Obter Localização
         </button>
 
@@ -196,7 +196,7 @@
   <script>
     const quantidadeSelecionada = 1; // ajuste conforme regra do seu app
 
-    function capturarLocalizacao() {
+    function capturarLocalizacao(event) {
       const btn = event.target;
       if (!navigator.geolocation) {
         alert("Geolocalização não é suportada pelo seu navegador.");
@@ -256,5 +256,11 @@
       }
 
       if (comprovativo.size > 32 * 1024) {
-        erroDiv.textContent = "O comprov
+        erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
+        erroDiv.style.display = "block";
+        return;
+      }
+      </script>
+</body>
+</html>
 
