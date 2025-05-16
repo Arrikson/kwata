@@ -2,112 +2,127 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pagamento da Rifa</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     body {
       font-family: 'Inter', sans-serif;
       margin: 0;
       background-color: #f5f7fa;
       color: #333;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 1rem;
     }
-
     main {
-      max-width: 600px;
-      margin: 3rem auto;
       background: #fff;
-      padding: 2rem 2.5rem;
+      max-width: 600px;
+      width: 100%;
       border-radius: 12px;
+      padding: 2rem 2.5rem;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     }
-
-    h1, h2, h3 {
-      color: #111827;
-    }
-
     h1 {
+      margin-top: 0;
       font-size: 1.8rem;
+      font-weight: 700;
+      color: #111827;
       text-align: center;
       margin-bottom: 1.5rem;
     }
-
+    h2, h3 {
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+      color: #111827;
+    }
     label {
       display: block;
-      margin: 1rem 0 0.3rem;
+      margin-top: 1rem;
+      margin-bottom: 0.3rem;
       font-weight: 600;
+      color: #374151;
     }
-
-    input, select {
+    select, input[type="text"], input[type="tel"], input[type="file"] {
       width: 100%;
-      padding: 0.6rem 0.8rem;
+      padding: 0.6rem 0.9rem;
       border: 1px solid #d1d5db;
       border-radius: 6px;
       font-size: 1rem;
       background-color: #f9fafb;
       transition: border-color 0.3s ease;
     }
-
-    input:focus, select:focus {
+    select:focus, input[type="text"]:focus, input[type="tel"]:focus, input[type="file"]:focus {
       outline: none;
       border-color: #3b82f6;
       background-color: #fff;
     }
-
     #lista-bilhetes {
+      margin-top: 0.5rem;
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 0.5rem;
     }
-
     #lista-bilhetes label {
-      margin: 0;
+      display: flex;
+      align-items: center;
+      background: #e0e7ff;
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 500;
+      color: #1e40af;
+      border: 1px solid transparent;
+      transition: background-color 0.2s, border-color 0.2s;
     }
-
     #lista-bilhetes input[type="checkbox"] {
-      margin-right: 4px;
+      margin-right: 6px;
+      cursor: pointer;
     }
-
+    #lista-bilhetes input[type="checkbox"]:checked + label {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #2563eb;
+    }
     .button {
       display: block;
       width: 100%;
       margin-top: 1.5rem;
       padding: 0.75rem;
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 1.1rem;
+      font-weight: 700;
       background-color: #3b82f6;
       color: #fff;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.2s ease-in-out;
+      transition: background-color 0.3s ease;
     }
-
     .button:hover {
       background-color: #2563eb;
     }
-
     small {
-      display: block;
-      margin-top: 0.25rem;
-      color: #6b7280;
       font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+      display: block;
     }
-
     .erro {
-      color: #dc2626;
-      margin-top: 1rem;
-      font-weight: 500;
+      background-color: #fee2e2;
+      color: #b91c1c;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      text-align: center;
     }
-
     @media (max-width: 600px) {
       main {
-        padding: 1.5rem;
-        margin: 1rem;
+        padding: 1.5rem 1.5rem;
       }
-
       h1 {
         font-size: 1.5rem;
       }
@@ -115,126 +130,132 @@
   </style>
 </head>
 <body>
+  <main>
+    <h1>Pagamento da Rifa</h1>
 
-<main>
-  <h1>Pagamento da Rifa</h1>
+    {% if erro %}
+      <div class="erro" role="alert">{{ erro }}</div>
+    {% else %}
+      <section aria-live="polite" aria-atomic="true">
+        <h2 id="nome-produto">{{ nome_produto }}</h2>
+        <h3>Preço total do produto: {{ preco }} KZ</h3>
+        <h3>Preço por bilhete: {{ preco_bilhete }} KZ</h3>
 
-  <section id="produto-info" aria-live="polite" aria-atomic="true">
-    <h2 id="nome-produto">{{ nome_produto }}</h2>
-    <h3>Preço total do produto: {{ preco }} KZ</h3>
-    <h3>Preço por bilhete: {{ preco_bilhete }} KZ</h3>
+        <label for="bilhetes-multi">Escolha os números dos bilhetes (modo lista):</label>
+        <select id="bilhetes-multi" name="numeros_bilhetes" multiple size="5" aria-describedby="instrucoes-bilhetes">
+          {% for numero in bilhetes_disponiveis %}
+            <option value="{{ numero }}">{{ numero }}</option>
+          {% endfor %}
+        </select>
+        <small id="instrucoes-bilhetes">Use Ctrl/Cmd + clique para múltiplas seleções.</small>
 
-    <label for="bilhetes">Escolha os números dos bilhetes (modo lista):</label>
-    <select id="bilhetes" name="numeros_bilhetes" multiple>
-      {% for numero in bilhetes_disponiveis %}
-        <option value="{{ numero }}">{{ numero }}</option>
-      {% endfor %}
-    </select>
+        <label for="lista-bilhetes">Ou escolha visualmente:</label>
+        <div id="lista-bilhetes" role="group" aria-label="Bilhetes disponíveis para seleção">
+          {% for numero in bilhetes_disponiveis %}
+            <input type="checkbox" id="bilhete-{{ numero }}" name="bilhetes" value="{{ numero }}" />
+            <label for="bilhete-{{ numero }}">{{ numero }}</label>
+          {% endfor %}
+        </div>
+      </section>
 
-    <label for="lista-bilhetes">Ou escolha visualmente:</label>
-    <div id="lista-bilhetes" aria-label="Números disponíveis para bilhetes">
-      {% for numero in bilhetes_disponiveis %}
-        <input type="checkbox" id="bilhete-{{ numero }}" name="bilhetes" value="{{ numero }}" />
-        <label for="bilhete-{{ numero }}">{{ numero }}</label>
-      {% endfor %}
-    </div>
-  </section>
+      <form id="form-pagamento" novalidate>
+        <label for="nome">Nome completo:</label>
+        <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
 
-  <form id="form-pagamento" novalidate>
-    <label for="nome">Nome completo:</label>
-    <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
+        <label for="bi">Nº do B.I:</label>
+        <input type="text" id="bi" name="bi" placeholder="Número do seu B.I" required autocomplete="off" />
 
-    <label for="bi">Nº do B.I:</label>
-    <input type="text" id="bi" name="bi" placeholder="Número do seu B.I" required autocomplete="off" />
+        <label for="telefone">Telefone:</label>
+        <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
 
-    <label for="telefone">Telefone:</label>
-    <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
+        <label for="latitude">Latitude:</label>
+        <input type="text" id="latitude" name="latitude" readonly />
 
-    <label for="latitude">Latitude:</label>
-    <input type="text" id="latitude" name="latitude" readonly />
+        <label for="longitude">Longitude:</label>
+        <input type="text" id="longitude" name="longitude" readonly />
 
-    <label for="longitude">Longitude:</label>
-    <input type="text" id="longitude" name="longitude" readonly />
+        <label for="comprovativo">Envie o comprovativo de pagamento</label>
+        <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required />
+        <small>Máximo 32 KB. Imagem ou PDF.</small>
 
-    <label for="comprovativo">Envie o comprovativo de pagamento</label>
-    <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required />
-    <small>Máximo 32 KB. Imagem ou PDF.</small>
+        <button type="submit" class="button">Enviar Comprovativo</button>
+        <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
+      </form>
+    {% endif %}
+  </main>
 
-    <button type="submit" class="button">Enviar Comprovativo</button>
-    <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
-  </form>
-</main>
+  <script>
+    const quantidadeSelecionada = 1; // ajuste conforme regra do seu app
 
-<script>
-  const quantidadeSelecionada = 1;
-
-  function capturarLocalizacao() {
-    if (!navigator.geolocation) {
-      alert("Geolocalização não é suportada pelo seu navegador.");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        document.getElementById("latitude").value = pos.coords.latitude.toFixed(6);
-        document.getElementById("longitude").value = pos.coords.longitude.toFixed(6);
-      },
-      (error) => {
-        console.warn(`Erro ao obter localização: ${error.message}`);
+    function capturarLocalizacao() {
+      if (!navigator.geolocation) {
+        alert("Geolocalização não é suportada pelo seu navegador.");
+        return;
       }
-    );
-  }
-
-  document.getElementById("form-pagamento").addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    const erroDiv = document.getElementById("mensagem-erro");
-    erroDiv.style.display = "none";
-    erroDiv.textContent = "";
-
-    const bilhetesSelecionados = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => parseInt(el.value));
-
-    if (bilhetesSelecionados.length === 0) {
-      erroDiv.textContent = "Por favor, selecione pelo menos um bilhete.";
-      erroDiv.style.display = "block";
-      return;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          document.getElementById("latitude").value = pos.coords.latitude.toFixed(6);
+          document.getElementById("longitude").value = pos.coords.longitude.toFixed(6);
+        },
+        (error) => {
+          console.warn(`Erro ao obter localização: ${error.message}`);
+        }
+      );
     }
 
-    if (bilhetesSelecionados.length !== quantidadeSelecionada) {
-      erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
-      erroDiv.style.display = "block";
-      return;
-    }
+    document.getElementById("form-pagamento")?.addEventListener("submit", function (e) {
+      e.preventDefault();
 
-    const nome = document.getElementById("nome").value.trim();
-    const bi = document.getElementById("bi").value.trim();
-    const telefone = document.getElementById("telefone").value.trim();
-    const comprovativo = document.getElementById("comprovativo").files[0];
+      const erroDiv = document.getElementById("mensagem-erro");
+      erroDiv.style.display = "none";
+      erroDiv.textContent = "";
 
-    if (!nome || !bi || !telefone) {
-      erroDiv.textContent = "Preencha todos os campos obrigatórios.";
-      erroDiv.style.display = "block";
-      return;
-    }
+      // Captura bilhetes via checkboxes e select e junta numa lista única
+      const bilhetesCheckbox = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => parseInt(el.value));
+      const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => parseInt(opt.value));
+      const bilhetesSelecionados = Array.from(new Set([...bilhetesCheckbox, ...bilhetesSelect]));
 
-    if (!comprovativo) {
-      erroDiv.textContent = "Envie o comprovativo de pagamento.";
-      erroDiv.style.display = "block";
-      return;
-    }
+      if (bilhetesSelecionados.length === 0) {
+        erroDiv.textContent = "Por favor, selecione pelo menos um bilhete.";
+        erroDiv.style.display = "block";
+        return;
+      }
 
-    if (comprovativo.size > 32 * 1024) {
-      erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
-      erroDiv.style.display = "block";
-      return;
-    }
+      if (bilhetesSelecionados.length !== quantidadeSelecionada) {
+        erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
+        erroDiv.style.display = "block";
+        return;
+      }
 
-    alert(`Formulário enviado com sucesso.\nBilhetes escolhidos: ${bilhetesSelecionados.join(", ")}`);
-    this.reset();
-  });
+      const nome = document.getElementById("nome").value.trim();
+      const bi = document.getElementById("bi").value.trim();
+      const telefone = document.getElementById("telefone").value.trim();
+      const comprovativo = document.getElementById("comprovativo").files[0];
 
-  capturarLocalizacao();
-</script>
+      if (!nome || !bi || !telefone) {
+        erroDiv.textContent = "Preencha todos os campos obrigatórios.";
+        erroDiv.style.display = "block";
+        return;
+      }
 
+      if (!comprovativo) {
+        erroDiv.textContent = "Envie o comprovativo de pagamento.";
+        erroDiv.style.display = "block";
+        return;
+      }
+
+      if (comprovativo.size > 32 * 1024) {
+        erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
+        erroDiv.style.display = "block";
+        return;
+      }
+
+      alert(`Formulário enviado com sucesso.\nBilhetes escolhidos: ${bilhetesSelecionados.join(", ")}`);
+      this.reset();
+    });
+
+    capturarLocalizacao();
+  </script>
 </body>
 </html>
 
