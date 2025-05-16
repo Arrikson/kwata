@@ -27,6 +27,7 @@ from google.protobuf.timestamp_pb2 import Timestamp
 
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
+CAMINHO_ARQUIVO = "static/produto-refletidos.json"
 
 # Inicializa o Firebase se ainda não estiver inicializado
 if not firebase_admin._apps:
@@ -48,9 +49,6 @@ templates = Jinja2Templates(directory="templates")
 
 UPLOAD_DIR = os.path.join("static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-pasta_static = Path("static")  # ajuste conforme sua estrutura real
-caminho_arquivo = pasta_static / "produto-refletidos.json"
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -156,9 +154,6 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
-# 🔹 Caminho do arquivo JSON
-CAMINHO_ARQUIVO = "gerar-produto-refletidos.json"
-
 @app.get("/pagamento-rifa.html")
 async def exibir_pagamento(request: Request, produto_id: str = Query(default=None)):
     if not produto_id:
@@ -168,7 +163,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         })
 
     try:
-        # 🔹 Carrega os dados do JSON local
+        # 🔹 Carrega os dados do JSON local (agora com o caminho corrigido!)
         with open(CAMINHO_ARQUIVO, "r", encoding="utf-8") as f:
             produtos = json.load(f)
 
@@ -181,11 +176,11 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
                 "erro": "Produto não encontrado no arquivo JSON."
             })
 
-        quantidade_bilhetes = dados_produto.get("quantidade_bilhetes", 0)
-        preco_bilhete = dados_produto.get("preco_bilhete", 0.0)
-        preco_total = dados_produto.get("preco", 0.0)
+        quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
+        preco_bilhete = float(dados_produto.get("preco_bilhete", 0.0))
+        preco_total = float(dados_produto.get("preco", preco_bilhete * quantidade_bilhetes))
 
-        # 🔹 Carrega bilhetes já comprados (do Firebase, se ainda quiser manter)
+        # 🔹 Carrega bilhetes já comprados do Firebase
         compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
         bilhetes_comprados = []
 
@@ -194,7 +189,6 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
             numeros = data.get("numeros_bilhetes", [])
             bilhetes_comprados.extend(numeros)
 
-        # 🔹 Calcular bilhetes disponíveis
         bilhetes_disponiveis = [
             i for i in range(1, quantidade_bilhetes + 1)
             if i not in bilhetes_comprados
