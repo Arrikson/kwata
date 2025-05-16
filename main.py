@@ -18,6 +18,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from io import BytesIO
 from fastapi import Query
+from fastapi.responses import JSONResponse
+from pathlib import Path
 
 
 
@@ -202,6 +204,39 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
             "request": request,
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
+
+@app.get("/gerar-produto-refletidos")
+async def gerar_arquivo_produtos():
+    try:
+        # 🔹 Referência à coleção "produtos"
+        produtos_ref = db.collection("produtos").stream()
+
+        # 🔹 Lista para armazenar os produtos
+        lista_produtos = []
+
+        for doc in produtos_ref:
+            produto = doc.to_dict()
+            produto["id"] = doc.id  # Inclui o ID do documento
+            lista_produtos.append(produto)
+
+        # 🔹 Caminho para salvar o arquivo JSON
+        caminho_arquivo = Path("produto-refletidos.json")
+
+        # 🔹 Grava os dados no arquivo
+        with open(caminho_arquivo, "w", encoding="utf-8") as f:
+            json.dump(lista_produtos, f, ensure_ascii=False, indent=4)
+
+        return JSONResponse({
+            "mensagem": "Arquivo produto-refletidos.json gerado com sucesso.",
+            "quantidade": len(lista_produtos)
+        })
+
+    except Exception as e:
+        print("❌ Erro ao gerar arquivo de produtos:", e)
+        return JSONResponse(
+            {"erro": "Não foi possível gerar o arquivo de produtos."},
+            status_code=500
+        )
 
 @app.get("/registros", response_class=HTMLResponse)
 async def listar_registros(request: Request):
