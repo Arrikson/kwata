@@ -49,6 +49,9 @@ templates = Jinja2Templates(directory="templates")
 UPLOAD_DIR = os.path.join("static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+pasta_static = Path("static")  # ajuste conforme sua estrutura real
+caminho_arquivo = pasta_static / "produto-refletidos.json"
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
@@ -163,8 +166,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
 
     try:
         # 🔹 Carrega os dados do JSON local
-        caminho_json = os.path.join("caminho/para/seu/arquivo", "gerar-produto-refletidos.json")
-        with open(caminho_json, "r", encoding="utf-8") as f:
+        with open(caminho_arquivo, "r", encoding="utf-8") as f:
             produtos = json.load(f)
 
         # 🔹 Busca o produto com o ID correspondente
