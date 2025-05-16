@@ -217,13 +217,19 @@ def converter_valores_json(data):
         return [converter_valores_json(i) for i in data]
     elif hasattr(data, "ToDatetime"):  # objeto Firestore Timestamp
         return data.ToDatetime().isoformat()
-    elif hasattr(data, "timestamp"):  # para protobuf Timestamp
-        return data.timestamp().isoformat()
-    # Caso para objetos datetime do python comum
+    # para objetos datetime comuns, já possuem isoformat
     elif hasattr(data, "isoformat"):
         try:
             return data.isoformat()
-        except:
+        except Exception:
+            pass
+    # para protobuf Timestamp ou objetos com método timestamp mas sem isoformat
+    elif hasattr(data, "timestamp"):
+        try:
+            ts = data.timestamp()
+            # timestamp() retorna float, converte para ISO string
+            return datetime.fromtimestamp(ts).isoformat()
+        except Exception:
             pass
     return data
 
