@@ -155,7 +155,7 @@ async def adicionar_produto(
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
 @app.get("/pagamento-rifa.html")
-async def exibir_pagamento(request: Request, produto_id: str = Query(default=None)):
+async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)):
     if not produto_id:
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
@@ -163,11 +163,10 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         })
 
     try:
-        # 🔹 Carrega os dados do JSON local (agora com o caminho corrigido!)
+        # Carrega os dados do produto
         with open(CAMINHO_ARQUIVO, "r", encoding="utf-8") as f:
             produtos = json.load(f)
 
-        # 🔹 Busca o produto com o ID correspondente
         dados_produto = next((p for p in produtos if p.get("id") == produto_id), None)
 
         if not dados_produto:
@@ -180,20 +179,20 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         preco_bilhete = float(dados_produto.get("preco_bilhete", 0.0))
         preco_total = float(dados_produto.get("preco", preco_bilhete * quantidade_bilhetes))
 
-        # 🔹 Carrega bilhetes já comprados do Firebase
+        # Consulta compras no Firebase
         compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
         bilhetes_comprados = []
 
         for compra in compras_ref:
             data = compra.to_dict()
-            numeros = data.get("numeros_bilhetes", [])
-            bilhetes_comprados.extend(numeros)
+            bilhetes_comprados.extend(data.get("numeros_bilhetes", []))
 
         bilhetes_disponiveis = [
             i for i in range(1, quantidade_bilhetes + 1)
             if i not in bilhetes_comprados
         ]
 
+        # Renderiza template com dados
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "produto_id": produto_id,
@@ -203,7 +202,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         })
 
     except Exception as e:
-        print("❌ Erro ao carregar dados do pagamento:", e)
+        print(f"❌ Erro ao carregar dados: {e}")
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
