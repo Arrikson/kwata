@@ -32,6 +32,8 @@ from fastapi import FastAPI, Request, UploadFile, File, Form
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
 CAMINHO_ARQUIVO = "static/produto-refletidos.json"
+# Define o caminho onde os arquivos serão salvos
+CAMINHO_PASTA_COMPROVATIVOS = "static/static/comprovativos"
 
 # Inicializa o Firebase se ainda não estiver inicializado
 if not firebase_admin._apps:
@@ -429,19 +431,22 @@ async def enviar_comprovativo(
     bilhetes: List[int] = Form(...),
     comprovativo: UploadFile = File(...)
 ):
-    # Validar tamanho do arquivo
+    # Validação do tamanho
     contents = await comprovativo.read()
     if len(contents) > 32 * 1024:
         raise HTTPException(status_code=400, detail="Comprovativo maior que 32 KB.")
 
-    # Salvar arquivo no Storage Firebase
-    ext = comprovativo.filename.split(".")[-1]
-    filename = f"comprovativos/{uuid.uuid4()}.{ext}"
-    blob = bucket.blob(filename)
-    blob.upload_from_string(contents, content_type=comprovativo.content_type)
-    url_comprovativo = blob.generate_signed_url(expiration=datetime.utcnow() + timedelta(days=365))
+    # Cria a pasta se não existir
+    os.makedirs(CAMINHO_PASTA_COMPROVATIVOS, exist_ok=True)
 
-    # Salvar dados no Firestore
+    # Salva o arquivo na pasta local
+    ext = comprovativo.filename.split(".")[-1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    caminho_arquivo = os.path.join(CAMINHO_PASTA_COMPROVATIVOS, filename)
+    with open(caminho_arquivo, "wb") as f:
+        f.write(contents)
+
+    # Salva os dados no Firebase Firestore
     doc_ref = db.collection("comprovativo-comprados").document()
     doc_ref.set({
         "nome": nome,
@@ -451,7 +456,7 @@ async def enviar_comprovativo(
         "longitude": longitude,
         "bilhetes": bilhetes,
         "timestamp": datetime.utcnow(),
-        "url_comprovativo": url_comprovativo
+        "caminho_local": caminho_arquivo  # salva o caminho local
     })
 
     return JSONResponse({"msg": "Comprovativo enviado com sucesso."})
