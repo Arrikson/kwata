@@ -2,6 +2,7 @@ import os
 import json
 import firebase_admin
 import uvicorn
+import uuid
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -22,7 +23,10 @@ from fastapi.responses import JSONResponse
 from pathlib import Path
 from google.cloud.firestore_v1 import DocumentSnapshot
 from google.protobuf.timestamp_pb2 import Timestamp
-
+from typing import List
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request, UploadFile, File, Form
 
 
 # Caminho da chave do Firebase
@@ -49,6 +53,34 @@ templates = Jinja2Templates(directory="templates")
 
 UPLOAD_DIR = os.path.join("static", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Caminho onde serão salvos os dados
+CAMINHO_JSON = "comprovativo_comprados.json"
+
+# Criar arquivo se não existir
+if not os.path.exists(CAMINHO_JSON):
+    with open(CAMINHO_JSON, "w") as f:
+        json.dump([], f)
+
+
+class Comprovativo(BaseModel):
+    nome: str
+    bi: str
+    telefone: str
+    latitude: str
+    longitude: str
+    bilhetes: List[int]
+    comprovativoURL: str  # URL do Firebase
+    timestamp: str = ""   # opcional
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -364,6 +396,28 @@ async def listar_registros(request: Request):
             "registros": [],
             "erro": "Erro ao carregar os registros."
         })
+
+@app.get("/comprovativo-comprados")
+def listar_comprovativos():
+    with open(CAMINHO_JSON, "r") as f:
+        dados = json.load(f)
+    return JSONResponse(content=dados)
+
+
+@app.post("/comprovativo-comprados")
+def adicionar_comprovativo(comprovativo: Comprovativo):
+    with open(CAMINHO_JSON, "r") as f:
+        dados = json.load(f)
+
+    novo_comprovativo = comprovativo.dict()
+    novo_comprovativo["id"] = str(uuid.uuid4())
+
+    dados.append(novo_comprovativo)
+
+    with open(CAMINHO_JSON, "w") as f:
+        json.dump(dados, f, indent=2)
+
+    return {"mensagem": "Comprovativo adicionado com sucesso", "id": novo_comprovativo["id"]}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
