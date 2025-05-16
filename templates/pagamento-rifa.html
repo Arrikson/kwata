@@ -179,8 +179,16 @@
         <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required />
         <small>Só comprovativo em PDF.</small>
 
+        <!-- Botão para capturar a localização -->
+        <button type="button" onclick="capturarLocalizacao()" class="button" style="margin-bottom: 10px;">
+        Obter Localização
+        </button>
+
+        <!-- Botão para enviar o comprovativo -->
         <button type="submit" class="button">Enviar Comprovativo</button>
+
         <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
+
       </form>
     {% endif %}
   </main>
