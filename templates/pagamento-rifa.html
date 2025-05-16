@@ -117,9 +117,9 @@
     text-align: center;
     border: 1px solid #fecaca; 
   }
-    .invisivel {
-  color: #ffffff
-}
+  .invisivel {
+    color: #ffffff
+  }
   @media (max-width: 600px) {
     main {
       padding: 1.5rem 1.5rem;
@@ -181,7 +181,7 @@
 
         <!-- Botão para capturar a localização -->
         <button type="button" onclick="capturarLocalizacao()" class="button" style="margin-bottom: 10px;">
-        Obter Localização
+          Obter Localização
         </button>
 
         <!-- Botão para enviar o comprovativo -->
@@ -196,30 +196,31 @@
   <script>
     const quantidadeSelecionada = 1; // ajuste conforme regra do seu app
 
-   function capturarLocalizacao() {
-    const btn = event.target;
-    if (!navigator.geolocation) {
-      alert("Geolocalização não é suportada pelo seu navegador.");
-      return;
-    }
-    btn.disabled = true;
-    btn.textContent = "Capturando localização...";
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        document.getElementById("latitude").value = pos.coords.latitude.toFixed(6);
-        document.getElementById("longitude").value = pos.coords.longitude.toFixed(6);
-        btn.textContent = "Localização Capturada";
-        btn.style.backgroundColor = "#16a34a";
-      },
-      (error) => {
-        alert(`Erro ao obter localização: ${error.message}`);
-        btn.disabled = false;
-        btn.textContent = "Tentar novamente";
+    function capturarLocalizacao() {
+      const btn = event.target;
+      if (!navigator.geolocation) {
+        alert("Geolocalização não é suportada pelo seu navegador.");
+        return;
       }
-    );
-  }
-    
-    document.getElementById("form-pagamento")?.addEventListener("submit", function (e) {
+      btn.disabled = true;
+      btn.textContent = "Capturando localização...";
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          document.getElementById("latitude").value = pos.coords.latitude.toFixed(6);
+          document.getElementById("longitude").value = pos.coords.longitude.toFixed(6);
+          btn.textContent = "Localização Capturada";
+          btn.style.backgroundColor = "#16a34a";
+        },
+        (error) => {
+          alert(`Erro ao obter localização: ${error.message}`);
+          btn.disabled = false;
+          btn.textContent = "Tentar novamente";
+        }
+      );
+    }
+
+    const form = document.getElementById("form-pagamento");
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const erroDiv = document.getElementById("mensagem-erro");
@@ -227,15 +228,9 @@
       erroDiv.textContent = "";
 
       // Captura bilhetes via checkboxes e select e junta numa lista única
-      const bilhetesCheckbox = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => parseInt(el.value));
-      const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => parseInt(opt.value));
+      const bilhetesCheckbox = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => el.value);
+      const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => opt.value);
       const bilhetesSelecionados = Array.from(new Set([...bilhetesCheckbox, ...bilhetesSelect]));
-
-      if (bilhetesSelecionados.length === 0) {
-        erroDiv.textContent = "Por favor, selecione pelo menos um bilhete.";
-        erroDiv.style.display = "block";
-        return;
-      }
 
       if (bilhetesSelecionados.length !== quantidadeSelecionada) {
         erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
@@ -261,17 +256,5 @@
       }
 
       if (comprovativo.size > 32 * 1024) {
-        erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
-        erroDiv.style.display = "block";
-        return;
-      }
-
-      alert(`Formulário enviado com sucesso.\nBilhetes escolhidos: ${bilhetesSelecionados.join(", ")}`);
-      this.reset();
-    });
-
-    capturarLocalizacao();
-  </script>
-</body>
-</html>
+        erroDiv.textContent = "O comprov
 
