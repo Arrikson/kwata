@@ -153,6 +153,7 @@ async def adicionar_produto(
         traceback.print_exc()
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
+
 @app.get("/pagamento-rifa.html")
 async def exibir_pagamento(request: Request, produto_id: str = Query(default=None)):
     if not produto_id:
@@ -175,6 +176,7 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         dados_produto = produto_doc.to_dict()
         quantidade_bilhetes = dados_produto.get("quantidade_bilhetes", 0)
         preco_bilhete = dados_produto.get("preco_bilhete", 0.0)
+        preco_total = dados_produto.get("preco", 0.0)  # 💰 Pega o preço total do produto
 
         # 🔹 Obter todos os números de bilhetes já comprados para este produto
         compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
@@ -194,18 +196,20 @@ async def exibir_pagamento(request: Request, produto_id: str = Query(default=Non
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "produto_id": produto_id,
+            "preco": preco_total,  # 🔹 Passa o preço total ao template
             "preco_bilhete": preco_bilhete,
             "bilhetes_disponiveis": bilhetes_disponiveis
         })
 
     except Exception as e:
         print("❌ Erro ao carregar dados do pagamento:")
-        traceback.print_exc()  # Exibe detalhes do erro no terminal
+        traceback.print_exc()
 
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
+
 
 def converter_valores_json(data):
     """
