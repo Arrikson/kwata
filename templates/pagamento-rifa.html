@@ -159,37 +159,45 @@
         </div>
       </section>
 
-      <form id="form-pagamento" novalidate>
-        <label for="nome">Nome completo:</label>
-        <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
+      <form id="form-pagamento" action="/enviar-comprovativo" method="post" enctype="multipart/form-data" novalidate>
+  <label for="nome">Nome completo:</label>
+  <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
 
-        <label for="bi">Nº do B.I:</label>
-        <input type="text" id="bi" name="bi" placeholder="Número do seu B.I" required autocomplete="off" />
+  <label for="bi">Nº do B.I:</label>
+  <input type="text" id="bi" name="bi" placeholder="Número do seu B.I" required autocomplete="off" />
 
-        <label for="telefone">Telefone:</label>
-        <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
+  <label for="telefone">Telefone:</label>
+  <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
 
-        <label for="latitude">Latitude:</label>
-        <input type="text" id="latitude" name="latitude" readonly />
+  <label for="latitude">Latitude:</label>
+  <input type="text" id="latitude" name="latitude" readonly />
 
-        <label for="longitude">Longitude:</label>
-        <input type="text" id="longitude" name="longitude" readonly />
+  <label for="longitude">Longitude:</label>
+  <input type="text" id="longitude" name="longitude" readonly />
 
-        <label for="comprovativo">Envie o comprovativo de pagamento</label>
-        <input type="file" id="comprovativo" name="comprovativo" accept="image/*,application/pdf" required />
-        <small>Só comprovativo em PDF.</small>
+  <label>Escolha os bilhetes:</label>
+  <div>
+    <label><input type="checkbox" name="bilhetes" value="1" /> Bilhete 1</label>
+    <label><input type="checkbox" name="bilhetes" value="2" /> Bilhete 2</label>
+    <label><input type="checkbox" name="bilhetes" value="3" /> Bilhete 3</label>
+    <!-- Adicione mais conforme necessário -->
+  </div>
 
-        <!-- Botão para capturar a localização -->
-        <button type="button" onclick="capturarLocalizacao(event)" class="button" style="margin-bottom: 10px;">
-          Obter Localização
-        </button>
+  <label for="comprovativo">Envie o comprovativo de pagamento</label>
+  <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required />
+  <small>Só comprovativo em PDF.</small>
 
-        <!-- Botão para enviar o comprovativo -->
-        <button type="submit" class="button">Enviar Comprovativo</button>
+  <!-- Botão para capturar a localização -->
+  <button type="button" onclick="capturarLocalizacao(event)" class="button" style="margin-bottom: 10px;">
+    Obter Localização
+  </button>
 
-        <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
+  <!-- Botão para enviar o comprovativo -->
+  <button type="submit" class="button">Enviar Comprovativo</button>
 
-      </form>
+  <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
+</form>
+
     {% endif %}
   </main>
   
