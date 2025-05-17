@@ -72,7 +72,6 @@ if not os.path.exists(CAMINHO_JSON):
     with open(CAMINHO_JSON, "w") as f:
         json.dump([], f)
 
-
 class Comprovativo(BaseModel):
     nome: str
     bi: str
@@ -82,6 +81,27 @@ class Comprovativo(BaseModel):
     bilhetes: List[int]
     comprovativoURL: str  # URL do Firebase
     timestamp: str = ""   # opcional
+
+def atualizar_rifas_restantes(produto_id: str):
+    doc_ref_produto = db.collection("produtos").document(produto_id)
+    doc_produto = doc_ref_produto.get()
+
+    if not doc_produto.exists:
+        print("Produto não encontrado para atualizar rifas restantes")
+        return
+
+    dados = doc_produto.to_dict()
+    quantidade_total = dados.get("quantidade_bilhetes", 0)
+    bilhetes_vendidos = dados.get("bilhetes_vendidos", 0)
+
+    # Cria lista de bilhetes disponíveis
+    bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_total + 1))
+
+    # Atualiza a coleção "rifas-restantes"
+    db.collection("rifas-restantes").document(produto_id).set({
+        "bilhetes_disponiveis": bilhetes_disponiveis
+    })
+    print(f"Documento rifas-restantes/{produto_id} atualizado com {len(bilhetes_disponiveis)} bilhetes disponíveis.")
 
 
 @app.get("/", response_class=HTMLResponse)
