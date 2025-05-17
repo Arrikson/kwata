@@ -203,7 +203,7 @@ async def adicionar_produto(
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
 @app.get("/pagamento-rifa.html", response_class=HTMLResponse)
-async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)):
+async def pagamento_rifa(request: Request, produto_id: str = Query(default=None), sucesso: str = Query(default=None)):
     if not produto_id:
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
@@ -211,7 +211,7 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         })
 
     try:
-        # Busca o produto no Firebase
+        # 🔹 Buscar o produto no Firebase
         doc_ref = db.collection("produtos").document(produto_id)
         doc = doc_ref.get()
 
@@ -225,24 +225,36 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         nome_produto = dados_produto.get("nome", "Produto")
         preco_bilhete = float(dados_produto.get("preco_bilhete", 0.00))
 
-        # Buscar rifas restantes no documento específico
+        # 🔹 Buscar rifas restantes no documento específico
         rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
         if rifas_restantes_doc.exists:
             bilhetes_disponiveis = rifas_restantes_doc.to_dict().get("bilhetes_disponiveis", [])
         else:
-            # Caso não exista documento, calcula com base na quantidade total e vendidos
+            # 🔄 Caso não exista documento, calcula com base na quantidade total e vendidos
             quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
-            bilhetes_vendidos = dados_produto.get("bilhetes_vendidos", 0)
+            bilhetes_vendidos = int(dados_produto.get("bilhetes_vendidos", 0))
             bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
 
-        return templates.TemplateResponse("pagamento-rifa.html", {
+            # ✅ Criar documento na coleção "rifas-restantes"
+            db.collection("rifas-restantes").document(produto_id).set({
+                "bilhetes_disponiveis": bilhetes_disponiveis,
+                "atualizado_em": datetime.now().isoformat()
+            })
+
+        # 🔸 Montar contexto para o template
+        contexto = {
             "request": request,
             "produto_id": produto_id,
             "nome_produto": nome_produto,
             "preco_bilhete": preco_bilhete,
-            "bilhetes_disponiveis": bilhetes_disponiveis,
-            "sucesso": request.query_params.get("sucesso")
-        })
+            "bilhetes_disponiveis": bilhetes_disponiveis
+        }
+
+        # ✅ Mostrar mensagem de sucesso se for redirecionado após o POST
+        if sucesso == "1":
+            contexto["sucesso"] = "Pagamento enviado com sucesso! Seus bilhetes foram reservados."
+
+        return templates.TemplateResponse("pagamento-rifa.html", contexto)
 
     except Exception as e:
         print(f"❌ Erro ao carregar dados do Firebase: {e}")
