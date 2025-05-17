@@ -184,7 +184,7 @@ async def adicionar_produto(
             preco_bilhete = 0
             quantidade_calculada = 0
 
-        produto = {
+                produto = {
             "nome": nome,
             "descricao": descricao,
             "imagem": imagem_url,
@@ -198,8 +198,13 @@ async def adicionar_produto(
 
         print("📝 Produto a ser salvo:", produto)
 
-        db.collection('produtos').add(produto)
-        print("✅ Produto salvo no Firestore!")
+        # Salva produto e pega ID gerado
+        doc_ref = db.collection('produtos').add(produto)[1]
+        produto_id = doc_ref.id
+        print(f"✅ Produto salvo no Firestore com ID: {produto_id}")
+
+        # Chama a função para atualizar rifas restantes
+        atualizar_rifas_restantes(produto_id)
 
         return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
