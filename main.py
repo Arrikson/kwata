@@ -197,7 +197,7 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         })
 
     try:
-        # Busca o produto diretamente do Firebase
+        # Busca o produto no Firebase
         doc_ref = db.collection("produtos").document(produto_id)
         doc = doc_ref.get()
 
@@ -209,31 +209,25 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
 
         dados_produto = doc.to_dict()
         nome_produto = dados_produto.get("nome", "Produto")
-        quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
         preco_bilhete = float(dados_produto.get("preco_bilhete", 0.00))
-        preco_total = float(dados_produto.get("preco", preco_bilhete * quantidade_bilhetes))
 
-        # Consulta compras no Firebase
-        compras_ref = db.collection("compras").where("produto_id", "==", produto_id).stream()
-        bilhetes_comprados = []
+        # Buscar rifas restantes no documento específico
+        rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
+        if rifas_restantes_doc.exists:
+            bilhetes_disponiveis = rifas_restantes_doc.to_dict().get("bilhetes_disponiveis", [])
+        else:
+            # Caso não exista documento, calcula com base na quantidade total e vendidos
+            quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
+            bilhetes_vendidos = dados_produto.get("bilhetes_vendidos", 0)
+            bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
 
-        for compra in compras_ref:
-            data = compra.to_dict()
-            bilhetes_comprados.extend(data.get("numeros_bilhetes", []))
-
-        bilhetes_disponiveis = [
-            i for i in range(1, quantidade_bilhetes + 1)
-            if i not in bilhetes_comprados
-        ]
-
-        # Renderiza o template com os dados
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
             "produto_id": produto_id,
             "nome_produto": nome_produto,
-            "preco": preco_total,
             "preco_bilhete": preco_bilhete,
-            "bilhetes_disponiveis": bilhetes_disponiveis
+            "bilhetes_disponiveis": bilhetes_disponiveis,
+            "sucesso": request.query_params.get("sucesso")
         })
 
     except Exception as e:
@@ -508,6 +502,85 @@ async def receber_comprovativo(
     db.collection("comprovativo-comprados").add(dados)
 
     return JSONResponse(content={"message": "Comprovativo enviado com sucesso!"})
+
+from fastapi import Form
+
+@app.post("/comprar-bilhete")
+async def comprar_bilhete(
+    nome: str = Form(...),
+    bi: str = Form(...),
+    telefone: str = Form(...),
+    latitude: str = Form(...),
+    longitude: str = Form(...),
+    produto_id: str = Form(...),
+    bilhetes_comprados: List[int] = Form(...),
+    comprovativo: UploadFile = File(...)
+):
+    try:
+        # 1. Salvar o comprovativo no servidor e Firebase Storage (opcional)
+        conteudo = await comprovativo.read()
+        nome_arquivo = f"{uuid4().hex}_{comprovativo.filename}"
+        caminho_comprovativo = os.path.join(CAMINHO_PASTA_COMPROVATIVOS, nome_arquivo)
+        os.makedirs(CAMINHO_PASTA_COMPROVATIVOS, exist_ok=True)
+        with open(caminho_comprovativo, "wb") as f:
+            f.write(conteudo)
+
+        comprovativo_url = f"/static/comprovativos/{nome_arquivo}"  # ajuste se usar Firebase Storage
+
+        # 2. Atualizar a coleção comprovativo-comprados
+        compra = {
+            "nome": nome,
+            "bi": bi,
+            "telefone": telefone,
+            "latitude": latitude,
+            "longitude": longitude,
+            "produto_id": produto_id,
+            "bilhetes": bilhetes_comprados,
+            "comprovativoURL": comprovativo_url,
+            "timestamp": datetime.utcnow()
+        }
+        db.collection("comprovativo-comprados").add(compra)
+
+        # 3. Atualizar bilhetes vendidos no produto
+        produto_ref = db.collection("produtos").document(produto_id)
+        produto_doc = produto_ref.get()
+        if not produto_doc.exists:
+            return {"erro": "Produto não encontrado"}
+
+        produto_data = produto_doc.to_dict()
+        bilhetes_vendidos_atuais = produto_data.get("bilhetes_vendidos", 0)
+        bilhetes_novos = len(bilhetes_comprados)
+        bilhetes_vendidos_atualizado = bilhetes_vendidos_atuais + bilhetes_novos
+
+        produto_ref.update({"bilhetes_vendidos": bilhetes_vendidos_atualizado})
+
+        # 4. Atualizar coleção rifas-restantes
+        quantidade_total = produto_data.get("quantidade_bilhetes", 0)
+
+        # Buscar todos bilhetes já vendidos (somando todos comprovativos)
+        comprovativos_ref = db.collection("comprovativo-comprados").where("produto_id", "==", produto_id).stream()
+        bilhetes_todos_vendidos = []
+        for doc in comprovativos_ref:
+            dados = doc.to_dict()
+            bilhetes_todos_vendidos.extend(dados.get("bilhetes", []))
+
+        bilhetes_todos_vendidos = list(set(bilhetes_todos_vendidos))  # evitar duplicados
+        bilhetes_disponiveis = [i for i in range(1, quantidade_total + 1) if i not in bilhetes_todos_vendidos]
+
+        rifas_restantes_ref = db.collection("rifas-restantes").document(produto_id)
+        rifas_restantes_ref.set({
+            "produto_id": produto_id,
+            "bilhetes_disponiveis": bilhetes_disponiveis,
+            "timestamp": datetime.utcnow()
+        })
+
+        return RedirectResponse(url=f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
+
+    except Exception as e:
+        print("Erro ao processar compra:", e)
+        traceback.print_exc()
+        return {"erro": str(e)}
+
     
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
