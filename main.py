@@ -184,34 +184,35 @@ async def adicionar_produto(
             preco_bilhete = 0
             quantidade_calculada = 0
 
-                produto = {
-            "nome": nome,
-            "descricao": descricao,
-            "imagem": imagem_url,
-            "preco_aquisicao": preco_aquisicao,
-            "lucro_desejado": lucro_desejado,
-            "preco_bilhete": round(preco_bilhete, 2),
-            "quantidade_bilhetes": quantidade_calculada,
-            "bilhetes_vendidos": 0,
-            "data_limite": data_limite_dt  # ✅ usar datetime, não Timestamp
-        }
+    try:
+    produto = {
+        "nome": nome,
+        "descricao": descricao,
+        "imagem": imagem_url,
+        "preco_aquisicao": preco_aquisicao,
+        "lucro_desejado": lucro_desejado,
+        "preco_bilhete": round(preco_bilhete, 2),
+        "quantidade_bilhetes": quantidade_calculada,
+        "bilhetes_vendidos": 0,
+        "data_limite": data_limite_dt  # ✅ usar datetime, não Timestamp
+    }
 
-        print("📝 Produto a ser salvo:", produto)
+    print("📝 Produto a ser salvo:", produto)
 
-        # Salva produto e pega ID gerado
-        doc_ref = db.collection('produtos').add(produto)[1]
-        produto_id = doc_ref.id
-        print(f"✅ Produto salvo no Firestore com ID: {produto_id}")
+    # Salva produto e pega ID gerado
+    doc_ref = db.collection('produtos').add(produto)[1]
+    produto_id = doc_ref.id
+    print(f"✅ Produto salvo no Firestore com ID: {produto_id}")
 
-        # Chama a função para atualizar rifas restantes
-        atualizar_rifas_restantes(produto_id)
+    # Chama a função para atualizar rifas restantes
+    atualizar_rifas_restantes(produto_id)
 
-        return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+    return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
-    except Exception as e:
-        print("❌ ERRO AO SALVAR PRODUTO:", str(e))
-        traceback.print_exc()
-        return RedirectResponse(url="/admin?erro=1", status_code=303)
+except Exception as e:
+    print("❌ ERRO AO SALVAR PRODUTO:", str(e))
+    traceback.print_exc()
+    return RedirectResponse(url="/admin?erro=1", status_code=303)
 
 @app.get("/pagamento-rifa.html", response_class=HTMLResponse)
 async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)):
