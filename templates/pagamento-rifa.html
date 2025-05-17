@@ -228,10 +228,10 @@ form.addEventListener("submit", async (e) => {
   const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => opt.value);
   const bilhetesSelecionados = Array.from(new Set([...bilhetesCheckbox, ...bilhetesSelect]));
 
-  //if (bilhetesSelecionados.length !== quantidadeSelecionada) {
-    //erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
-    //erroDiv.style.display = "block";
-   // return;
+  if (bilhetesSelecionados.length !== quantidadeSelecionada) {
+    erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
+    erroDiv.style.display = "block";
+   return;
   }
 
   const nome = document.getElementById("nome").value.trim();
