@@ -83,26 +83,26 @@ class Comprovativo(BaseModel):
     timestamp: str = ""   # opcional
 
 def atualizar_rifas_restantes(produto_id: str):
-    doc_ref_produto = db.collection("produtos").document(produto_id)
-    doc_produto = doc_ref_produto.get()
+    try:
+        doc_ref = db.collection("produtos").document(produto_id)
+        doc = doc_ref.get()
 
-    if not doc_produto.exists:
-        print("Produto não encontrado para atualizar rifas restantes")
-        return
+        if not doc.exists:
+            print("❌ Produto não encontrado ao tentar atualizar rifas restantes.")
+            return
 
-    dados = doc_produto.to_dict()
-    quantidade_total = dados.get("quantidade_bilhetes", 0)
-    bilhetes_vendidos = dados.get("bilhetes_vendidos", 0)
+        dados_produto = doc.to_dict()
+        quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
+        bilhetes_vendidos = int(dados_produto.get("bilhetes_vendidos", 0))
 
-    # Cria lista de bilhetes disponíveis
-    bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_total + 1))
+        bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
 
-    # Atualiza a coleção "rifas-restantes"
-    db.collection("rifas-restantes").document(produto_id).set({
-        "bilhetes_disponiveis": bilhetes_disponiveis
-    })
-    print(f"Documento rifas-restantes/{produto_id} atualizado com {len(bilhetes_disponiveis)} bilhetes disponíveis.")
-
+        db.collection("rifas-restantes").document(produto_id).set({
+            "bilhetes_disponiveis": bilhetes_disponiveis
+        })
+        print(f"✅ Rifas restantes atualizadas para o produto {produto_id}.")
+    except Exception as e:
+        print("❌ Erro ao atualizar rifas restantes:", e)
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
