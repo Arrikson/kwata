@@ -158,6 +158,7 @@
         </div>
       </section>
 
+    <input type="hidden" id="quantidade-selecionada" value="2" />
       <form id="form-pagamento" action="/enviar-comprovativo" method="post" enctype="multipart/form-data" novalidate>
   <label for="nome">Nome completo:</label>
   <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
@@ -227,6 +228,7 @@ form.addEventListener("submit", async (e) => {
   const bilhetesCheckbox = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => el.value);
   const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => opt.value);
   const bilhetesSelecionados = Array.from(new Set([...bilhetesCheckbox, ...bilhetesSelect]));
+  const quantidadeSelecionada = parseInt(document.getElementById("quantidade-selecionada").value);
 
   if (bilhetesSelecionados.length !== quantidadeSelecionada) {
     erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
