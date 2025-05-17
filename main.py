@@ -132,16 +132,6 @@ async def index(request: Request):
         "produtos": produtos
     })
 
-@app.get("/admin", response_class=HTMLResponse)
-async def admin_form(request: Request):
-    sucesso = request.query_params.get("sucesso")
-    erro = request.query_params.get("erro")
-    return templates.TemplateResponse("admin.html", {
-        "request": request,
-        "sucesso": sucesso,
-        "erro": erro
-    })
-
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
@@ -184,30 +174,33 @@ async def adicionar_produto(
             preco_bilhete = 0
             quantidade_calculada = 0
 
-    try:
-    produto = {
-        "nome": nome,
-        "descricao": descricao,
-        "imagem": imagem_url,
-        "preco_aquisicao": preco_aquisicao,
-        "lucro_desejado": lucro_desejado,
-        "preco_bilhete": round(preco_bilhete, 2),
-        "quantidade_bilhetes": quantidade_calculada,
-        "bilhetes_vendidos": 0,
-        "data_limite": data_limite_dt  # ✅ usar datetime, não Timestamp
-    }
+        produto = {
+            "nome": nome,
+            "descricao": descricao,
+            "imagem": imagem_url,
+            "preco_aquisicao": preco_aquisicao,
+            "lucro_desejado": lucro_desejado,
+            "preco_bilhete": round(preco_bilhete, 2),
+            "quantidade_bilhetes": quantidade_calculada,
+            "bilhetes_vendidos": 0,
+            "data_limite": data_limite_dt  # ✅ usar datetime, não Timestamp
+        }
 
-    print("📝 Produto a ser salvo:", produto)
+        print("📝 Produto a ser salvo:", produto)
 
-    # Salva produto e pega ID gerado
-    doc_ref = db.collection('produtos').add(produto)[1]
-    produto_id = doc_ref.id
-    print(f"✅ Produto salvo no Firestore com ID: {produto_id}")
+        # Salva produto e pega ID gerado
+        doc_ref = db.collection('produtos').add(produto)[1]
+        produto_id = doc_ref.id
+        print(f"✅ Produto salvo no Firestore com ID: {produto_id}")
 
-    # Chama a função para atualizar rifas restantes
-    atualizar_rifas_restantes(produto_id)
+        # Chama a função para atualizar rifas restantes
+        atualizar_rifas_restantes(produto_id)
 
-    return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+        return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+
+    except Exception as e:
+        print(f"❌ Erro ao adicionar produto: {e}")
+        return RedirectResponse(url="/admin?erro=1", status_code=303)
 
 except Exception as e:
     print("❌ ERRO AO SALVAR PRODUTO:", str(e))
@@ -529,23 +522,23 @@ async def receber_comprovativo(
 
     return JSONResponse(content={"message": "Comprovativo enviado com sucesso!"})
 
-from fastapi import Form
-
 @app.post("/comprar-bilhete")
 async def comprar_bilhete(
+    request: Request,
+    produto_id: str = Form(...),
     nome: str = Form(...),
     bi: str = Form(...),
     telefone: str = Form(...),
     latitude: str = Form(...),
     longitude: str = Form(...),
-    produto_id: str = Form(...),
     bilhetes_comprados: List[int] = Form(...),
     comprovativo: UploadFile = File(...)
 ):
     try:
-        # 1. Salvar o comprovativo no servidor e Firebase Storage (opcional)
+        # 1. Salvar o comprovativo no servidor com extensão correta
         conteudo = await comprovativo.read()
-        nome_arquivo = f"{uuid4().hex}_{comprovativo.filename}"
+        ext = os.path.splitext(comprovativo.filename)[-1]
+        nome_arquivo = f"{uuid4().hex}{ext}"
         caminho_comprovativo = os.path.join(CAMINHO_PASTA_COMPROVATIVOS, nome_arquivo)
         os.makedirs(CAMINHO_PASTA_COMPROVATIVOS, exist_ok=True)
         with open(caminho_comprovativo, "wb") as f:
@@ -553,7 +546,7 @@ async def comprar_bilhete(
 
         comprovativo_url = f"/static/comprovativos/{nome_arquivo}"  # ajuste se usar Firebase Storage
 
-        # 2. Atualizar a coleção comprovativo-comprados
+        # 2. Salvar dados da compra na coleção "comprovativo-comprados" no Firestore
         compra = {
             "nome": nome,
             "bi": bi,
@@ -571,36 +564,30 @@ async def comprar_bilhete(
         produto_ref = db.collection("produtos").document(produto_id)
         produto_doc = produto_ref.get()
         if not produto_doc.exists:
-            return {"erro": "Produto não encontrado"}
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "Produto não encontrado"
+            })
 
         produto_data = produto_doc.to_dict()
         bilhetes_vendidos_atuais = produto_data.get("bilhetes_vendidos", 0)
         bilhetes_novos = len(bilhetes_comprados)
         bilhetes_vendidos_atualizado = bilhetes_vendidos_atuais + bilhetes_novos
-
         produto_ref.update({"bilhetes_vendidos": bilhetes_vendidos_atualizado})
 
-        # 4. Atualizar coleção rifas-restantes
-        quantidade_total = produto_data.get("quantidade_bilhetes", 0)
+        # 4. Atualizar rifas restantes (usar função externa para manter código organizado)
+        atualizar_rifas_restantes(produto_id)
 
-        # Buscar todos bilhetes já vendidos (somando todos comprovativos)
-        comprovativos_ref = db.collection("comprovativo-comprados").where("produto_id", "==", produto_id).stream()
-        bilhetes_todos_vendidos = []
-        for doc in comprovativos_ref:
-            dados = doc.to_dict()
-            bilhetes_todos_vendidos.extend(dados.get("bilhetes", []))
-
-        bilhetes_todos_vendidos = list(set(bilhetes_todos_vendidos))  # evitar duplicados
-        bilhetes_disponiveis = [i for i in range(1, quantidade_total + 1) if i not in bilhetes_todos_vendidos]
-
-        rifas_restantes_ref = db.collection("rifas-restantes").document(produto_id)
-        rifas_restantes_ref.set({
-            "produto_id": produto_id,
-            "bilhetes_disponiveis": bilhetes_disponiveis,
-            "timestamp": datetime.utcnow()
-        })
-
+        # 5. Redirecionar para página de sucesso
         return RedirectResponse(url=f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
+
+    except Exception as e:
+        print(f"❌ Erro na compra do bilhete: {e}")
+        traceback.print_exc()
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "erro": "Erro ao processar a compra, tente novamente."
+        })
 
     except Exception as e:
         print("Erro ao processar compra:", e)
