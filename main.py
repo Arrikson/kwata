@@ -84,25 +84,43 @@ class Comprovativo(BaseModel):
 
 def atualizar_rifas_restantes(produto_id: str):
     try:
+        print(f"🔄 Atualizando rifas restantes para produto: {produto_id}")
+        
+        # 1. Buscar o produto
         doc_ref = db.collection("produtos").document(produto_id)
         doc = doc_ref.get()
-
+        
         if not doc.exists:
-            print("❌ Produto não encontrado ao tentar atualizar rifas restantes.")
+            print("❌ Produto não encontrado.")
             return
+        
+        produto = doc.to_dict()
+        quantidade_total = int(produto.get("quantidade_bilhetes", 0))
 
-        dados_produto = doc.to_dict()
-        quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
-        bilhetes_vendidos = int(dados_produto.get("bilhetes_vendidos", 0))
+        # 2. Buscar todos os comprovativos desse produto
+        comprovativos_ref = db.collection("comprovativo-comprados").where("produto_id", "==", produto_id).stream()
 
-        bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
+        bilhetes_comprados = set()
+        for comprovativo in comprovativos_ref:
+            dados = comprovativo.to_dict()
+            bilhetes = dados.get("bilhetes", [])
+            bilhetes_comprados.update(bilhetes)
 
+        # 3. Gerar lista completa e subtrair os bilhetes comprados
+        todos_bilhetes = set(range(1, quantidade_total + 1))
+        bilhetes_disponiveis = sorted(list(todos_bilhetes - bilhetes_comprados))
+
+        # 4. Atualizar coleção "rifas-restantes"
         db.collection("rifas-restantes").document(produto_id).set({
-            "bilhetes_disponiveis": bilhetes_disponiveis
+            "bilhetes_disponiveis": bilhetes_disponiveis,
+            "atualizado_em": datetime.now().isoformat()
         })
-        print(f"✅ Rifas restantes atualizadas para o produto {produto_id}.")
+
+        print(f"✅ Rifas restantes atualizadas corretamente. Disponíveis: {len(bilhetes_disponiveis)}")
+    
     except Exception as e:
-        print("❌ Erro ao atualizar rifas restantes:", e)
+        print("❌ Erro ao atualizar rifas restantes:")
+        traceback.print_exc()
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
