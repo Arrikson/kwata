@@ -481,9 +481,34 @@ async def receber_comprovativo(
     bilhetes: list[str] = Form(...),
     comprovativo: UploadFile = File(...)
 ):
-    # Aqui você pode salvar o comprovativo, bilhetes e os dados no Firestore, por exemplo
-    return {"message": "Dados recebidos com sucesso"}
+    # Gera um nome único para o arquivo
+    filename = f"{uuid.uuid4()}.pdf"
+    file_location = f"comprovativos/{filename}"
 
+    # Cria pasta se não existir
+    os.makedirs("comprovativos", exist_ok=True)
+
+    # Salva o PDF localmente
+    with open(file_location, "wb") as f:
+        content = await comprovativo.read()
+        f.write(content)
+
+    # Prepara dados para salvar no Firestore
+    dados = {
+        "nome": nome,
+        "bi": bi,
+        "telefone": telefone,
+        "latitude": latitude,
+        "longitude": longitude,
+        "bilhetes": bilhetes,
+        "comprovativo_path": file_location,
+    }
+
+    # Cria documento na coleção
+    db.collection("comprovativo-comprados").add(dados)
+
+    return JSONResponse(content={"message": "Comprovativo enviado com sucesso!"})
+    
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
