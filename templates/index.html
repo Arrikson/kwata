@@ -135,6 +135,18 @@
     margin-top: 10px;
   }
 
+  /* Novo estilo para bilhetes disponíveis */
+  #bilhetes-disponiveis {
+    max-width: 1000px;
+    margin: 1rem auto;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    font-size: 1.1rem;
+    color: #333;
+  }
+
   /* Responsividade para celular */
   @media (max-width: 600px) {
     header {
@@ -161,12 +173,15 @@
 </head>
 <body>
   <header>
-  <div class="logo-container">
-    <img src="/static/novologo.png" alt="Kwata Logo">
-    <h1>Kwata</h1>
-  </div>
-</header>
-  
+    <div class="logo-container">
+      <img src="/static/novologo.png" alt="Kwata Logo">
+      <h1>Kwata</h1>
+    </div>
+  </header>
+
+  <!-- Mostra os bilhetes disponíveis excluindo os vendidos -->
+  <div id="bilhetes-disponiveis">Carregando bilhetes disponíveis...</div>
+
   <div class="carousel-container">
     <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
     <div class="carousel-track" id="carousel-track">
@@ -243,6 +258,7 @@
       }
     }
 
+    // Atualiza o carrossel dos produtos em tempo real
     db.collection("produtos").onSnapshot(snapshot => {
       document.getElementById('carousel-track').innerHTML = "";
       snapshot.forEach(doc => {
@@ -251,7 +267,50 @@
         criarCard(produto);
       });
     });
+
+    // Função que carrega e mostra os bilhetes disponíveis excluindo os comprados
+    async function atualizarBilhetesRestantes() {
+      try {
+        const produtosSnap = await db.collection("produtos").get();
+        let bilhetesTotais = [];
+        produtosSnap.forEach(doc => {
+          const data = doc.data();
+          if (Array.isArray(data.bilhetes)) {
+            bilhetesTotais = bilhetesTotais.concat(data.bilhetes);
+          }
+        });
+
+        const comprasSnap = await db.collection("comprovativo-comprados").get();
+        let bilhetesComprados = [];
+        comprasSnap.forEach(doc => {
+          const data = doc.data();
+          if (Array.isArray(data.bilhetes_comprados)) {
+            bilhetesComprados = bilhetesComprados.concat(data.bilhetes_comprados);
+          }
+        });
+
+        const bilhetesDisponiveis = bilhetesTotais.filter(
+          n => !bilhetesComprados.includes(n)
+        );
+
+        const el = document.getElementById("bilhetes-disponiveis");
+        if (bilhetesDisponiveis.length > 0) {
+          el.textContent = "Bilhetes disponíveis: " + bilhetesDisponiveis.join(", ");
+        } else {
+          el.textContent = "Nenhum bilhete disponível no momento.";
+        }
+      } catch (error) {
+        console.error("Erro ao buscar bilhetes:", error);
+        document.getElementById("bilhetes-disponiveis").textContent = "Erro ao carregar bilhetes disponíveis.";
+      }
+    }
+
+    // Atualiza os bilhetes disponíveis ao carregar a página
+    window.onload = () => {
+      atualizarBilhetesRestantes();
+    }
   </script>
 </body>
 </html>
+
 
