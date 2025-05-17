@@ -202,11 +202,6 @@ async def adicionar_produto(
         print(f"❌ Erro ao adicionar produto: {e}")
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
-except Exception as e:
-    print("❌ ERRO AO SALVAR PRODUTO:", str(e))
-    traceback.print_exc()
-    return RedirectResponse(url="/admin?erro=1", status_code=303)
-
 @app.get("/pagamento-rifa.html", response_class=HTMLResponse)
 async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)):
     if not produto_id:
