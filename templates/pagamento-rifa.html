@@ -148,7 +148,6 @@
             <option value="{{ numero }}">{{ numero }}</option>
           {% endfor %}
         </select>
-        <small id="instrucoes-bilhetes">Use Ctrl/Cmd + clique para múltiplas seleções.</small>
 
         <label for="lista-bilhetes">Ou escolha visualmente:</label>
         <div id="lista-bilhetes" role="group" aria-label="Bilhetes disponíveis para seleção">
@@ -174,13 +173,6 @@
 
   <label for="longitude">Longitude:</label>
   <input type="text" id="longitude" name="longitude" readonly />
-
-  <label>Escolha os bilhetes:</label>
-  <div>
-    <label><input type="checkbox" name="bilhetes" value="1" /> Bilhete 1</label>
-    <label><input type="checkbox" name="bilhetes" value="2" /> Bilhete 2</label>
-    <label><input type="checkbox" name="bilhetes" value="3" /> Bilhete 3</label>
-    <!-- Adicione mais conforme necessário -->
   </div>
 
   <label for="comprovativo">Envie o comprovativo de pagamento</label>
