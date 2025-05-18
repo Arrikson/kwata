@@ -717,21 +717,18 @@ async def receber_comprovativo(
     bilhetes: list[str] = Form(...),
     comprovativo: UploadFile = File(...)
 ):
-    # Gera um nome único para o arquivo
+    # Gera nome único para o arquivo PDF
     filename = f"{uuid.uuid4()}.pdf"
     file_location = f"comprovativos/{filename}"
-
-    # Cria pasta se não existir
     os.makedirs("comprovativos", exist_ok=True)
 
-    # Salva o PDF localmente
+    # Salva localmente
     with open(file_location, "wb") as f:
-        content = await comprovativo.read()
-        f.write(content)
+        f.write(await comprovativo.read())
 
     agora = datetime.utcnow()
 
-    # Prepara dados para salvar no Firestore
+    # Dados que serão salvos no Firestore
     dados = {
         "nome": nome,
         "bi": bi,
@@ -743,11 +740,10 @@ async def receber_comprovativo(
         "quantidade_bilhetes": quantidade_bilhetes,
         "bilhetes": bilhetes,
         "comprovativo_path": file_location,
-        "data_compra": agora.isoformat(),  # ✅ data e hora legível
-        "timestamp": agora                 # ✅ útil para ordenações no Firestore
+        "data_compra": agora.isoformat(),
+        "timestamp": agora
     }
 
-    # Cria documento na coleção
     db.collection("comprovativo-comprados").add(dados)
 
     return JSONResponse(content={"message": "Comprovativo enviado com sucesso!"})
