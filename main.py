@@ -120,8 +120,8 @@ def atualizar_rifas_restantes(produto_id: str):
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
         
-@app.route("/")
-def index():
+@app.get("/")
+def index(request: Request):
     db = firestore.client()
     produtos_ref = db.collection("produtos")
     docs = produtos_ref.stream()
@@ -135,12 +135,12 @@ def index():
             "descricao": data.get("descricao", ""),
             "preco_bilhete": data.get("preco_bilhete", 0.0),
             "bilhetes_disponiveis": data.get("quantidade_total", 0) - data.get("bilhetes_vendidos", 0),
-            "imagem": data.get("imagem", "/static/imagem-padrao.jpg"),
+            "imagem": data.get("imagem", "/static/padrao.jpg"),
             "data_limite_iso": data.get("data_limite", "2025-12-31T23:59:59")
         }
         produtos.append(produto)
 
-    return render_template("index.html", produtos=produtos)
+    return templates.TemplateResponse("index.html", {"request": request, "produtos": produtos})
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
