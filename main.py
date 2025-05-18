@@ -328,6 +328,27 @@ def converter_valores_json(data):
             pass
     return data
 
+@app.post("/atualizar-data-sorteio")
+async def atualizar_data_sorteio(produto_id: str = Form(...), data_sorteio: str = Form(...)):
+    try:
+        doc_ref = db.collection("produtos").document(produto_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            return HTMLResponse("Produto não encontrado.", status_code=404)
+
+        # Atualizar campo 'data_sorteio' no documento
+        doc_ref.update({
+            "data_sorteio": data_sorteio  # pode ser string no formato ISO ou datetime
+        })
+
+        # Redirecionar ou retornar sucesso
+        return RedirectResponse(url=f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=HTTP_302_FOUND)
+
+    except Exception as e:
+        print(f"❌ Erro ao atualizar data do sorteio: {e}")
+        return HTMLResponse("Erro ao atualizar data do sorteio.", status_code=500)
+
 @app.post("/pagamento-rifa.html")
 async def processar_pagamento_rifa(
     request: Request,
@@ -795,30 +816,77 @@ async def post_sorteio():
     docs = db.collection("comprovativo-comprados").stream()
 
     bilhetes_com_participantes = []
+    produto_ids = set()
 
+    # Coletar todos os produto_ids para verificar a data do sorteio depois
+    for doc in docs:
+        data = doc.to_dict()
+        produto_id = data.get("produto_id")
+        if produto_id:
+            produto_ids.add(produto_id)
+
+    # Verificar se alguma data do sorteio já passou
+    data_atual = datetime.now()
+
+    sorteio_realizado = False
+
+    for produto_id in produto_ids:
+        produto_doc = db.collection("produtos").document(produto_id).get()
+        if produto_doc.exists:
+            produto_data = produto_doc.to_dict()
+            data_sorteio_str = produto_data.get("data_sorteio")
+            if data_sorteio_str:
+                try:
+                    # Supondo que data_sorteio esteja em ISO format string
+                    data_sorteio = datetime.fromisoformat(data_sorteio_str)
+                    if data_atual >= data_sorteio:
+                        sorteio_realizado = True
+                        break  # Pelo menos um sorteio já passou, pode continuar
+                except Exception:
+                    pass
+
+    if not sorteio_realizado:
+        return JSONResponse(status_code=400, content={"mensagem": "O sorteio ainda não foi realizado. Aguarde até a data final."})
+
+    # Se chegou aqui, significa que o sorteio pode ocorrer
+
+    # Agora recolher os bilhetes para produtos cuja data do sorteio já passou
+    docs = db.collection("comprovativo-comprados").stream()
     for doc in docs:
         data = doc.to_dict()
         nome = data.get("nome")
         bilhetes = data.get("bilhetes", [])
         produto_id = data.get("produto_id")
 
-        # Buscar nome do produto usando o ID
-        produto_nome = "Desconhecido"
-        if produto_id:
-            produto_doc = db.collection("produtos").document(produto_id).get()
-            if produto_doc.exists:
-                produto_nome = produto_doc.to_dict().get("nome", "Sem Nome")
+        if not produto_id:
+            continue
 
-        # Adicionar cada bilhete individualmente à lista
-        for bilhete in bilhetes:
-            bilhetes_com_participantes.append({
-                "nome": nome,
-                "numero_bilhete": bilhete,
-                "produto": produto_nome
-            })
+        produto_doc = db.collection("produtos").document(produto_id).get()
+        if not produto_doc.exists:
+            continue
+
+        produto_data = produto_doc.to_dict()
+        data_sorteio_str = produto_data.get("data_sorteio")
+        if not data_sorteio_str:
+            continue
+
+        try:
+            data_sorteio = datetime.fromisoformat(data_sorteio_str)
+        except Exception:
+            continue
+
+        # Incluir só bilhetes de produtos cujo sorteio já passou
+        if data_atual >= data_sorteio:
+            produto_nome = produto_data.get("nome", "Desconhecido")
+            for bilhete in bilhetes:
+                bilhetes_com_participantes.append({
+                    "nome": nome,
+                    "numero_bilhete": bilhete,
+                    "produto": produto_nome
+                })
 
     if not bilhetes_com_participantes:
-        return JSONResponse(status_code=404, content={"mensagem": "Nenhum bilhete encontrado."})
+        return JSONResponse(status_code=404, content={"mensagem": "Nenhum bilhete encontrado para sorteios realizados."})
 
     # Escolher um bilhete aleatório
     vencedor = random.choice(bilhetes_com_participantes)
