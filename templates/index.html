@@ -217,26 +217,34 @@
             <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
 
             <div id="bilhetes-disponiveis">Carregando bilhetes disponíveis...</div>
-
-  <div class="carousel-container">
-    <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
-    <div class="carousel-track" id="carousel-track">
-      {% for produto in produtos %}
-      <div class="product-card{% if loop.first %} active{% endif %}">
-        <div class="product-card-inner">
-          <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
-          <div class="product-info">
-            <h3>{{ produto.nome }}</h3>
-            <p>{{ produto.descricao }}</p>
-            <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
-             <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
-            <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
-          </div>
+ <div class="carousel-track" id="carousel-track">
+  {% for produto in produtos %}
+  <div class="product-card{% if loop.first %} active{% endif %}">
+    <div class="product-card-inner">
+      <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
+      <div class="product-info">
+        <h2>{{ produto.nome }}</h2>
+        <p>{{ produto.descricao }}</p>
+        <p><strong>Preço:</strong> {{ produto.preco }} Kz</p>
+        <p class="contador">Bilhetes restantes: {{ produto.total_bilhetes - produto.bilhetes_vendidos }}</p>
+        <a href="/pagamento-rifa.html?produto_id={{ produto.id }}">
+          <button class="button">Comprar Bilhete</button>
+        </a>
+        <div class="bilhetes-container">
+          {% for i in range(produto.bilhetes_vendidos + 1, produto.total_bilhetes + 1) %}
+            <div class="bilhete-badge
+              {% if i <= 5 %}verde
+              {% elif i <= 10 %}laranja
+              {% else %}vermelho{% endif %}">
+              {{ i }}
+            </div>
+          {% endfor %}
         </div>
       </div>
-      {% endfor %}
     </div>
+  </div>
+  {% endfor %}
+</div>
     <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
   </div>
 
