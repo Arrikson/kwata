@@ -9,7 +9,7 @@
   body {
     font-family: 'Inter', sans-serif;
     margin: 0;
-    background-color: #f3fdf6; /* verde bem claro */
+    background-color: #f3fdf6;
     color: #333;
     min-height: 100vh;
     display: flex;
@@ -24,13 +24,13 @@
     border-radius: 12px;
     padding: 2rem 2.5rem;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    border-top: 6px solid #16a34a; /* verde moderno */
+    border-top: 6px solid #16a34a;
   }
   h1 {
     margin-top: 0;
     font-size: 1.8rem;
     font-weight: 700;
-    color: #14532d; /* verde escuro */
+    color: #14532d;
     text-align: center;
     margin-bottom: 1.5rem;
   }
@@ -69,13 +69,13 @@
   #lista-bilhetes label {
     display: flex;
     align-items: center;
-    background: #fef9c3; /* amarelo claro */
+    background: #fef9c3;
     border-radius: 6px;
     padding: 0.3rem 0.6rem;
     cursor: pointer;
     user-select: none;
     font-weight: 500;
-    color: #92400e; /* amarelo escuro */
+    color: #92400e;
     border: 1px solid transparent;
     transition: background-color 0.2s, border-color 0.2s;
   }
@@ -108,7 +108,7 @@
     display: block;
   }
   .erro {
-    background-color: #fef2f2; /* vermelho claro */
+    background-color: #fef2f2;
     color: #b91c1c;
     border-radius: 6px;
     padding: 1rem;
@@ -137,13 +137,14 @@
     {% if erro %}
       <div class="erro" role="alert">{{ erro }}</div>
     {% else %}
+    <form id="form-pagamento" action="/enviar-comprovativo" method="post" enctype="multipart/form-data" novalidate>
       <section aria-live="polite" aria-atomic="true">
         <h2 id="nome-produto">{{ nome_produto }}</h2>
         <h3 class="invisivel">Preço total do produto: {{ preco }} Kz</h3>
         <h3>Preço por bilhete: {{ preco_bilhete }} Kz</h3>
 
         <label for="bilhetes-multi">Escolha os números dos bilhetes (modo lista):</label>
-        <select id="bilhetes-multi" name="numeros_bilhetes" multiple size="5" aria-describedby="instrucoes-bilhetes">
+        <select id="bilhetes-multi" name="bilhetes" multiple size="5" aria-describedby="instrucoes-bilhetes">
           {% for numero in bilhetes_disponiveis %}
             <option value="{{ numero }}">{{ numero }}</option>
           {% endfor %}
@@ -158,41 +159,38 @@
         </div>
       </section>
 
-      <!-- CAMPOS HIDDEN ESSENCIAIS -->
+      <!-- CAMPOS HIDDEN ESSENCIAIS (agora dentro do formulário) -->
       <input type="hidden" id="quantidade-selecionada" name="quantidade_bilhetes" value="{{ quantidade_bilhetes }}" />
       <input type="hidden" id="produto-id" name="produto_id" value="{{ produto_id }}" />
       <input type="hidden" id="localizacao" name="localizacao" />
 
-      <form id="form-pagamento" action="/enviar-comprovativo" method="post" enctype="multipart/form-data" novalidate>
-        <label for="nome">Nome completo:</label>
-        <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
+      <label for="nome">Nome completo:</label>
+      <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
 
-        <label for="bi">Nº do B.I:</label>
-        <input type="text" id="bi" name="bi" placeholder="Número do seu B.I" required autocomplete="off" />
+      <label for="bi">Nº do B.I:</label>
+      <input type="text" id="bi" name="bi" placeholder="Número do seu B.I" required autocomplete="off" />
 
-        <label for="telefone">Telefone:</label>
-        <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
+      <label for="telefone">Telefone:</label>
+      <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
 
-        <label for="latitude">Latitude:</label>
-        <input type="text" id="latitude" name="latitude" readonly />
+      <label for="latitude">Latitude:</label>
+      <input type="text" id="latitude" name="latitude" readonly />
 
-        <label for="longitude">Longitude:</label>
-        <input type="text" id="longitude" name="longitude" readonly />
+      <label for="longitude">Longitude:</label>
+      <input type="text" id="longitude" name="longitude" readonly />
 
-        <label for="comprovativo">Envie o comprovativo de pagamento</label>
-        <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required />
-        <small>Só comprovativo em PDF.</small>
+      <label for="comprovativo">Envie o comprovativo de pagamento</label>
+      <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required />
+      <small>Só comprovativo em PDF.</small>
 
-        <!-- Botão para capturar a localização -->
-        <button type="button" onclick="capturarLocalizacao(event)" class="button" style="margin-bottom: 10px;">
-          Obter Localização
-        </button>
+      <button type="button" onclick="capturarLocalizacao(event)" class="button" style="margin-bottom: 10px;">
+        Obter Localização
+      </button>
 
-        <!-- Botão para enviar o comprovativo -->
-        <button type="submit" class="button">Enviar Comprovativo</button>
+      <button type="submit" class="button">Enviar Comprovativo</button>
 
-        <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
-      </form>
+      <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
+    </form>
     {% endif %}
   </main>
 
@@ -222,47 +220,6 @@ function capturarLocalizacao(event) {
     }
   );
 }
-
-const form = document.getElementById("form-pagamento");
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const erroDiv = document.getElementById("mensagem-erro");
-  erroDiv.style.display = "none";
-  erroDiv.textContent = "";
-
-  const bilhetesCheckbox = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => el.value);
-  const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => opt.value);
-  const bilhetesSelecionados = Array.from(new Set([...bilhetesCheckbox, ...bilhetesSelect]));
-  
-  console.log("Valor bruto do campo quantidade-selecionada:", document.getElementById("quantidade-selecionada").value);
-  const quantidadeSelecionada = parseInt(document.getElementById("quantidade-selecionada").value);
-
-  if (bilhetesSelecionados.length !== quantidadeSelecionada) {
-  erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
-  erroDiv.style.display = "block";
-  return;
-}
-
-  const nome = document.getElementById("nome").value.trim();
-  const bi = document.getElementById("bi").value.trim();
-  const telefone = document.getElementById("telefone").value.trim();
-  const comprovativo = document.getElementById("comprovativo").files[0];
-
-  if (!nome || !bi || !telefone) {
-    erroDiv.textContent = "Preencha todos os campos obrigatórios.";
-    erroDiv.style.display = "block";
-    return;
-  }
-
-  if (!comprovativo) {
-    erroDiv.textContent = "Envie um comprovativo de pagamento.";
-    erroDiv.style.display = "block";
-    return;
-  }
-
-  form.submit();
-});
 </script>
 </body>
 </html>
