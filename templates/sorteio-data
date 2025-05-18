@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sorteio ao Vivo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(45deg, #e6ffe6, #ffffe6, #ffe6e6);
+      color: #222;
+      text-align: center;
+      padding: 40px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .timer {
+      font-size: 2rem;
+      color: green;
+      margin-bottom: 20px;
+    }
+    .highlight {
+      color: red;
+      font-weight: bold;
+    }
+    .winner {
+      display: none;
+      margin-top: 30px;
+      font-size: 1.5rem;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sorteio ao Vivo 🎉</h1>
+    <p>Data do fim do sorteio: <span id="sorteio-fim"></span></p>
+    <div class="timer" id="cronometro">Carregando...</div>
+    <div class="winner" id="vencedor">
+      <p class="highlight">🎊 Parabéns!</p>
+      <p>O(a) vencedor(a) é: <span id="nome-vencedor"></span></p>
+      <p>Prêmio: <span id="produto"></span></p>
+    </div>
+  </div>
+
+  <script>
+    // Data final do sorteio
+    const fimSorteio = new Date("2025-05-20T20:00:00").getTime();
+    document.getElementById("sorteio-fim").innerText = new Date(fimSorteio).toLocaleString();
+
+    const cronometro = document.getElementById("cronometro");
+    const vencedorDiv = document.getElementById("vencedor");
+
+    const intervalo = setInterval(() => {
+      const agora = new Date().getTime();
+      const tempoRestante = fimSorteio - agora;
+
+      if (tempoRestante <= 0) {
+        clearInterval(intervalo);
+        cronometro.innerText = "Sorteando vencedor...";
+        buscarVencedor();
+        return;
+      }
+
+      const horas = Math.floor((tempoRestante % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutos = Math.floor((tempoRestante % (1000 * 60 * 60)) / (1000 * 60));
+      const segundos = Math.floor((tempoRestante % (1000 * 60)) / 1000);
+
+      cronometro.innerText = `${horas}h ${minutos}m ${segundos}s`;
+    }, 1000);
+
+    async function buscarVencedor() {
+      try {
+        const response = await fetch("/sorteio-data", { method: "POST" });
+        const data = await response.json();
+        document.getElementById("nome-vencedor").innerText = `${data.nome} (Nº ${data.numero})`;
+        document.getElementById("produto").innerText = data.produto;
+        vencedorDiv.style.display = "block";
+        cronometro.style.display = "none";
+      } catch (error) {
+        cronometro.innerText = "Erro ao buscar vencedor.";
+      }
+    }
+  </script>
+</body>
+</html>
