@@ -639,48 +639,66 @@ def listar_comprovativos():
     return lista
 
 @app.post("/enviar-comprovativo")
-async def receber_comprovativo(
+async def enviar_comprovativo(
+    request: Request,
     nome: str = Form(...),
     bi: str = Form(...),
     telefone: str = Form(...),
     latitude: str = Form(...),
     longitude: str = Form(...),
-    localizacao: str = Form(...),
     produto_id: str = Form(...),
-    quantidade_bilhetes: int = Form(...),
-    bilhetes: list[str] = Form(...),
-    comprovativo: UploadFile = File(...)
+    comprovativo: UploadFile = File(...),
+    bilhetes: list[str] = Form(...),  # Pode vir múltiplos
 ):
-    # Gera nome único para o arquivo PDF
-    filename = f"{uuid.uuid4()}.pdf"
-    file_location = f"comprovativos/{filename}"
-    os.makedirs("comprovativos", exist_ok=True)
+    rifas_ref = db.collection("rifas-compradas")
 
-    # Salva localmente
-    with open(file_location, "wb") as f:
+    # Verifica se já existe algum conflito
+    conflitos = []
+    for bilhete in bilhetes:
+        query = rifas_ref.where("produto_id", "==", produto_id).where("bilhete", "==", bilhete).stream()
+        for doc in query:
+            conflitos.append(f"Bilhete {bilhete} já foi comprado.")
+
+    bi_conf = rifas_ref.where("bi", "==", bi).where("produto_id", "==", produto_id).limit(1).stream()
+    if any(bi_conf):
+        conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
+
+    nome_conf = rifas_ref.where("nome", "==", nome).where("produto_id", "==", produto_id).limit(1).stream()
+    if any(nome_conf):
+        conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
+
+    if conflitos:
+        # Retorna erro com HTMLResponse
+        erro_msg = " | ".join(conflitos)
+        return HTMLResponse(content=f"<h2>Erro:</h2><p>{erro_msg}</p>", status_code=400)
+
+    # Salva os comprovativos (em memória local temporária)
+    pasta = "comprovativos"
+    os.makedirs(pasta, exist_ok=True)
+    file_path = f"{pasta}/{uuid4()}.pdf"
+    with open(file_path, "wb") as f:
         f.write(await comprovativo.read())
 
-    agora = datetime.utcnow()
+    # Gravação dos bilhetes no Firebase
+    for bilhete in bilhetes:
+        rifas_ref.add({
+            "nome": nome,
+            "bi": bi,
+            "telefone": telefone,
+            "latitude": latitude,
+            "longitude": longitude,
+            "produto_id": produto_id,
+            "bilhete": bilhete,
+            "data_envio": datetime.utcnow().isoformat(),
+            "comprovativo_path": file_path
+        })
 
-    # Dados que serão salvos no Firestore
-    dados = {
-        "nome": nome,
-        "bi": bi,
-        "telefone": telefone,
-        "latitude": latitude,
-        "longitude": longitude,
-        "localizacao": localizacao,
+    # Em vez de redirect, retorna o template sorteio-data.html passando request e produto_id
+    return templates.TemplateResponse("sorteio-data.html", {
+        "request": request,
         "produto_id": produto_id,
-        "quantidade_bilhetes": quantidade_bilhetes,
-        "bilhetes": bilhetes,
-        "comprovativo_path": file_location,
-        "data_compra": agora.isoformat(),
-        "timestamp": agora
-    }
-
-    db.collection("comprovativo-comprados").add(dados)
-
-    return JSONResponse(content={"message": "Comprovativo enviado com sucesso!"})
+        # você pode passar outras variáveis que quiser usar no template
+    })
 
 @app.post("/comprar-bilhete")
 async def comprar_bilhete(
