@@ -224,6 +224,183 @@ async def adicionar_produto(
         print(f"❌ Erro ao adicionar produto: {e}")
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
+@app.get("/pagamento-rifa.html", response_class=HTMLResponse)
+async def pagamento_rifa(request: Request, produto_id: str = Query(default=None), sucesso: str = Query(default=None)):
+    if not produto_id:
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "erro": "Nenhum produto selecionado. Volte à página anterior e selecione um produto."
+        })
+
+    try:
+        # 🔹 Buscar o produto no Firebase
+        doc_ref = db.collection("produtos").document(produto_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "Produto não encontrado no Firebase."
+            })
+
+        dados_produto = doc.to_dict()
+        nome_produto = dados_produto.get("nome", "Produto")
+        preco_bilhete = float(dados_produto.get("preco_bilhete", 0.00))
+
+        # 🔹 Buscar rifas restantes no documento específico
+        rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
+        if rifas_restantes_doc.exists:
+            bilhetes_disponiveis = rifas_restantes_doc.to_dict().get("bilhetes_disponiveis", [])
+        else:
+            # 🔄 Caso não exista documento, calcula com base na quantidade total e vendidos
+            quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
+            bilhetes_vendidos = int(dados_produto.get("bilhetes_vendidos", 0))
+            bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
+
+            # ✅ Criar documento na coleção "rifas-restantes"
+            db.collection("rifas-restantes").document(produto_id).set({
+                "bilhetes_disponiveis": bilhetes_disponiveis,
+                "atualizado_em": datetime.now().isoformat()
+            })
+
+        # 🔸 Montar contexto para o template
+        contexto = {
+            "request": request,
+            "produto_id": produto_id,
+            "nome_produto": nome_produto,
+            "preco_bilhete": preco_bilhete,
+            "bilhetes_disponiveis": bilhetes_disponiveis
+        }
+
+        # ✅ Mostrar mensagem de sucesso se for redirecionado após o POST
+        if sucesso == "1":
+            contexto["sucesso"] = "Pagamento enviado com sucesso! Seus bilhetes foram reservados."
+
+        return templates.TemplateResponse("pagamento-rifa.html", contexto)
+
+    except Exception as e:
+        print(f"❌ Erro ao carregar dados do Firebase: {e}")
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
+        })
+
+def converter_valores_json(data):
+    """
+    Função recursiva que converte tipos não serializáveis (ex: datas) para strings.
+    """
+    if isinstance(data, dict):
+        return {k: converter_valores_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [converter_valores_json(i) for i in data]
+    elif hasattr(data, "ToDatetime"):  # objeto Firestore Timestamp
+        return data.ToDatetime().isoformat()
+    # para objetos datetime comuns, já possuem isoformat
+    elif hasattr(data, "isoformat"):
+        try:
+            return data.isoformat()
+        except Exception:
+            pass
+    # para protobuf Timestamp ou objetos com método timestamp mas sem isoformat
+    elif hasattr(data, "timestamp"):
+        try:
+            ts = data.timestamp()
+            # timestamp() retorna float, converte para ISO string
+            return datetime.fromtimestamp(ts).isoformat()
+        except Exception:
+            pass
+    return data
+
+@app.post("/pagamento-rifa.html")
+async def processar_pagamento_rifa(
+    request: Request,
+    produto_id: str = Form(...),
+    nome: str = Form(...),
+    numero_bi: str = Form(...),
+    telefone: str = Form(...),
+    bilhetes_selecionados: List[int] = Form(...),
+    nome_comprovativo: str = Form(...),
+    numero_comprovativo: str = Form(...),
+    comprovativo: UploadFile = Form(...)
+):
+    try:
+        # 🔍 Buscar todos os registros existentes
+        registros_ref = db.collection("registros")
+        registros = registros_ref.stream()
+
+        # 🔁 Verificar se já existe nome, BI, telefone ou comprovativo duplicado
+        for registro in registros:
+            dados = registro.to_dict()
+
+            if dados.get("nome") == nome:
+                return templates.TemplateResponse("pagamento-rifa.html", {
+                    "request": request,
+                    "produto_id": produto_id,
+                    "erro": "Este nome já foi usado para registro."
+                })
+
+            if dados.get("numero_bi") == numero_bi:
+                return templates.TemplateResponse("pagamento-rifa.html", {
+                    "request": request,
+                    "produto_id": produto_id,
+                    "erro": "Este número de B.I já está registrado."
+                })
+
+            if dados.get("telefone") == telefone:
+                return templates.TemplateResponse("pagamento-rifa.html", {
+                    "request": request,
+                    "produto_id": produto_id,
+                    "erro": "Este número de telefone já está registrado."
+                })
+
+            if dados.get("numero_comprovativo") == numero_comprovativo and dados.get("nome_comprovativo") == nome_comprovativo:
+                return templates.TemplateResponse("pagamento-rifa.html", {
+                    "request": request,
+                    "produto_id": produto_id,
+                    "erro": "Este comprovativo já foi utilizado por outro usuário."
+                })
+
+            bilhetes_utilizados = dados.get("bilhetes", [])
+            for bilhete in bilhetes_selecionados:
+                if bilhete in bilhetes_utilizados:
+                    return templates.TemplateResponse("pagamento-rifa.html", {
+                        "request": request,
+                        "produto_id": produto_id,
+                        "erro": f"O bilhete número {bilhete} já foi comprado por outro usuário."
+                    })
+
+        # ✅ Se passou nas verificações, salvar os dados no Firebase
+        novo_registro = {
+            "nome": nome,
+            "numero_bi": numero_bi,
+            "telefone": telefone,
+            "bilhetes": bilhetes_selecionados,
+            "nome_comprovativo": nome_comprovativo,
+            "numero_comprovativo": numero_comprovativo,
+            "data_envio": datetime.now().isoformat()
+        }
+
+        db.collection("registros").add(novo_registro)
+
+        # 🔁 Atualizar lista de bilhetes restantes
+        rifas_doc_ref = db.collection("rifas-restantes").document(produto_id)
+        rifas_doc = rifas_doc_ref.get()
+        if rifas_doc.exists:
+            bilhetes_restantes = rifas_doc.to_dict().get("bilhetes_disponiveis", [])
+            novos_bilhetes = [b for b in bilhetes_restantes if b not in bilhetes_selecionados]
+            rifas_doc_ref.update({"bilhetes_disponiveis": novos_bilhetes})
+
+        # ✅ Redirecionar com sucesso
+        return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
+
+    except Exception as e:
+        print(f"❌ Erro ao processar pagamento: {e}")
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "produto_id": produto_id,
+            "erro": "Erro ao processar o pagamento. Tente novamente."
+        })
+
 @app.post("/enviar-comprovativo")
 async def enviar_comprovativo(
     request: Request,
