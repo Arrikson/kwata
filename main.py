@@ -4,6 +4,7 @@ import firebase_admin
 import uvicorn
 import uuid
 import random
+import sys
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -119,17 +120,15 @@ def atualizar_rifas_restantes(produto_id: str):
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
 
-
-# === Ponto de entrada do script ===
+# 👇 Adicionando ponto de entrada principal para execução via linha de comando
 if __name__ == "__main__":
-    import sys
     if len(sys.argv) != 2:
-        print("❗ Uso: python atualizar_rifas.py <ID_DO_PRODUTO>")
-        exit(1)
+        print("❗ Uso: python main.py <ID_DO_PRODUTO>")
+        sys.exit(1)
 
     produto_id = sys.argv[1]
     atualizar_rifas_restantes(produto_id)
-    
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
