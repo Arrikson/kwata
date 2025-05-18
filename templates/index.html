@@ -5,171 +5,167 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kwata</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<style>
-  :root {
-    --verde: #4ead4f;
-    --laranja: #FFA500;
-    --vermelho-claro: #FF6F61;
-  }
+  <style>
+    :root {
+      --verde: #4ead4f;
+      --laranja: #FFA500;
+      --vermelho-claro: #FF6F61;
+    }
 
-  * {
-    box-sizing: border-box;
-  }
+    * {
+      box-sizing: border-box;
+    }
 
-  body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f4f4f9;
-    margin: 0;
-    padding: 0;
-  }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
 
-  header {
-    background-color: var(--verde);
-    padding:  0.5rem 1rem;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .logo-container {
-    display: flex;
-    align-items: center;
-  }
-
-  header img {
-    height: 40px;
-  }
-
-  header h1 {
-    font-size: 2rem;
-    margin-left: 1rem;
-    color: white;
-  }
-
-  .carousel-container {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    max-width: 1000px;
-    margin: 2rem auto;
-  }
-
-  .carousel-track {
-    display: flex;
-    transition: transform 0.5s ease-in-out;
-  }
-
-  .product-card {
-    flex: 0 0 100%;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .product-card-inner {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    padding: 1.5rem;
-    max-width: 400px;
-    width: 100%;
-    text-align: center;
-    border-top: 6px solid var(--laranja);
-  }
-
-  .product-card img {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-  }
-
-  .product-info {
-    margin-top: 1rem;
-  }
-
-  .button {
-    background-color: var(--vermelho-claro);
-    color: white;
-    padding: 1rem 2rem;
-    font-size: 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    border: none;
-    margin-top: 1rem;
-    transition: background 0.3s;
-  }
-
-  .button:hover {
-    background-color: #e55b50;
-  }
-
-  .carousel-button {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    background: rgba(0, 0, 0, 0.4);
-    color: white;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    z-index: 1;
-    border-radius: 50%;
-  }
-
-  .carousel-button.left {
-    left: 10px;
-  }
-
-  .carousel-button.right {
-    right: 10px;
-  }
-
-  .contador {
-    font-weight: bold;
-    color: var(--laranja);
-    margin-top: 10px;
-  }
-
-  /* Novo estilo para bilhetes disponíveis */
-  #bilhetes-disponiveis {
-    max-width: 1000px;
-    margin: 1rem auto;
-    padding: 1rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    font-size: 1.1rem;
-    color: #333;
-  }
-
-  /* Responsividade para celular */
-  @media (max-width: 600px) {
     header {
-      flex-direction: row;
+      background-color: var(--verde);
+      padding: 0.5rem 1rem;
+      color: #fff;
+      display: flex;
       align-items: center;
+      justify-content: space-between;
     }
 
     .logo-container {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
     }
 
     header img {
-      height: 100px;
+      height: 40px;
     }
 
     header h1 {
-      font-size: 1.4rem;
-      margin-left: 0.5rem;
+      font-size: 2rem;
+      margin-left: 1rem;
+      color: white;
     }
-  }
-</style>
+
+    .carousel-container {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      max-width: 1000px;
+      margin: 2rem auto;
+    }
+
+    .carousel-track {
+      display: flex;
+      transition: transform 0.5s ease-in-out;
+    }
+
+    .product-card {
+      flex: 0 0 100%;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .product-card-inner {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      border-top: 6px solid var(--laranja);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    .product-info {
+      margin-top: 1rem;
+    }
+
+    .button {
+      background-color: var(--vermelho-claro);
+      color: white;
+      padding: 1rem 2rem;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      border: none;
+      margin-top: 1rem;
+      transition: background 0.3s;
+    }
+
+    .button:hover {
+      background-color: #e55b50;
+    }
+
+    .carousel-button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 2rem;
+      background: rgba(0, 0, 0, 0.4);
+      color: white;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      z-index: 1;
+      border-radius: 50%;
+    }
+
+    .carousel-button.left {
+      left: 10px;
+    }
+
+    .carousel-button.right {
+      right: 10px;
+    }
+
+    .contador {
+      font-weight: bold;
+      color: var(--laranja);
+      margin-top: 10px;
+    }
+
+    #bilhetes-disponiveis {
+      max-width: 1000px;
+      margin: 1rem auto;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-size: 1.1rem;
+      color: #333;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      header img {
+        height: 100px;
+      }
+
+      header h1 {
+        font-size: 1.4rem;
+        margin-left: 0.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -179,29 +175,31 @@
     </div>
   </header>
 
-  <!-- Mostra os bilhetes disponíveis excluindo os vendidos -->
   <div id="bilhetes-disponiveis">Carregando bilhetes disponíveis...</div>
 
   <div class="carousel-container">
     <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
     <div class="carousel-track" id="carousel-track">
-      <!-- Produtos aqui -->
+      {% for produto in produtos %}
+      <div class="product-card">
+        <div class="product-card-inner">
+          <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
+          <div class="product-info">
+            <h3>{{ produto.nome }}</h3>
+            <p>{{ produto.descricao }}</p>
+            <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
+            <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
+            <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
+            <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
     </div>
     <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCwtVGJBjGgYUiuNVPI-Y3gMeLhOWnSWCQ",
-      authDomain: "kwata-48ab2.firebaseapp.com",
-      projectId: "kwata-48ab2",
-      storageBucket: "kwata-48ab2.firebasestorage.app",
-      messagingSenderId: "654204246057",
-      appId:  "1:654204246057:web:48c7a39dc294dc41a62438"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
     let currentIndex = 0;
 
     function moverCarrossel(direction) {
@@ -222,93 +220,39 @@
       return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
     }
 
-    function criarCard(produto) {
-      const card = document.createElement('div');
-      card.className = 'product-card';
-      const bilhetesRestantes = produto.total_bilhetes - (produto.bilhetes_vendidos || 0);
-      const dataLimite = produto.data_limite ? produto.data_limite.toDate() : null;
-      const contadorId = `contador-${produto.id}`;
+    // Atualiza os contadores com base nos timestamps vindos do backend
+    {% for produto in produtos %}
+    const dataLimite{{ loop.index }} = new Date("{{ produto.data_limite_iso }}");
+    const contadorEl{{ loop.index }} = document.getElementById("contador-{{ produto.id }}");
 
-      card.innerHTML = `
-  <div class="product-card-inner">
-    <img src="${produto.imagem}" alt="${produto.nome}">
-    <div class="product-info">
-      <h3>${produto.nome}</h3>
-      <p>${produto.descricao}</p>
-      <p><strong>Preço:</strong> ${produto.preco} Kz</p>
-      <p><strong>Bilhetes disponíveis:</strong> ${bilhetesRestantes}</p>
-      <p class="contador" id="${contadorId}">Carregando contador...</p>
-      <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id=${produto.id}'">Comprar Bilhete</button>
-    </div>
-  </div>
-`;
-      document.getElementById('carousel-track').appendChild(card);
-
-      if (dataLimite) {
-        setInterval(() => {
-          const agora = new Date();
-          const diff = dataLimite - agora;
-          const el = document.getElementById(contadorId);
-          if (diff > 0) {
-            el.textContent = "Sorteio em: " + formatarTempo(diff);
-          } else {
-            el.textContent = "Sorteio encerrado!";
-          }
-        }, 1000);
+    setInterval(() => {
+      const agora = new Date();
+      const diff = dataLimite{{ loop.index }} - agora;
+      if (diff > 0) {
+        contadorEl{{ loop.index }}.textContent = "Sorteio em: " + formatarTempo(diff);
+      } else {
+        contadorEl{{ loop.index }}.textContent = "Sorteio encerrado!";
       }
-    }
+    }, 1000);
+    {% endfor %}
 
-    // Atualiza o carrossel dos produtos em tempo real
-    db.collection("produtos").onSnapshot(snapshot => {
-      document.getElementById('carousel-track').innerHTML = "";
-      snapshot.forEach(doc => {
-        const produto = doc.data();
-        produto.id = doc.id;
-        criarCard(produto);
-      });
-    });
-
-    // Função que carrega e mostra os bilhetes disponíveis excluindo os comprados
-    async function atualizarBilhetesRestantes() {
-      try {
-        const produtosSnap = await db.collection("produtos").get();
-        let bilhetesTotais = [];
-        produtosSnap.forEach(doc => {
-          const data = doc.data();
-          if (Array.isArray(data.bilhetes)) {
-            bilhetesTotais = bilhetesTotais.concat(data.bilhetes);
-          }
-        });
-
-        const comprasSnap = await db.collection("comprovativo-comprados").get();
-        let bilhetesComprados = [];
-        comprasSnap.forEach(doc => {
-          const data = doc.data();
-          if (Array.isArray(data.bilhetes_comprados)) {
-            bilhetesComprados = bilhetesComprados.concat(data.bilhetes_comprados);
-          }
-        });
-
-        const bilhetesDisponiveis = bilhetesTotais.filter(
-          n => !bilhetesComprados.includes(n)
-        );
-
-        const el = document.getElementById("bilhetes-disponiveis");
-        if (bilhetesDisponiveis.length > 0) {
-          el.textContent = "Bilhetes disponíveis: " + bilhetesDisponiveis.join(", ");
-        } else {
-          el.textContent = "Nenhum bilhete disponível no momento.";
-        }
-      } catch (error) {
-        console.error("Erro ao buscar bilhetes:", error);
-        document.getElementById("bilhetes-disponiveis").textContent = "Erro ao carregar bilhetes disponíveis.";
-      }
-    }
-
-    // Atualiza os bilhetes disponíveis ao carregar a página
+    // Aqui pode-se usar uma chamada AJAX para buscar os bilhetes disponíveis (opcional)
     window.onload = () => {
-      atualizarBilhetesRestantes();
-    }
+      fetch("/bilhetes-disponiveis")
+        .then(res => res.json())
+        .then(data => {
+          const el = document.getElementById("bilhetes-disponiveis");
+          if (data.length > 0) {
+            el.textContent = "Bilhetes disponíveis: " + data.join(", ");
+          } else {
+            el.textContent = "Nenhum bilhete disponível no momento.";
+          }
+        })
+        .catch(error => {
+          console.error("Erro:", error);
+          document.getElementById("bilhetes-disponiveis").textContent = "Erro ao carregar bilhetes.";
+        });
+    };
   </script>
 </body>
 </html>
