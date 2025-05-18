@@ -234,13 +234,15 @@ form.addEventListener("submit", async (e) => {
   const bilhetesCheckbox = [...document.querySelectorAll('input[name="bilhetes"]:checked')].map(el => el.value);
   const bilhetesSelect = [...document.getElementById("bilhetes-multi").selectedOptions].map(opt => opt.value);
   const bilhetesSelecionados = Array.from(new Set([...bilhetesCheckbox, ...bilhetesSelect]));
+  
+  console.log("Valor bruto do campo quantidade-selecionada:", document.getElementById("quantidade-selecionada").value);
   const quantidadeSelecionada = parseInt(document.getElementById("quantidade-selecionada").value);
 
   if (bilhetesSelecionados.length !== quantidadeSelecionada) {
-    erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
-    erroDiv.style.display = "block";
-    return;
-  }
+  erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
+  erroDiv.style.display = "block";
+  return;
+}
 
   const nome = document.getElementById("nome").value.trim();
   const bi = document.getElementById("bi").value.trim();
