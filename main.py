@@ -842,6 +842,63 @@ async def post_sorteio():
         "produto": vencedor["produto"]
     }
 
+@app.post("/enviar-comprovativo")
+async def enviar_comprovativo(
+    request: Request,
+    nome: str = Form(...),
+    bi: str = Form(...),
+    telefone: str = Form(...),
+    latitude: str = Form(...),
+    longitude: str = Form(...),
+    produto_id: str = Form(...),
+    comprovativo: UploadFile = File(...),
+    bilhetes: list[str] = Form(...),  # Pode vir múltiplos
+):
+    rifas_ref = db.collection("rifas-compradas")
+
+    # Verifica se já existe algum conflito
+    conflitos = []
+    for bilhete in bilhetes:
+        query = rifas_ref.where("produto_id", "==", produto_id).where("bilhete", "==", bilhete).stream()
+        for doc in query:
+            conflitos.append(f"Bilhete {bilhete} já foi comprado.")
+
+    bi_conf = rifas_ref.where("bi", "==", bi).where("produto_id", "==", produto_id).limit(1).stream()
+    if any(bi_conf):
+        conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
+
+    nome_conf = rifas_ref.where("nome", "==", nome).where("produto_id", "==", produto_id).limit(1).stream()
+    if any(nome_conf):
+        conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
+
+    if conflitos:
+        # Redireciona de volta com erro
+        erro_msg = " | ".join(conflitos)
+        return HTMLResponse(content=f"<h2>Erro:</h2><p>{erro_msg}</p>", status_code=400)
+
+    # Salva os comprovativos (exemplo: em memória local temporária)
+    pasta = "comprovativos"
+    os.makedirs(pasta, exist_ok=True)
+    file_path = f"{pasta}/{uuid4()}.pdf"
+    with open(file_path, "wb") as f:
+        f.write(await comprovativo.read())
+
+    # Gravação dos bilhetes no Firebase
+    for bilhete in bilhetes:
+        rifas_ref.add({
+            "nome": nome,
+            "bi": bi,
+            "telefone": telefone,
+            "latitude": latitude,
+            "longitude": longitude,
+            "produto_id": produto_id,
+            "bilhete": bilhete,
+            "data_envio": datetime.utcnow().isoformat(),
+            "comprovativo_path": file_path
+        })
+
+    return RedirectResponse(url="/obrigado", status_code=302)
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
