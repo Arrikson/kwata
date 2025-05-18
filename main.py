@@ -688,6 +688,9 @@ async def receber_comprovativo(
     telefone: str = Form(...),
     latitude: str = Form(...),
     longitude: str = Form(...),
+    localizacao: str = Form(...),
+    produto_id: str = Form(...),
+    quantidade_bilhetes: int = Form(...),
     bilhetes: list[str] = Form(...),
     comprovativo: UploadFile = File(...)
 ):
@@ -712,6 +715,9 @@ async def receber_comprovativo(
         "telefone": telefone,
         "latitude": latitude,
         "longitude": longitude,
+        "localizacao": localizacao,
+        "produto_id": produto_id,
+        "quantidade_bilhetes": quantidade_bilhetes,
         "bilhetes": bilhetes,
         "comprovativo_path": file_location,
         "data_compra": agora.isoformat(),  # ✅ data e hora legível
