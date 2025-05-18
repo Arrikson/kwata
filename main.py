@@ -326,6 +326,12 @@ async def listar_produtos():
             status_code=500
         )
 
+def converter_valores_json(data_str):
+    # Aqui você pode colocar a lógica de conversão que quiser
+    # Exemplo simples: apenas retornar a data se não for None
+    return data_str if data_str else "Data inválida"
+
+
 @app.get("/registros", response_class=HTMLResponse)
 async def listar_registros(request: Request):
     try:
@@ -356,7 +362,6 @@ async def listar_registros(request: Request):
                 "data_compra": converter_valores_json(data.get("data_compra") or data.get("data_envio"))
             })
 
-
         # 🔹 2. Coletar dados da coleção "compras"
         compras_ref = db.collection("compras").stream()
         for doc in compras_ref:
@@ -378,6 +383,7 @@ async def listar_registros(request: Request):
                 "longitude": data.get("longitude"),
                 "produto": produto_nome,
                 "quantidade_bilhetes": data.get("quantidade_bilhetes"),
+                "bilhetes": data.get("bilhetes", []),  # opcional, pode não ter
                 "data_compra": converter_valores_json(data.get("data_compra"))
             })
 
