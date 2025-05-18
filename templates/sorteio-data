@@ -45,13 +45,14 @@
     <div class="winner" id="vencedor">
       <p class="highlight">🎊 Parabéns!</p>
       <p>O(a) vencedor(a) é: <span id="nome-vencedor"></span></p>
+      <p>Número do Bilhete: <span id="numero-bilhete"></span></p>
       <p>Prêmio: <span id="produto"></span></p>
     </div>
   </div>
 
   <script>
-    // Data final do sorteio
-    const fimSorteio = new Date("2025-05-20T20:00:00").getTime();
+    const fimSorteioStr = "{{ data_fim_sorteio }}";
+    const fimSorteio = new Date(fimSorteioStr).getTime();
     document.getElementById("sorteio-fim").innerText = new Date(fimSorteio).toLocaleString();
 
     const cronometro = document.getElementById("cronometro");
@@ -79,8 +80,11 @@
       try {
         const response = await fetch("/sorteio-data", { method: "POST" });
         const data = await response.json();
-        document.getElementById("nome-vencedor").innerText = `${data.nome} (Nº ${data.numero})`;
+
+        document.getElementById("nome-vencedor").innerText = data.nome;
+        document.getElementById("numero-bilhete").innerText = data.numero_bilhete;
         document.getElementById("produto").innerText = data.produto;
+
         vencedorDiv.style.display = "block";
         cronometro.style.display = "none";
       } catch (error) {
@@ -90,3 +94,4 @@
   </script>
 </body>
 </html>
+
