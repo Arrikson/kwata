@@ -119,67 +119,28 @@ def atualizar_rifas_restantes(produto_id: str):
     except Exception as e:
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
+        
+@app.route("/")
+def index():
+    db = firestore.client()
+    produtos_ref = db.collection("produtos")
+    docs = produtos_ref.stream()
 
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
-    try:
-        # 1. Buscar todos os comprovativos para manter registro de bilhetes vendidos
-        compras_ref = db.collection("comprovativo-comprados").stream()
-        bilhetes_comprados = []
-        for compra in compras_ref:
-            compra_data = compra.to_dict()
-            bilhetes = compra_data.get("bilhetes", [])
-            bilhetes_comprados.extend(bilhetes)
+    produtos = []
+    for doc in docs:
+        data = doc.to_dict()
+        produto = {
+            "id": doc.id,
+            "nome": data.get("nome", "Sem nome"),
+            "descricao": data.get("descricao", ""),
+            "preco_bilhete": data.get("preco_bilhete", 0.0),
+            "bilhetes_disponiveis": data.get("quantidade_total", 0) - data.get("bilhetes_vendidos", 0),
+            "imagem": data.get("imagem", "/static/imagem-padrao.jpg"),
+            "data_limite_iso": data.get("data_limite", "2025-12-31T23:59:59")
+        }
+        produtos.append(produto)
 
-        # 2. Buscar todos os produtos
-        produtos_ref = db.collection("produtos").stream()
-        produtos = []
-        for doc in produtos_ref:
-            data = doc.to_dict()
-            produto_id = doc.id
-            data["id"] = produto_id
-
-            # 3. Buscar bilhetes disponíveis na coleção 'rifas-restantes'
-            try:
-                bilhetes_doc = db.collection("rifas-restantes").document(produto_id).get()
-                if bilhetes_doc.exists:
-                    bilhetes_data = bilhetes_doc.to_dict()
-                    bilhetes_disponiveis = bilhetes_data.get("bilhetes", [])
-                else:
-                    bilhetes_disponiveis = []
-            except Exception as e:
-                print(f"Erro ao buscar bilhetes restantes para produto {produto_id}: {e}")
-                bilhetes_disponiveis = []
-
-            data["bilhetes_disponiveis"] = len(bilhetes_disponiveis)
-
-            # Garantir que o preço seja um número float
-            try:
-                data["preco_bilhete"] = float(data.get("preco", 0))
-            except:
-                data["preco_bilhete"] = 0
-
-            # Garantir que o campo data_limite exista em formato ISO
-            try:
-                data_limite = data.get("data_limite")
-                if data_limite:
-                    data["data_limite_iso"] = data_limite
-                else:
-                    data["data_limite_iso"] = "2100-01-01T00:00:00"
-            except:
-                data["data_limite_iso"] = "2100-01-01T00:00:00"
-
-            produtos.append(data)
-
-    except Exception as e:
-        print("❌ Erro ao buscar produtos do Firestore:", e)
-        traceback.print_exc()
-        produtos = []
-
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "produtos": produtos
-    })
+    return render_template("index.html", produtos=produtos)
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
