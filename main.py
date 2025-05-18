@@ -427,71 +427,25 @@ async def atualizar_data_sorteio(produto_id: str = Form(...), data_sorteio: str 
         return HTMLResponse("Erro ao atualizar data do sorteio.", status_code=500)
 
 @app.post("/enviar-comprovativo")
-async def enviar_comprovativo(
-    request: Request,
-    produto_id: str = Form(...),
-    nome: str = Form(...),
-    bi: str = Form(...),
-    telefone: str = Form(...),
-    localizacao: str = Form(...),
-    latitude: str = Form(...),
-    longitude: str = Form(...),
-    comprovativo: UploadFile = File(...),
-    quantidade_bilhetes: int = Form(...)
-):
+async def receber_comprovativo(comprovativo: Comprovativo):
     try:
-        # ✅ Validar se algum campo essencial está ausente (extra segurança)
-        campos_obrigatorios = [produto_id, localizacao, quantidade_bilhetes]
-        if not all(campos_obrigatorios):
-            raise ValueError("Campos obrigatórios ausentes.")
+        # Aqui você pode salvar os dados no JSON, no Firebase, etc.
+        # Exemplo: salvar no JSON local
+        with open(CAMINHO_JSON, "r+") as f:
+            dados = json.load(f)
+            dados.append(comprovativo.dict())
+            f.seek(0)
+            json.dump(dados, f, indent=2)
 
-        # ✅ Criar nome único para o arquivo
-        extensao = comprovativo.filename.split(".")[-1]
-        nome_arquivo = f"comprovativo_{uuid4().hex}.{extensao}"
-        caminho_local = f"/tmp/{nome_arquivo}"
+        # Atualizar rifas restantes
+        atualizar_rifas_restantes(comprovativo.produto_id)
 
-        # ✅ Salvar temporariamente o arquivo local
-        with open(caminho_local, "wb") as f:
-            conteudo = await comprovativo.read()
-            f.write(conteudo)
-
-        # 🔺 Fazer upload para o Firebase Storage (supondo que você já tenha configurado)
-        bucket = storage.bucket()
-        blob = bucket.blob(f"comprovativos/{nome_arquivo}")
-        blob.upload_from_filename(caminho_local)
-        blob.make_public()
-        comprovativo_url = blob.public_url
-
-        # ✅ Registrar a data da compra
-        data_compra = datetime.now()
-
-        # ✅ Salvar os dados na coleção "comprovativo-comprados"
-        db.collection("comprovativo-comprados").add({
-            "produto_id": produto_id,
-            "nome": nome,
-            "bi": bi,
-            "telefone": telefone,
-            "localizacao": localizacao,
-            "latitude": latitude,
-            "longitude": longitude,
-            "quantidade_bilhetes": quantidade_bilhetes,
-            "comprovativo_url": comprovativo_url,
-            "data_compra": data_compra.isoformat()
-        })
-
-        # ✅ Atualizar o produto com a última data de compra
-        produto_ref = db.collection("produtos").document(produto_id)
-        produto_ref.update({
-            "ultima_compra_em": data_compra.isoformat()
-        })
-
-        # ✅ Redirecionar com mensagem de sucesso
-        return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
-
+        return {"status": "sucesso", "msg": "Comprovativo recebido."}
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors())
     except Exception as e:
-        print("❌ Erro ao registrar comprovativo:", e)
-        return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&erro=1", status_code=303)
-
+        raise HTTPException(status_code=500, detail=str(e))
+        
 @app.get("/gerar-produto-refletidos")
 async def gerar_arquivo_produtos():
     try:
