@@ -87,19 +87,16 @@ class Comprovativo(BaseModel):
 def atualizar_rifas_restantes(produto_id: str):
     try:
         print(f"🔄 Atualizando rifas restantes para produto: {produto_id}")
-        
-        # 1. Buscar o produto
         doc_ref = db.collection("produtos").document(produto_id)
         doc = doc_ref.get()
-        
+
         if not doc.exists:
             print("❌ Produto não encontrado.")
             return
-        
+
         produto = doc.to_dict()
         quantidade_total = int(produto.get("quantidade_bilhetes", 0))
 
-        # 2. Buscar todos os comprovativos desse produto
         comprovativos_ref = db.collection("comprovativo-comprados").where("produto_id", "==", produto_id).stream()
 
         bilhetes_comprados = set()
@@ -108,22 +105,31 @@ def atualizar_rifas_restantes(produto_id: str):
             bilhetes = dados.get("bilhetes", [])
             bilhetes_comprados.update(bilhetes)
 
-        # 3. Gerar lista completa e subtrair os bilhetes comprados
         todos_bilhetes = set(range(1, quantidade_total + 1))
         bilhetes_disponiveis = sorted(list(todos_bilhetes - bilhetes_comprados))
 
-        # 4. Atualizar coleção "rifas-restantes"
         db.collection("rifas-restantes").document(produto_id).set({
             "bilhetes_disponiveis": bilhetes_disponiveis,
             "atualizado_em": datetime.now().isoformat()
         })
 
-        print(f"✅ Rifas restantes atualizadas corretamente. Disponíveis: {len(bilhetes_disponiveis)}")
-    
+        print(f"✅ Rifas restantes atualizadas com sucesso. Restam: {len(bilhetes_disponiveis)} bilhetes.")
+
     except Exception as e:
-        print("❌ Erro ao atualizar rifas restantes:")
+        print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
 
+
+# === Ponto de entrada do script ===
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 2:
+        print("❗ Uso: python atualizar_rifas.py <ID_DO_PRODUTO>")
+        exit(1)
+
+    produto_id = sys.argv[1]
+    atualizar_rifas_restantes(produto_id)
+    
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
