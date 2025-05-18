@@ -271,6 +271,7 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
             "produto_id": produto_id,
             "nome_produto": nome_produto,
             "preco_bilhete": preco_bilhete,
+            "quantidade_bilhetes": 1,
             "bilhetes_disponiveis": bilhetes_disponiveis
         }
 
