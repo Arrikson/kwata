@@ -150,6 +150,10 @@ async def index(request: Request):
         "produtos": produtos
     })
 
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_form(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})
+
 @app.post("/admin")
 async def adicionar_produto(
     request: Request,
