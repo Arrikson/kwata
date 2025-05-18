@@ -140,15 +140,42 @@
       margin-top: 10px;
     }
 
-    #bilhetes-disponiveis {
-      max-width: 1000px;
-      margin: 1rem auto;
-      padding: 1rem;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      font-size: 1.1rem;
+    /* Novo estilo para bilhetes disponíveis em badges coloridos */
+    .bilhetes-container {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .bilhete-badge {
+      min-width: 32px;
+      height: 32px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 0.9rem;
+      user-select: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      transition: background-color 0.3s;
+    }
+
+    /* Cores conforme posição (exemplo: 1-5 verde, 6-10 amarelo, 11+ vermelho-claro) */
+    .bilhete-badge.verde {
+      background-color: var(--verde);
+    }
+
+    .bilhete-badge.laranja {
+      background-color: var(--laranja);
       color: #333;
+    }
+
+    .bilhete-badge.vermelho {
+      background-color: var(--vermelho-claro);
     }
 
     @media (max-width: 600px) {
@@ -175,7 +202,7 @@
     </div>
   </header>
 
-  <div id="bilhetes-disponiveis">Carregando bilhetes disponíveis...</div>
+  <!-- REMOVIDO: div#bilhetes-disponiveis -->
 
   <div class="carousel-container">
     <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
@@ -188,7 +215,26 @@
             <h3>{{ produto.nome }}</h3>
             <p>{{ produto.descricao }}</p>
             <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
+
+            <!-- Exibição melhorada de bilhetes disponíveis -->
+            <div>
+              <strong>Bilhetes disponíveis:</strong>
+              <div class="bilhetes-container">
+                {% for i in range(1, produto.bilhetes_disponiveis + 1) %}
+                  {% if i <= 5 %}
+                    <span class="bilhete-badge verde">{{ i }}</span>
+                  {% elif i <= 10 %}
+                    <span class="bilhete-badge laranja">{{ i }}</span>
+                  {% else %}
+                    <span class="bilhete-badge vermelho">{{ i }}</span>
+                  {% endif %}
+                {% endfor %}
+                {% if produto.bilhetes_disponiveis == 0 %}
+                  <em>Indisponível</em>
+                {% endif %}
+              </div>
+            </div>
+
             <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
             <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
           </div>
@@ -238,26 +284,13 @@
     setInterval(() => {
       const agora = new Date();
       const diff = dataLimite{{ loop.index }} - agora;
-      if (diff > 0) {
+      if(diff > 0) {
         contadorEl{{ loop.index }}.textContent = "Sorteio em: " + formatarTempo(diff);
       } else {
-        contadorEl{{ loop.index }}.textContent = "Sorteio encerrado!";
+        contadorEl{{ loop.index }}.textContent = "Sorteio encerrado";
       }
     }, 1000);
     {% endfor %}
-
-    window.onload = () => {
-      fetch("/bilhetes-disponiveis")
-        .then(res => res.json())
-        .then(data => {
-          const el = document.getElementById("bilhetes-disponiveis");
-          el.textContent = data.length > 0 ? "Bilhetes disponíveis: " + data.join(", ") : "";
-        })
-        .catch(error => {
-          console.error("Erro:", error);
-          document.getElementById("bilhetes-disponiveis").textContent = "Erro ao carregar bilhetes.";
-        });
-    };
   </script>
 </body>
 </html>
