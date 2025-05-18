@@ -216,23 +216,27 @@
             <p>{{ produto.descricao }}</p>
             <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
 
-            <!-- Exibição melhorada de bilhetes disponíveis -->
-            <div>
-              <strong>Bilhetes disponíveis:</strong>
-              <div class="bilhetes-container">
-                {% for i in range(1, produto.bilhetes_disponiveis + 1) %}
-                  {% if i <= 5 %}
-                    <span class="bilhete-badge verde">{{ i }}</span>
-                  {% elif i <= 10 %}
-                    <span class="bilhete-badge laranja">{{ i }}</span>
-                  {% else %}
-                    <span class="bilhete-badge vermelho">{{ i }}</span>
-                  {% endif %}
-                {% endfor %}
-                {% if produto.bilhetes_disponiveis == 0 %}
-                  <em>Indisponível</em>
-                {% endif %}
-              </div>
+            <div id="bilhetes-disponiveis">Carregando bilhetes disponíveis...</div>
+
+  <div class="carousel-container">
+    <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
+    <div class="carousel-track" id="carousel-track">
+      {% for produto in produtos %}
+      <div class="product-card{% if loop.first %} active{% endif %}">
+        <div class="product-card-inner">
+          <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
+          <div class="product-info">
+            <h3>{{ produto.nome }}</h3>
+            <p>{{ produto.descricao }}</p>
+            <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
+            <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
+            <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
+            <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
             </div>
 
             <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
