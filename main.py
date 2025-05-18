@@ -872,11 +872,11 @@ async def enviar_comprovativo(
         conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
 
     if conflitos:
-        # Redireciona de volta com erro
+        # Retorna erro com HTMLResponse
         erro_msg = " | ".join(conflitos)
         return HTMLResponse(content=f"<h2>Erro:</h2><p>{erro_msg}</p>", status_code=400)
 
-    # Salva os comprovativos (exemplo: em memória local temporária)
+    # Salva os comprovativos (em memória local temporária)
     pasta = "comprovativos"
     os.makedirs(pasta, exist_ok=True)
     file_path = f"{pasta}/{uuid4()}.pdf"
@@ -897,7 +897,12 @@ async def enviar_comprovativo(
             "comprovativo_path": file_path
         })
 
-    return RedirectResponse(url="/obrigado", status_code=302)
+    # Em vez de redirect, retorna o template sorteio-data.html passando request e produto_id
+    return templates.TemplateResponse("sorteio-data.html", {
+        "request": request,
+        "produto_id": produto_id,
+        # você pode passar outras variáveis que quiser usar no template
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
