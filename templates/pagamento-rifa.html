@@ -158,42 +158,44 @@
         </div>
       </section>
 
-    <input type="hidden" id="quantidade-selecionada" value="2" />
+      <!-- CAMPOS HIDDEN ESSENCIAIS -->
+      <input type="hidden" id="quantidade-selecionada" name="quantidade_bilhetes" value="{{ quantidade_bilhetes }}" />
+      <input type="hidden" id="produto-id" name="produto_id" value="{{ produto_id }}" />
+      <input type="hidden" id="localizacao" name="localizacao" />
+
       <form id="form-pagamento" action="/enviar-comprovativo" method="post" enctype="multipart/form-data" novalidate>
-  <label for="nome">Nome completo:</label>
-  <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
+        <label for="nome">Nome completo:</label>
+        <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required autocomplete="name" />
 
-  <label for="bi">Nº do B.I:</label>
-  <input type="text" id="bi" name="bi" placeholder="Número do seu B.I" required autocomplete="off" />
+        <label for="bi">Nº do B.I:</label>
+        <input type="text" id="bi" name="bi" placeholder="Número do seu B.I" required autocomplete="off" />
 
-  <label for="telefone">Telefone:</label>
-  <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
+        <label for="telefone">Telefone:</label>
+        <input type="tel" id="telefone" name="telefone" placeholder="+244 9XX XXX XXX" required autocomplete="tel" />
 
-  <label for="latitude">Latitude:</label>
-  <input type="text" id="latitude" name="latitude" readonly />
+        <label for="latitude">Latitude:</label>
+        <input type="text" id="latitude" name="latitude" readonly />
 
-  <label for="longitude">Longitude:</label>
-  <input type="text" id="longitude" name="longitude" readonly />
-  </div>
+        <label for="longitude">Longitude:</label>
+        <input type="text" id="longitude" name="longitude" readonly />
 
-  <label for="comprovativo">Envie o comprovativo de pagamento</label>
-  <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required />
-  <small>Só comprovativo em PDF.</small>
+        <label for="comprovativo">Envie o comprovativo de pagamento</label>
+        <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required />
+        <small>Só comprovativo em PDF.</small>
 
-  <!-- Botão para capturar a localização -->
-  <button type="button" onclick="capturarLocalizacao(event)" class="button" style="margin-bottom: 10px;">
-    Obter Localização
-  </button>
+        <!-- Botão para capturar a localização -->
+        <button type="button" onclick="capturarLocalizacao(event)" class="button" style="margin-bottom: 10px;">
+          Obter Localização
+        </button>
 
-  <!-- Botão para enviar o comprovativo -->
-  <button type="submit" class="button">Enviar Comprovativo</button>
+        <!-- Botão para enviar o comprovativo -->
+        <button type="submit" class="button">Enviar Comprovativo</button>
 
-  <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
-</form>
-
+        <div id="mensagem-erro" class="erro" style="display:none;" role="alert"></div>
+      </form>
     {% endif %}
   </main>
-  
+
 <script>
 function capturarLocalizacao(event) {
   const btn = event.target;
@@ -205,8 +207,11 @@ function capturarLocalizacao(event) {
   btn.textContent = "Capturando localização...";
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      document.getElementById("latitude").value = pos.coords.latitude.toFixed(6);
-      document.getElementById("longitude").value = pos.coords.longitude.toFixed(6);
+      const lat = pos.coords.latitude.toFixed(6);
+      const long = pos.coords.longitude.toFixed(6);
+      document.getElementById("latitude").value = lat;
+      document.getElementById("longitude").value = long;
+      document.getElementById("localizacao").value = `${lat},${long}`;
       btn.textContent = "Localização Capturada";
       btn.style.backgroundColor = "#16a34a";
     },
@@ -217,6 +222,7 @@ function capturarLocalizacao(event) {
     }
   );
 }
+
 const form = document.getElementById("form-pagamento");
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -233,14 +239,12 @@ form.addEventListener("submit", async (e) => {
   if (bilhetesSelecionados.length !== quantidadeSelecionada) {
     erroDiv.textContent = `Você deve selecionar exatamente ${quantidadeSelecionada} bilhete(s).`;
     erroDiv.style.display = "block";
-   return;
+    return;
   }
 
   const nome = document.getElementById("nome").value.trim();
   const bi = document.getElementById("bi").value.trim();
   const telefone = document.getElementById("telefone").value.trim();
-  const latitude = document.getElementById("latitude").value.trim();
-  const longitude = document.getElementById("longitude").value.trim();
   const comprovativo = document.getElementById("comprovativo").files[0];
 
   if (!nome || !bi || !telefone) {
@@ -250,49 +254,13 @@ form.addEventListener("submit", async (e) => {
   }
 
   if (!comprovativo) {
-    erroDiv.textContent = "Envie o comprovativo de pagamento.";
+    erroDiv.textContent = "Envie um comprovativo de pagamento.";
     erroDiv.style.display = "block";
     return;
   }
 
-  if (comprovativo.size > 32 * 1024) {
-    erroDiv.textContent = "O comprovativo deve ter no máximo 32 KB.";
-    erroDiv.style.display = "block";
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("nome", nome);
-  formData.append("bi", bi);
-  formData.append("telefone", telefone);
-  formData.append("latitude", latitude);
-  formData.append("longitude", longitude);
-  formData.append("comprovativo", comprovativo);
-
-  bilhetesSelecionados.forEach((numero) => {
-    formData.append("bilhetes", numero);
-  });
-
-  try {
-    const resposta = await fetch("/enviar-comprovativo", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!resposta.ok) {
-      const textoErro = await resposta.text();
-      erroDiv.textContent = textoErro || "Erro ao enviar os dados.";
-      erroDiv.style.display = "block";
-      return;
-    }
-
-    window.location.href = "/sorteio-data";
-  } catch (err) {
-    erroDiv.textContent = "Erro ao enviar o formulário. Tente novamente.";
-    erroDiv.style.display = "block";
-  }
+  form.submit();
 });
 </script>
 </body>
 </html>
-
