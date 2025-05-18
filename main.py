@@ -427,25 +427,45 @@ async def atualizar_data_sorteio(produto_id: str = Form(...), data_sorteio: str 
         return HTMLResponse("Erro ao atualizar data do sorteio.", status_code=500)
 
 @app.post("/enviar-comprovativo")
-async def receber_comprovativo(comprovativo: Comprovativo):
-    try:
-        # Aqui você pode salvar os dados no JSON, no Firebase, etc.
-        # Exemplo: salvar no JSON local
-        with open(CAMINHO_JSON, "r+") as f:
-            dados = json.load(f)
-            dados.append(comprovativo.dict())
-            f.seek(0)
-            json.dump(dados, f, indent=2)
+async def receber_comprovativo(
+    nome: str = Form(...),
+    bi: str = Form(...),
+    telefone: str = Form(...),
+    latitude: str = Form(...),
+    longitude: str = Form(...),
+    bilhetes: str = Form(...),  # Será string, depois transformamos em lista
+    comprovativoURL: str = Form(...),
+    produto_id: str = Form(...),
+    localizacao: str = Form(...),
+    quantidade_bilhetes: int = Form(...)
+):
+    bilhetes_list = [int(b) for b in bilhetes.strip("[]").split(",") if b.strip().isdigit()]
 
-        # Atualizar rifas restantes
-        atualizar_rifas_restantes(comprovativo.produto_id)
+    comprovativo = {
+        "nome": nome,
+        "bi": bi,
+        "telefone": telefone,
+        "latitude": latitude,
+        "longitude": longitude,
+        "bilhetes": bilhetes_list,
+        "comprovativoURL": comprovativoURL,
+        "produto_id": produto_id,
+        "localizacao": localizacao,
+        "quantidade_bilhetes": quantidade_bilhetes,
+        "timestamp": datetime.now().isoformat()
+    }
 
-        return {"status": "sucesso", "msg": "Comprovativo recebido."}
-    except ValidationError as e:
-        raise HTTPException(status_code=422, detail=e.errors())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-        
+    # Salvar no JSON
+    with open(CAMINHO_JSON, "r+") as f:
+        dados = json.load(f)
+        dados.append(comprovativo)
+        f.seek(0)
+        json.dump(dados, f, indent=2)
+
+    atualizar_rifas_restantes(produto_id)
+
+    return {"status": "sucesso", "msg": "Comprovativo recebido"}
+
 @app.get("/gerar-produto-refletidos")
 async def gerar_arquivo_produtos():
     try:
