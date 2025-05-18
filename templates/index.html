@@ -193,6 +193,7 @@
       }
     }
   </style>
+</style>
 </head>
 <body>
   <header>
@@ -202,8 +203,6 @@
     </div>
   </header>
 
-  <!-- REMOVIDO: div#bilhetes-disponiveis -->
-
   <div class="carousel-container">
     <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
     <div class="carousel-track" id="carousel-track">
@@ -212,39 +211,29 @@
         <div class="product-card-inner">
           <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
           <div class="product-info">
-            <h3>{{ produto.nome }}</h3>
+            <h2>{{ produto.nome }}</h2>
             <p>{{ produto.descricao }}</p>
-            <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
-
-            <div id="bilhetes-disponiveis">Carregando bilhetes disponíveis...</div>
- <div class="carousel-track" id="carousel-track">
-  {% for produto in produtos %}
-  <div class="product-card{% if loop.first %} active{% endif %}">
-    <div class="product-card-inner">
-      <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
-      <div class="product-info">
-        <h2>{{ produto.nome }}</h2>
-        <p>{{ produto.descricao }}</p>
-        <p><strong>Preço:</strong> {{ produto.preco }} Kz</p>
-        <p class="contador">Bilhetes restantes: {{ produto.total_bilhetes - produto.bilhetes_vendidos }}</p>
-        <a href="/pagamento-rifa.html?produto_id={{ produto.id }}">
-          <button class="button">Comprar Bilhete</button>
-        </a>
-        <div class="bilhetes-container">
-          {% for i in range(produto.bilhetes_vendidos + 1, produto.total_bilhetes + 1) %}
-            <div class="bilhete-badge
-              {% if i <= 5 %}verde
-              {% elif i <= 10 %}laranja
-              {% else %}vermelho{% endif %}">
-              {{ i }}
+            <p><strong>Preço:</strong> {{ produto.preco }} Kz</p>
+            <p id="contador-{{ produto.id }}" class="contador">Carregando contador...</p>
+            <p class="contador">Bilhetes restantes: {{ produto.total_bilhetes - produto.bilhetes_vendidos }}</p>
+            <a href="/pagamento-rifa.html?produto_id={{ produto.id }}">
+              <button class="button">Comprar Bilhete</button>
+            </a>
+            <div class="bilhetes-container">
+              {% for i in range(produto.bilhetes_vendidos + 1, produto.total_bilhetes + 1) %}
+              <div class="bilhete-badge
+                {% if i <= 5 %}verde
+                {% elif i <= 10 %}laranja
+                {% else %}vermelho{% endif %}">
+                {{ i }}
+              </div>
+              {% endfor %}
             </div>
-          {% endfor %}
+          </div>
         </div>
       </div>
+      {% endfor %}
     </div>
-  </div>
-  {% endfor %}
-</div>
     <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
   </div>
 
@@ -263,22 +252,18 @@
       track.style.transform = `translateX(${offset}px)`;
 
       cards.forEach((card, index) => {
-        if (index === currentIndex) {
-          card.classList.add('active');
-        } else {
-          card.classList.remove('active');
-        }
+        card.classList.toggle('active', index === currentIndex);
       });
     }
 
-   function formatarTempo(ms) {
-     const totalSegundos = Math.floor(ms / 1000);
-     const dias = Math.floor(totalSegundos / 86400);
-     const horas = Math.floor((totalSegundos % 86400) / 3600);
-     const minutos = Math.floor((totalSegundos % 3600) / 60);
-     const segundos = totalSegundos % 60;
-     return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
-   }
+    function formatarTempo(ms) {
+      const totalSegundos = Math.floor(ms / 1000);
+      const dias = Math.floor(totalSegundos / 86400);
+      const horas = Math.floor((totalSegundos % 86400) / 3600);
+      const minutos = Math.floor((totalSegundos % 3600) / 60);
+      const segundos = totalSegundos % 60;
+      return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+    }
 
     {% for produto in produtos %}
     const dataLimite{{ loop.index }} = new Date("{{ produto.data_limite_iso }}");
@@ -287,7 +272,7 @@
     setInterval(() => {
       const agora = new Date();
       const diff = dataLimite{{ loop.index }} - agora;
-      if(diff > 0) {
+      if (diff > 0) {
         contadorEl{{ loop.index }}.textContent = "Sorteio em: " + formatarTempo(diff);
       } else {
         contadorEl{{ loop.index }}.textContent = "Sorteio encerrado";
