@@ -119,7 +119,7 @@ def atualizar_rifas_restantes(produto_id: str):
     except Exception as e:
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
-        
+
 @app.get("/")
 def index(request: Request):
     db = firestore.client()
@@ -129,12 +129,22 @@ def index(request: Request):
     produtos = []
     for doc in docs:
         data = doc.to_dict()
+        produto_id = doc.id
+
+        # Buscar o bilhetes_disponiveis na coleção "rifas-restantes" pelo mesmo id do produto
+        rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
+        if rifa_doc.exists:
+            rifa_data = rifa_doc.to_dict()
+            bilhetes_disponiveis = rifa_data.get("bilhetes_disponiveis", 0)
+        else:
+            bilhetes_disponiveis = 0
+
         produto = {
-            "id": doc.id,
+            "id": produto_id,
             "nome": data.get("nome", "Sem nome"),
             "descricao": data.get("descricao", ""),
-            "preco_bilhete": data.get("preco_bilhete", 0.0),
-            "bilhetes_disponiveis": data.get("quantidade_total", 0) - data.get("bilhetes_vendidos", 0),
+            "preco_bilhete": data.get("preco_bilhete", 0.0),  # mantém o preço da coleção produtos
+            "bilhetes_disponiveis": bilhetes_disponiveis,    # busca da coleção rifas-restantes
             "imagem": data.get("imagem", "/static/padrao.jpg"),
             "data_limite_iso": data.get("data_limite", "2025-12-31T23:59:59")
         }
