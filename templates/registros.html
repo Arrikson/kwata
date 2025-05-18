@@ -5,36 +5,83 @@
     <title>Registros de Compradores</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 30px;
+            background-color: #f9f9f9;
+            color: #333;
         }
-        h2 {
-            color: #444;
+
+        header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
         }
+
+        header img {
+            height: 60px;
+            margin-right: 15px;
+        }
+
+        header h2 {
+            color: #2c3e50;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
+            background-color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
+
         th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
+            padding: 10px 12px;
             font-size: 14px;
             text-align: left;
+            border-bottom: 1px solid #eee;
         }
+
         th {
-            background-color: #f4f4f4;
+            background-color: #dff0d8; /* verde claro */
+            color: #2d6a4f;
         }
+
         tr:nth-child(even) {
-            background-color: #fafafa;
+            background-color: #fef9e7; /* amarelo bem claro */
         }
+
+        tr:hover {
+            background-color: #fdecea; /* vermelho fraco */
+        }
+
         .erro {
             color: red;
+            margin-top: 10px;
+        }
+
+        .badge-bilhete {
+            background-color: #2d6a4f;
+            color: white;
+            padding: 3px 7px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-right: 4px;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 13px;
+            }
         }
     </style>
 </head>
 <body>
-    <h2>Registros de Compradores de Rifas</h2>
+
+    <header>
+        <img src="/static/novologo.png" alt="Logo Ehmixa">
+        <h2>Registros de Compradores de Rifas</h2>
+    </header>
 
     {% if erro %}
         <p class="erro">{{ erro }}</p>
@@ -51,22 +98,32 @@
                     <th>Latitude</th>
                     <th>Longitude</th>
                     <th>Produto</th>
-                    <th>Bilhetes</th>
+                    <th>Qtd. Bilhetes</th>
+                    <th>Bilhetes Comprados</th>
                     <th>Data</th>
                 </tr>
             </thead>
             <tbody>
-                {% for r in registros %}
+                {% for registro in registros %}
                 <tr>
-                    <td>{{ r.nome }}</td>
-                    <td>{{ r.bi }}</td>
-                    <td>{{ r.telefone }}</td>
-                    <td>{{ r.localizacao }}</td>
-                    <td>{{ r.latitude }}</td>
-                    <td>{{ r.longitude }}</td>
-                    <td>{{ r.produto }}</td>
-                    <td>{{ r.quantidade_bilhetes }}</td>
-                    <td>{{ r.data_envio.strftime('%d/%m/%Y %H:%M') if r.data_envio }}</td>
+                    <td>{{ registro.nome }}</td>
+                    <td>{{ registro.bi }}</td>
+                    <td>{{ registro.telefone }}</td>
+                    <td>{{ registro.localizacao or "N/A" }}</td>
+                    <td>{{ registro.latitude }}</td>
+                    <td>{{ registro.longitude }}</td>
+                    <td>{{ registro.produto }}</td>
+                    <td>{{ registro.quantidade_bilhetes }}</td>
+                    <td>
+                        {% if registro.bilhetes %}
+                            {% for b in registro.bilhetes %}
+                                <span class="badge-bilhete">{{ b }}</span>
+                            {% endfor %}
+                        {% else %}
+                            Nenhum
+                        {% endif %}
+                    </td>
+                    <td>{{ registro.data_compra or "N/A" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -74,5 +131,6 @@
     {% else %}
         <p>Nenhum registro encontrado.</p>
     {% endif %}
+
 </body>
 </html>
