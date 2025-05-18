@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -220,7 +220,6 @@
       return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
     }
 
-    // Atualiza os contadores com base nos timestamps vindos do backend
     {% for produto in produtos %}
     const dataLimite{{ loop.index }} = new Date("{{ produto.data_limite_iso }}");
     const contadorEl{{ loop.index }} = document.getElementById("contador-{{ produto.id }}");
@@ -236,7 +235,6 @@
     }, 1000);
     {% endfor %}
 
-    // Aqui pode-se usar uma chamada AJAX para buscar os bilhetes disponíveis (opcional)
     window.onload = () => {
       fetch("/bilhetes-disponiveis")
         .then(res => res.json())
@@ -245,7 +243,7 @@
           if (data.length > 0) {
             el.textContent = "Bilhetes disponíveis: " + data.join(", ");
           } else {
-            el.textContent = "Nenhum bilhete disponível no momento.";
+            el.textContent = ""; // Aqui foi removida a mensagem padrão
           }
         })
         .catch(error => {
