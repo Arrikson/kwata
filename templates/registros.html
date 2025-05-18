@@ -11,47 +11,49 @@
             color: #333;
         }
 
-        header {
+        #pdf-content header {
             display: flex;
             align-items: center;
+            gap: 15px;
             margin-bottom: 20px;
         }
 
-        header img {
-            height: 60px;
+        #pdf-content header img {
+            height: 80px; /* maior para PDF */
             margin-right: 15px;
         }
 
-        header h2 {
+        #pdf-content header h2 {
             color: #2c3e50;
+            margin: 0;
         }
 
-        table {
+        #pdf-content table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
             background-color: white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-shadow: none;
         }
 
-        th, td {
+        #pdf-content th, #pdf-content td {
             padding: 10px 12px;
             font-size: 14px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border: 1px solid #ccc;
         }
 
-        th {
+        #pdf-content th {
             background-color: #dff0d8; /* verde claro */
             color: #2d6a4f;
         }
 
-        tr:nth-child(even) {
+        #pdf-content tr:nth-child(even) {
             background-color: #fef9e7; /* amarelo bem claro */
         }
 
-        tr:hover {
-            background-color: #fdecea; /* vermelho fraco */
+        #pdf-content tr:hover {
+            background-color: transparent; /* remover hover no PDF */
         }
 
         .erro {
@@ -74,95 +76,117 @@
                 font-size: 13px;
             }
         }
+
+        /* Botão para gerar PDF */
+        #btn-pdf {
+            background-color: #2d6a4f;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #btn-pdf:hover {
+            background-color: #25603f;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <img src="/static/novologo.png" alt="Logo Ehmixa">
-        <h2>Registros de Compradores de Rifas</h2>
-    </header>
+    <button id="btn-pdf" onclick="gerarPDF()">Gerar PDF</button>
 
-    {% if erro %}
-        <p class="erro">{{ erro }}</p>
-    {% endif %}
+    <div id="pdf-content">
 
-    {% if registros %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>B.I.</th>
-                    <th>Telefone</th>
-                    <th>Localização</th>
-                    <th>Latitude</th>
-                    <th>Longitude</th>
-                    <th>Produto</th>
-                    <th>Qtd. Bilhetes</th>
-                    <th>Bilhetes Comprados</th>
-                    <th>Data</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for registro in registros %}
-                <tr>
-                    <td>{{ registro.nome }}</td>
-                    <td>{{ registro.bi }}</td>
-                    <td>{{ registro.telefone }}</td>
-                    <td>{{ registro.localizacao or "N/A" }}</td>
-                    <td>{{ registro.latitude }}</td>
-                    <td>{{ registro.longitude }}</td>
-                    <td>{{ registro.produto }}</td>
-                    <td>{{ registro.quantidade_bilhetes }}</td>
-                    <td>
-                        {% if registro.bilhetes %}
-                            {% for b in registro.bilhetes %}
-                                <span class="badge-bilhete">{{ b }}</span>
-                            {% endfor %}
-                        {% else %}
-                            Nenhum
-                        {% endif %}
-                    </td>
-                    <td>{{ registro.data_compra or "N/A" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Nenhum registro encontrado.</p>
-    {% endif %}
+        <header>
+            <img src="/static/novologo.png" alt="Logo Ehmixa">
+            <h2>Registros de Compradores de Rifas</h2>
+        </header>
 
-    <!-- Botão para gerar PDF, sempre visível -->
-    <br><br>
-    <button onclick="gerarPDF()" style="
-        padding: 10px 20px;
-        background-color: #2d6a4f;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-size: 16px;
-        cursor: pointer;
-    ">Baixar PDF</button>
+        {% if erro %}
+            <p class="erro">{{ erro }}</p>
+        {% endif %}
+
+        {% if registros %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>B.I.</th>
+                        <th>Telefone</th>
+                        <th>Localização</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Produto</th>
+                        <th>Qtd. Bilhetes</th>
+                        <th>Bilhetes Comprados</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros %}
+                    <tr>
+                        <td>{{ registro.nome }}</td>
+                        <td>{{ registro.bi }}</td>
+                        <td>{{ registro.telefone }}</td>
+                        <td>{{ registro.localizacao or "N/A" }}</td>
+                        <td>{{ registro.latitude }}</td>
+                        <td>{{ registro.longitude }}</td>
+                        <td>{{ registro.produto }}</td>
+                        <td>{{ registro.quantidade_bilhetes }}</td>
+                        <td>
+                            {% if registro.bilhetes %}
+                                {% for b in registro.bilhetes %}
+                                    <span class="badge-bilhete">{{ b }}</span>
+                                {% endfor %}
+                            {% else %}
+                                Nenhum
+                            {% endif %}
+                        </td>
+                        <td>{{ registro.data_compra or "N/A" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Nenhum registro encontrado.</p>
+        {% endif %}
+
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         function gerarPDF() {
-            const element = document.querySelector('table'); // só a tabela será convertida em PDF
-            if(!element) {
-                alert('Nenhuma tabela para gerar PDF.');
+            const element = document.getElementById('pdf-content');
+            if (!element) {
+                alert('Conteúdo para gerar PDF não encontrado!');
                 return;
             }
+
+            // Clonar o conteúdo para não alterar a página original
+            const clone = element.cloneNode(true);
+
+            // Adicionar rodapé com data e hora
+            const footer = document.createElement('div');
+            footer.style.textAlign = 'right';
+            footer.style.fontSize = '12px';
+            footer.style.marginTop = '20px';
+            const dataAtual = new Date();
+            footer.textContent = `Data de geração: ${dataAtual.toLocaleDateString()} ${dataAtual.toLocaleTimeString()}`;
+            clone.appendChild(footer);
+
             const opt = {
-                margin:       0.5,
+                margin:       [0.5, 0.7, 0.7, 0.7], // top, left, bottom, right em polegadas
                 filename:     'registros-de-compradores.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
+                html2canvas:  { scale: 2, logging: true, useCORS: true },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
-            html2pdf().from(element).set(opt).save();
+
+            html2pdf().from(clone).set(opt).save();
         }
     </script>
 
 </body>
 </html>
-
