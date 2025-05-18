@@ -120,15 +120,6 @@ def atualizar_rifas_restantes(produto_id: str):
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
 
-# 👇 Adicionando ponto de entrada principal para execução via linha de comando
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("❗ Uso: python main.py <ID_DO_PRODUTO>")
-        sys.exit(1)
-
-    produto_id = sys.argv[1]
-    atualizar_rifas_restantes(produto_id)
-
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
