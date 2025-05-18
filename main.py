@@ -288,53 +288,6 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
 
-def converter_valores_json(data):
-    """
-    Função recursiva que converte tipos não serializáveis (ex: datas) para strings.
-    """
-    if isinstance(data, dict):
-        return {k: converter_valores_json(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [converter_valores_json(i) for i in data]
-    elif hasattr(data, "ToDatetime"):  # objeto Firestore Timestamp
-        return data.ToDatetime().isoformat()
-    # para objetos datetime comuns, já possuem isoformat
-    elif hasattr(data, "isoformat"):
-        try:
-            return data.isoformat()
-        except Exception:
-            pass
-    # para protobuf Timestamp ou objetos com método timestamp mas sem isoformat
-    elif hasattr(data, "timestamp"):
-        try:
-            ts = data.timestamp()
-            # timestamp() retorna float, converte para ISO string
-            return datetime.fromtimestamp(ts).isoformat()
-        except Exception:
-            pass
-    return data
-
-@app.post("/atualizar-data-sorteio")
-async def atualizar_data_sorteio(produto_id: str = Form(...), data_sorteio: str = Form(...)):
-    try:
-        doc_ref = db.collection("produtos").document(produto_id)
-        doc = doc_ref.get()
-
-        if not doc.exists:
-            return HTMLResponse("Produto não encontrado.", status_code=404)
-
-        # Atualizar campo 'data_sorteio' no documento
-        doc_ref.update({
-            "data_sorteio": data_sorteio  # pode ser string no formato ISO ou datetime
-        })
-
-        # Redirecionar ou retornar sucesso
-        return RedirectResponse(url=f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=HTTP_302_FOUND)
-
-    except Exception as e:
-        print(f"❌ Erro ao atualizar data do sorteio: {e}")
-        return HTMLResponse("Erro ao atualizar data do sorteio.", status_code=500)
-
 @app.post("/pagamento-rifa.html")
 async def processar_pagamento_rifa(
     request: Request,
@@ -425,6 +378,54 @@ async def processar_pagamento_rifa(
             "erro": "Erro ao processar o pagamento. Tente novamente."
         })
 
+
+def converter_valores_json(data):
+    """
+    Função recursiva que converte tipos não serializáveis (ex: datas) para strings.
+    """
+    if isinstance(data, dict):
+        return {k: converter_valores_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [converter_valores_json(i) for i in data]
+    elif hasattr(data, "ToDatetime"):  # objeto Firestore Timestamp
+        return data.ToDatetime().isoformat()
+    # para objetos datetime comuns, já possuem isoformat
+    elif hasattr(data, "isoformat"):
+        try:
+            return data.isoformat()
+        except Exception:
+            pass
+    # para protobuf Timestamp ou objetos com método timestamp mas sem isoformat
+    elif hasattr(data, "timestamp"):
+        try:
+            ts = data.timestamp()
+            # timestamp() retorna float, converte para ISO string
+            return datetime.fromtimestamp(ts).isoformat()
+        except Exception:
+            pass
+    return data
+    
+@app.post("/atualizar-data-sorteio")
+async def atualizar_data_sorteio(produto_id: str = Form(...), data_sorteio: str = Form(...)):
+    try:
+        doc_ref = db.collection("produtos").document(produto_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            return HTMLResponse("Produto não encontrado.", status_code=404)
+
+        # Atualizar campo 'data_sorteio' no documento
+        doc_ref.update({
+            "data_sorteio": data_sorteio  # pode ser string no formato ISO ou datetime
+        })
+
+        # Redirecionar ou retornar sucesso
+        return RedirectResponse(url=f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=HTTP_302_FOUND)
+
+    except Exception as e:
+        print(f"❌ Erro ao atualizar data do sorteio: {e}")
+        return HTMLResponse("Erro ao atualizar data do sorteio.", status_code=500)
+
 @app.post("/enviar-comprovativo")
 async def enviar_comprovativo(
     request: Request,
@@ -439,11 +440,32 @@ async def enviar_comprovativo(
     quantidade_bilhetes: int = Form(...)
 ):
     try:
-        # salvar o comprovativo, gerar URL, etc...
+        # ✅ Validar se algum campo essencial está ausente (extra segurança)
+        campos_obrigatorios = [produto_id, localizacao, quantidade_bilhetes]
+        if not all(campos_obrigatorios):
+            raise ValueError("Campos obrigatórios ausentes.")
 
-        data_compra = datetime.now()  # ✅ registrar data/hora atual
+        # ✅ Criar nome único para o arquivo
+        extensao = comprovativo.filename.split(".")[-1]
+        nome_arquivo = f"comprovativo_{uuid4().hex}.{extensao}"
+        caminho_local = f"/tmp/{nome_arquivo}"
 
-        # salvar na coleção "comprovativo-comprados"
+        # ✅ Salvar temporariamente o arquivo local
+        with open(caminho_local, "wb") as f:
+            conteudo = await comprovativo.read()
+            f.write(conteudo)
+
+        # 🔺 Fazer upload para o Firebase Storage (supondo que você já tenha configurado)
+        bucket = storage.bucket()
+        blob = bucket.blob(f"comprovativos/{nome_arquivo}")
+        blob.upload_from_filename(caminho_local)
+        blob.make_public()
+        comprovativo_url = blob.public_url
+
+        # ✅ Registrar a data da compra
+        data_compra = datetime.now()
+
+        # ✅ Salvar os dados na coleção "comprovativo-comprados"
         db.collection("comprovativo-comprados").add({
             "produto_id": produto_id,
             "nome": nome,
@@ -454,19 +476,20 @@ async def enviar_comprovativo(
             "longitude": longitude,
             "quantidade_bilhetes": quantidade_bilhetes,
             "comprovativo_url": comprovativo_url,
-            "data_compra": data_compra  # ✅ adicionado aqui
+            "data_compra": data_compra.isoformat()
         })
 
-        # opcional: também adicionar em "produtos" se quiser histórico por produto
+        # ✅ Atualizar o produto com a última data de compra
         produto_ref = db.collection("produtos").document(produto_id)
         produto_ref.update({
-            "ultima_compra_em": data_compra  # ✅ registra última compra
+            "ultima_compra_em": data_compra.isoformat()
         })
 
+        # ✅ Redirecionar com mensagem de sucesso
         return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
 
     except Exception as e:
-        print("Erro ao registrar comprovativo:", e)
+        print("❌ Erro ao registrar comprovativo:", e)
         return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&erro=1", status_code=303)
 
 @app.get("/gerar-produto-refletidos")
