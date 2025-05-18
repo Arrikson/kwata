@@ -143,10 +143,10 @@ def index(request: Request):
             "id": produto_id,
             "nome": data.get("nome", "Sem nome"),
             "descricao": data.get("descricao", ""),
-            "preco_bilhete": data.get("preco_bilhete", 0.0),  # mantém o preço da coleção produtos
-            "bilhetes_disponiveis": bilhetes_disponiveis,    # busca da coleção rifas-restantes
-            "imagem": data.get("imagem", "/static/padrao.jpg"),
-            "data_limite_iso": data.get("data_limite", "2025-12-31T23:59:59")
+            "preco_bilhete": data.get("preco_bilhete", 0),
+            "imagem": data.get("imagem", "/static/imagem_padrao.jpg"),
+            "data_limite_iso": data.get("data_limite_iso", "2025-12-31T23:59:59Z"),
+            "bilhetes_disponiveis": bilhetes_disponiveis
         }
         produtos.append(produto)
 
