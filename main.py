@@ -123,7 +123,7 @@ def atualizar_rifas_restantes(produto_id: str):
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
-        # 1. Buscar todos os comprovativos para registrar bilhetes comprados (caso queira manter histórico, mas não é usado aqui)
+        # 1. Buscar todos os comprovativos para manter registro de bilhetes vendidos
         compras_ref = db.collection("comprovativo-comprados").stream()
         bilhetes_comprados = []
         for compra in compras_ref:
@@ -153,11 +153,21 @@ async def index(request: Request):
 
             data["bilhetes_disponiveis"] = len(bilhetes_disponiveis)
 
-            # Garantir que o preço seja um número
+            # Garantir que o preço seja um número float
             try:
                 data["preco_bilhete"] = float(data.get("preco", 0))
             except:
                 data["preco_bilhete"] = 0
+
+            # Garantir que o campo data_limite exista em formato ISO
+            try:
+                data_limite = data.get("data_limite")
+                if data_limite:
+                    data["data_limite_iso"] = data_limite
+                else:
+                    data["data_limite_iso"] = "2100-01-01T00:00:00"
+            except:
+                data["data_limite_iso"] = "2100-01-01T00:00:00"
 
             produtos.append(data)
 
