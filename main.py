@@ -3,6 +3,7 @@ import json
 import firebase_admin
 import uvicorn
 import uuid
+import random
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -27,6 +28,7 @@ from typing import List
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request, UploadFile, File, Form
+
 
 
 # Caminho da chave do Firebase
@@ -783,6 +785,49 @@ async def comprar_bilhete(
             "request": request,
             "erro": "Erro ao processar a compra, tente novamente."
         })
+
+@app.get("/sorteio-data", response_class=HTMLResponse)
+async def get_sorteio(request: Request):
+    return templates.TemplateResponse("sorteio-data.html", {"request": request})
+
+@app.post("/sorteio-data")
+async def post_sorteio():
+    docs = db.collection("comprovativo-comprados").stream()
+
+    bilhetes_com_participantes = []
+
+    for doc in docs:
+        data = doc.to_dict()
+        nome = data.get("nome")
+        bilhetes = data.get("bilhetes", [])
+        produto_id = data.get("produto_id")
+
+        # Buscar nome do produto usando o ID
+        produto_nome = "Desconhecido"
+        if produto_id:
+            produto_doc = db.collection("produtos").document(produto_id).get()
+            if produto_doc.exists:
+                produto_nome = produto_doc.to_dict().get("nome", "Sem Nome")
+
+        # Adicionar cada bilhete individualmente à lista
+        for bilhete in bilhetes:
+            bilhetes_com_participantes.append({
+                "nome": nome,
+                "numero_bilhete": bilhete,
+                "produto": produto_nome
+            })
+
+    if not bilhetes_com_participantes:
+        return JSONResponse(status_code=404, content={"mensagem": "Nenhum bilhete encontrado."})
+
+    # Escolher um bilhete aleatório
+    vencedor = random.choice(bilhetes_com_participantes)
+
+    return {
+        "nome": vencedor["nome"],
+        "numero_bilhete": vencedor["numero_bilhete"],
+        "produto": vencedor["produto"]
+    }
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
