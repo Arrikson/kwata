@@ -11,6 +11,11 @@
             color: #333;
         }
 
+        #pdf-content {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         #pdf-content header {
             display: flex;
             align-items: center;
@@ -30,17 +35,22 @@
 
         #pdf-content table {
             width: 100%;
+            max-width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
             background-color: white;
             box-shadow: none;
+            table-layout: fixed; /* importante para evitar que células "estourem" */
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         #pdf-content th, #pdf-content td {
-            padding: 10px 12px;
-            font-size: 14px;
+            padding: 8px 10px;
+            font-size: 13px;
             text-align: left;
             border: 1px solid #ccc;
+            overflow-wrap: break-word;
         }
 
         #pdf-content th {
@@ -66,14 +76,15 @@
             color: white;
             padding: 3px 7px;
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 12px;
             margin-right: 4px;
             display: inline-block;
+            word-break: break-word;
         }
 
         @media (max-width: 768px) {
             table {
-                font-size: 13px;
+                font-size: 12px;
             }
         }
 
@@ -112,16 +123,16 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Nome</th>
-                        <th>B.I.</th>
-                        <th>Telefone</th>
-                        <th>Localização</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
-                        <th>Produto</th>
-                        <th>Qtd. Bilhetes</th>
-                        <th>Bilhetes Comprados</th>
-                        <th>Data</th>
+                        <th style="width: 12%;">Nome</th>
+                        <th style="width: 10%;">B.I.</th>
+                        <th style="width: 10%;">Telefone</th>
+                        <th style="width: 14%;">Localização</th>
+                        <th style="width: 8%;">Latitude</th>
+                        <th style="width: 8%;">Longitude</th>
+                        <th style="width: 12%;">Produto</th>
+                        <th style="width: 6%;">Qtd. Bilhetes</th>
+                        <th style="width: 12%;">Bilhetes Comprados</th>
+                        <th style="width: 8%;">Data</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -177,10 +188,10 @@
             clone.appendChild(footer);
 
             const opt = {
-                margin:       [0.5, 0.7, 0.7, 0.7], // top, left, bottom, right em polegadas
+                margin:       [0.7, 0.5, 0.7, 0.5], // top, left, bottom, right em polegadas
                 filename:     'registros-de-compradores.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, logging: true, useCORS: true },
+                html2canvas:  { scale: 1.5, logging: true, useCORS: true },
                 jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
 
