@@ -365,15 +365,14 @@ async def listar_produtos():
             status_code=500
         )
 
-
 @app.get("/registros", response_class=HTMLResponse)
 async def listar_registros(request: Request):
     try:
         registros = []
 
-        # 🔹 1. Coletar dados da coleção "pagamentos"
-        pagamentos_ref = db.collection("pagamentos").stream()
-        for doc in pagamentos_ref:
+        # 🔹 1. Coletar dados da coleção "comprovativo-comprados"
+        comprovativos_ref = db.collection("comprovativo-comprados").stream()
+        for doc in comprovativos_ref:
             data = doc.to_dict()
             produto_id = data.get("produto_id")
             produto_nome = "Desconhecido"
@@ -416,10 +415,10 @@ async def listar_registros(request: Request):
                 "longitude": data.get("longitude"),
                 "produto": produto_nome,
                 "quantidade_bilhetes": data.get("quantidade_bilhetes"),
-                "data_envio": data.get("data_compra")  # campo diferente em compras
+                "data_envio": data.get("data_compra")  # campo diferente
             })
 
-        # 🔹 3. Ordenar por data mais recente
+        # 🔹 3. Ordenar por data mais recente (pode ser None)
         registros.sort(key=lambda x: x["data_envio"] or "", reverse=True)
 
         return templates.TemplateResponse("registros.html", {
