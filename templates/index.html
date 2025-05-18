@@ -1,256 +1,140 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kwata</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <title>Rifa Kwata</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
   <style>
-    :root {
-      --verde: #4ead4f;
-      --laranja: #FFA500;
-      --vermelho-claro: #FF6F61;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f4f4f9;
+      font-family: Arial, sans-serif;
       margin: 0;
+      background: #f5f5f5;
       padding: 0;
     }
 
     header {
-      background-color: var(--verde);
-      padding: 0.5rem 1rem;
-      color: #fff;
+      background: #2c3e50;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .swiper-container {
+      width: 100%;
+      padding-top: 50px;
+      padding-bottom: 50px;
+    }
+
+    .swiper-slide {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+      padding: 20px;
+      width: 300px;
+      height: 300px;
+      overflow: hidden;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: space-between;
     }
 
-    .logo-container {
-      display: flex;
-      align-items: center;
+    .swiper-slide h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      color: #2c3e50;
     }
 
-    header img {
-      height: 40px;
+    .swiper-slide p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #555;
     }
 
-    header h1 {
-      font-size: 2rem;
-      margin-left: 1rem;
-      color: white;
-    }
-
-    .carousel-container {
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      max-width: 1000px;
-      margin: 2rem auto;
-    }
-
-    .carousel-track {
-      display: flex;
-      transition: transform 0.5s ease-in-out;
-    }
-
-    .product-card {
-      flex: 0 0 100%;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .product-card-inner {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      padding: 1.5rem;
-      max-width: 400px;
-      width: 100%;
-      text-align: center;
-      border-top: 6px solid var(--laranja);
-    }
-
-    .product-card img {
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-    }
-
-    .product-info {
-      margin-top: 1rem;
-    }
-
-    .button {
-      background-color: var(--vermelho-claro);
-      color: white;
-      padding: 1rem 2rem;
-      font-size: 16px;
-      border-radius: 5px;
-      cursor: pointer;
-      border: none;
-      margin-top: 1rem;
-      transition: background 0.3s;
-    }
-
-    .button:hover {
-      background-color: #e55b50;
-    }
-
-    .carousel-button {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 2rem;
-      background: rgba(0, 0, 0, 0.4);
-      color: white;
-      border: none;
-      cursor: pointer;
-      padding: 0.5rem 1rem;
-      z-index: 1;
-      border-radius: 50%;
-    }
-
-    .carousel-button.left {
-      left: 10px;
-    }
-
-    .carousel-button.right {
-      right: 10px;
-    }
-
-    .contador {
-      font-weight: bold;
-      color: var(--laranja);
+    .btn-comprar {
       margin-top: 10px;
+      padding: 10px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
     }
 
-    #bilhetes-disponiveis {
-      max-width: 1000px;
-      margin: 1rem auto;
-      padding: 1rem;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      font-size: 1.1rem;
-      color: #333;
-    }
-
-    @media (max-width: 600px) {
-      header {
-        flex-direction: row;
-        align-items: center;
-      }
-
-      .logo-container {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      header img {
-        height: 100px;
-      }
-
-      header h1 {
-        font-size: 1.4rem;
-        margin-left: 0.5rem;
-      }
+    .btn-comprar:hover {
+      background-color: #1e8449;
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="logo-container">
-      <img src="/static/novologo.png" alt="Kwata Logo">
-      <h1>Kwata</h1>
-    </div>
+    <h1>Bem-vindo à Rifa Kwata</h1>
+    <p>Veja os produtos disponíveis abaixo</p>
   </header>
 
-  <div id="bilhetes-disponiveis">Carregando bilhetes disponíveis...</div>
-
-  <div class="carousel-container">
-    <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
-    <div class="carousel-track" id="carousel-track">
-      {% for produto in produtos %}
-      <div class="product-card">
-        <div class="product-card-inner">
-          <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
-          <div class="product-info">
-            <h3>{{ produto.nome }}</h3>
-            <p>{{ produto.descricao }}</p>
-            <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
-            <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
-            <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
+  <!-- Carrossel de Produtos -->
+  <div class="swiper-container">
+    <div class="swiper-wrapper" id="produtos-container">
+      <!-- Produtos serão inseridos aqui pelo JavaScript -->
     </div>
-    <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
   </div>
 
-  <script>
-    let currentIndex = 0;
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    function moverCarrossel(direction) {
-      const totalSlides = document.querySelectorAll('.product-card').length;
-      currentIndex += direction;
-      if (currentIndex < 0) currentIndex = totalSlides - 1;
-      if (currentIndex >= totalSlides) currentIndex = 0;
-      const offset = -currentIndex * 100;
-      document.getElementById('carousel-track').style.transform = `translateX(${offset}%)`;
-    }
-
-    function formatarTempo(ms) {
-      const totalSegundos = Math.floor(ms / 1000);
-      const dias = Math.floor(totalSegundos / 86400);
-      const horas = Math.floor((totalSegundos % 86400) / 3600);
-      const minutos = Math.floor((totalSegundos % 3600) / 60);
-      const segundos = totalSegundos % 60;
-      return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
-    }
-
-    {% for produto in produtos %}
-    const dataLimite{{ loop.index }} = new Date("{{ produto.data_limite_iso }}");
-    const contadorEl{{ loop.index }} = document.getElementById("contador-{{ produto.id }}");
-
-    setInterval(() => {
-      const agora = new Date();
-      const diff = dataLimite{{ loop.index }} - agora;
-      if (diff > 0) {
-        contadorEl{{ loop.index }}.textContent = "Sorteio em: " + formatarTempo(diff);
-      } else {
-        contadorEl{{ loop.index }}.textContent = "Sorteio encerrado!";
-      }
-    }, 1000);
-    {% endfor %}
-
-    window.onload = () => {
-      fetch("/bilhetes-disponiveis")
-        .then(res => res.json())
-        .then(data => {
-          const el = document.getElementById("bilhetes-disponiveis");
-          if (data.length > 0) {
-            el.textContent = "Bilhetes disponíveis: " + data.join(", ");
-          } else {
-            el.textContent = ""; // Aqui foi removida a mensagem padrão
-          }
-        })
-        .catch(error => {
-          console.error("Erro:", error);
-          document.getElementById("bilhetes-disponiveis").textContent = "Erro ao carregar bilhetes.";
-        });
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_DOMINIO.firebaseapp.com",
+      projectId: "SEU_PROJECT_ID",
+      storageBucket: "SEU_BUCKET.appspot.com",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId: "SEU_APP_ID"
     };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function carregarProdutos() {
+      const querySnapshot = await getDocs(collection(db, "produtos"));
+      const container = document.getElementById("produtos-container");
+
+      querySnapshot.forEach((doc) => {
+        const produto = doc.data();
+        const id = doc.id;
+        const slide = document.createElement("div");
+        slide.classList.add("swiper-slide");
+        slide.innerHTML = `
+          <h3>${produto.nome}</h3>
+          <p>${produto.descricao}</p>
+          <p><strong>Preço:</strong> ${produto.preco}</p>
+          <p><strong>Bilhetes:</strong> ${produto.bilhetes}</p>
+          <button class="btn-comprar" onclick="window.location.href='pagamento-rifa.html?id=${id}'">Comprar bilhete</button>
+        `;
+        container.appendChild(slide);
+      });
+
+      new Swiper('.swiper-container', {
+        slidesPerView: 'auto',
+        centeredSlides: true,
+        spaceBetween: 30,
+        grabCursor: true,
+        loop: true,
+        effect: 'slide',
+      });
+    }
+
+    carregarProdutos();
   </script>
 </body>
 </html>
