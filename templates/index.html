@@ -230,16 +230,7 @@
             <p>{{ produto.descricao }}</p>
             <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
             <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
-            <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
-            <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-            </div>
-
-            <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
+             <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
             <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
           </div>
         </div>
