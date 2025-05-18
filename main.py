@@ -224,92 +224,49 @@ async def adicionar_produto(
         print(f"❌ Erro ao adicionar produto: {e}")
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
-@app.get("/pagamento-rifa.html", response_class=HTMLResponse)
-async def pagamento_rifa(request: Request, produto_id: str = Query(default=None), sucesso: str = Query(default=None)):
-    if not produto_id:
-        return templates.TemplateResponse("pagamento-rifa.html", {
-            "request": request,
-            "erro": "Nenhum produto selecionado. Volte à página anterior e selecione um produto."
+@app.post("/enviar-comprovativo")
+async def enviar_comprovativo(
+    request: Request,
+    produto_id: str = Form(...),
+    nome: str = Form(...),
+    bi: str = Form(...),
+    telefone: str = Form(...),
+    localizacao: str = Form(...),
+    latitude: str = Form(...),
+    longitude: str = Form(...),
+    comprovativo: UploadFile = File(...),
+    quantidade_bilhetes: int = Form(...)
+):
+    try:
+        # salvar o comprovativo, gerar URL, etc...
+
+        data_compra = datetime.now()  # ✅ registrar data/hora atual
+
+        # salvar na coleção "comprovativo-comprados"
+        db.collection("comprovativo-comprados").add({
+            "produto_id": produto_id,
+            "nome": nome,
+            "bi": bi,
+            "telefone": telefone,
+            "localizacao": localizacao,
+            "latitude": latitude,
+            "longitude": longitude,
+            "quantidade_bilhetes": quantidade_bilhetes,
+            "comprovativo_url": comprovativo_url,
+            "data_compra": data_compra  # ✅ adicionado aqui
         })
 
-    try:
-        # 🔹 Buscar o produto no Firebase
-        doc_ref = db.collection("produtos").document(produto_id)
-        doc = doc_ref.get()
+        # opcional: também adicionar em "produtos" se quiser histórico por produto
+        produto_ref = db.collection("produtos").document(produto_id)
+        produto_ref.update({
+            "ultima_compra_em": data_compra  # ✅ registra última compra
+        })
 
-        if not doc.exists:
-            return templates.TemplateResponse("pagamento-rifa.html", {
-                "request": request,
-                "erro": "Produto não encontrado no Firebase."
-            })
-
-        dados_produto = doc.to_dict()
-        nome_produto = dados_produto.get("nome", "Produto")
-        preco_bilhete = float(dados_produto.get("preco_bilhete", 0.00))
-
-        # 🔹 Buscar rifas restantes no documento específico
-        rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
-        if rifas_restantes_doc.exists:
-            bilhetes_disponiveis = rifas_restantes_doc.to_dict().get("bilhetes_disponiveis", [])
-        else:
-            # 🔄 Caso não exista documento, calcula com base na quantidade total e vendidos
-            quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
-            bilhetes_vendidos = int(dados_produto.get("bilhetes_vendidos", 0))
-            bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
-
-            # ✅ Criar documento na coleção "rifas-restantes"
-            db.collection("rifas-restantes").document(produto_id).set({
-                "bilhetes_disponiveis": bilhetes_disponiveis,
-                "atualizado_em": datetime.now().isoformat()
-            })
-
-        # 🔸 Montar contexto para o template
-        contexto = {
-            "request": request,
-            "produto_id": produto_id,
-            "nome_produto": nome_produto,
-            "preco_bilhete": preco_bilhete,
-            "bilhetes_disponiveis": bilhetes_disponiveis
-        }
-
-        # ✅ Mostrar mensagem de sucesso se for redirecionado após o POST
-        if sucesso == "1":
-            contexto["sucesso"] = "Pagamento enviado com sucesso! Seus bilhetes foram reservados."
-
-        return templates.TemplateResponse("pagamento-rifa.html", contexto)
+        return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
 
     except Exception as e:
-        print(f"❌ Erro ao carregar dados do Firebase: {e}")
-        return templates.TemplateResponse("pagamento-rifa.html", {
-            "request": request,
-            "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
-        })
-
-def converter_valores_json(data):
-    """
-    Função recursiva que converte tipos não serializáveis (ex: datas) para strings.
-    """
-    if isinstance(data, dict):
-        return {k: converter_valores_json(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [converter_valores_json(i) for i in data]
-    elif hasattr(data, "ToDatetime"):  # objeto Firestore Timestamp
-        return data.ToDatetime().isoformat()
-    # para objetos datetime comuns, já possuem isoformat
-    elif hasattr(data, "isoformat"):
-        try:
-            return data.isoformat()
-        except Exception:
-            pass
-    # para protobuf Timestamp ou objetos com método timestamp mas sem isoformat
-    elif hasattr(data, "timestamp"):
-        try:
-            ts = data.timestamp()
-            # timestamp() retorna float, converte para ISO string
-            return datetime.fromtimestamp(ts).isoformat()
-        except Exception:
-            pass
-    return data
+        print("Erro ao registrar comprovativo:", e)
+        return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&erro=1", status_code=303)
 
 @app.get("/gerar-produto-refletidos")
 async def gerar_arquivo_produtos():
@@ -395,7 +352,7 @@ async def listar_registros(request: Request):
                 "longitude": data.get("longitude"),
                 "produto": produto_nome,
                 "quantidade_bilhetes": data.get("quantidade_bilhetes"),
-                "data_envio": data.get("data_envio")
+                "data_compra": converter_valores_json(data.get("data_compra") or data.get("data_envio"))  # ✅
             })
 
         # 🔹 2. Coletar dados da coleção "compras"
@@ -419,11 +376,11 @@ async def listar_registros(request: Request):
                 "longitude": data.get("longitude"),
                 "produto": produto_nome,
                 "quantidade_bilhetes": data.get("quantidade_bilhetes"),
-                "data_envio": data.get("data_compra")  # campo diferente
+                "data_compra": converter_valores_json(data.get("data_compra"))
             })
 
         # 🔹 3. Ordenar por data mais recente (pode ser None)
-        registros.sort(key=lambda x: x["data_envio"] or "", reverse=True)
+        registros.sort(key=lambda x: x["data_compra"] or "", reverse=True)
 
         return templates.TemplateResponse("registros.html", {
             "request": request,
@@ -487,6 +444,8 @@ async def enviar_comprovativo(
     with open(caminho_arquivo, "wb") as f:
         f.write(contents)
 
+    agora = datetime.utcnow()
+
     # Salva os dados no Firebase Firestore
     doc_ref = db.collection("comprovativo-comprados").document()
     doc_ref.set({
@@ -496,8 +455,9 @@ async def enviar_comprovativo(
         "latitude": latitude,
         "longitude": longitude,
         "bilhetes": bilhetes,
-        "timestamp": datetime.utcnow(),
-        "caminho_local": caminho_arquivo  # salva o caminho local
+        "timestamp": agora,
+        "data_compra": agora.isoformat(),  # ✅ novo campo padronizado
+        "caminho_local": caminho_arquivo
     })
 
     return JSONResponse({"msg": "Comprovativo enviado com sucesso."})
@@ -534,6 +494,8 @@ async def receber_comprovativo(
         content = await comprovativo.read()
         f.write(content)
 
+    agora = datetime.utcnow()
+
     # Prepara dados para salvar no Firestore
     dados = {
         "nome": nome,
@@ -543,6 +505,8 @@ async def receber_comprovativo(
         "longitude": longitude,
         "bilhetes": bilhetes,
         "comprovativo_path": file_location,
+        "data_compra": agora.isoformat(),  # ✅ data e hora legível
+        "timestamp": agora                 # ✅ útil para ordenações no Firestore
     }
 
     # Cria documento na coleção
@@ -574,6 +538,8 @@ async def comprar_bilhete(
 
         comprovativo_url = f"/static/comprovativos/{nome_arquivo}"  # ajuste se usar Firebase Storage
 
+        agora = datetime.utcnow()
+
         # 2. Salvar dados da compra na coleção "comprovativo-comprados" no Firestore
         compra = {
             "nome": nome,
@@ -584,7 +550,8 @@ async def comprar_bilhete(
             "produto_id": produto_id,
             "bilhetes": bilhetes_comprados,
             "comprovativoURL": comprovativo_url,
-            "timestamp": datetime.utcnow()
+            "data_compra": agora.isoformat(),  # ✅ data legível
+            "timestamp": agora                 # ✅ útil para ordenação
         }
         db.collection("comprovativo-comprados").add(compra)
 
@@ -603,7 +570,7 @@ async def comprar_bilhete(
         bilhetes_vendidos_atualizado = bilhetes_vendidos_atuais + bilhetes_novos
         produto_ref.update({"bilhetes_vendidos": bilhetes_vendidos_atualizado})
 
-        # 4. Atualizar rifas restantes (usar função externa para manter código organizado)
+        # 4. Atualizar rifas restantes
         atualizar_rifas_restantes(produto_id)
 
         # 5. Redirecionar para página de sucesso
@@ -617,12 +584,6 @@ async def comprar_bilhete(
             "erro": "Erro ao processar a compra, tente novamente."
         })
 
-    except Exception as e:
-        print("Erro ao processar compra:", e)
-        traceback.print_exc()
-        return {"erro": str(e)}
-
-    
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
