@@ -132,5 +132,37 @@
         <p>Nenhum registro encontrado.</p>
     {% endif %}
 
+    <!-- Botão para gerar PDF, sempre visível -->
+    <br><br>
+    <button onclick="gerarPDF()" style="
+        padding: 10px 20px;
+        background-color: #2d6a4f;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+    ">Baixar PDF</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        function gerarPDF() {
+            const element = document.querySelector('table'); // só a tabela será convertida em PDF
+            if(!element) {
+                alert('Nenhuma tabela para gerar PDF.');
+                return;
+            }
+            const opt = {
+                margin:       0.5,
+                filename:     'registros-de-compradores.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
+    </script>
+
 </body>
 </html>
+
