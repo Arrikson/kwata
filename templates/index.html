@@ -268,14 +268,14 @@
       });
     }
 
-    function formatarTempo(ms) {
-      const totalSegundos = Math.floor(ms / 1000);
-      const dias = Math.floor(totalSegundos / 86400);
-      const horas = Math.floor((totalSegundos % 86400) / 3600);
-      const minutos = Math.floor((totalSegundos % 3600) / 60);
-      const segundos = totalSegundos % 60;
-      return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
-    }
+   function formatarTempo(ms) {
+     const totalSegundos = Math.floor(ms / 1000);
+     const dias = Math.floor(totalSegundos / 86400);
+     const horas = Math.floor((totalSegundos % 86400) / 3600);
+     const minutos = Math.floor((totalSegundos % 3600) / 60);
+     const segundos = totalSegundos % 60;
+     return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+   }
 
     {% for produto in produtos %}
     const dataLimite{{ loop.index }} = new Date("{{ produto.data_limite_iso }}");
