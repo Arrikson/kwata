@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -140,44 +140,6 @@
       margin-top: 10px;
     }
 
-    /* Novo estilo para bilhetes disponíveis em badges coloridos */
-    .bilhetes-container {
-      margin-top: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .bilhete-badge {
-      min-width: 32px;
-      height: 32px;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      color: white;
-      font-size: 0.9rem;
-      user-select: none;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-      transition: background-color 0.3s;
-    }
-
-    /* Cores conforme posição (exemplo: 1-5 verde, 6-10 amarelo, 11+ vermelho-claro) */
-    .bilhete-badge.verde {
-      background-color: var(--verde);
-    }
-
-    .bilhete-badge.laranja {
-      background-color: var(--laranja);
-      color: #333;
-    }
-
-    .bilhete-badge.vermelho {
-      background-color: var(--vermelho-claro);
-    }
-
     @media (max-width: 600px) {
       .product-card {
         flex: 0 0 80%;
@@ -193,7 +155,6 @@
       }
     }
   </style>
-</style>
 </head>
 <body>
   <header>
@@ -211,24 +172,12 @@
         <div class="product-card-inner">
           <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
           <div class="product-info">
-            <h2>{{ produto.nome }}</h2>
+            <h3>{{ produto.nome }}</h3>
             <p>{{ produto.descricao }}</p>
-            <p><strong>Preço:</strong> {{ produto.preco }} Kz</p>
-            <p id="contador-{{ produto.id }}" class="contador">Carregando contador...</p>
-            <p class="contador">Bilhetes restantes: {{ produto.total_bilhetes - produto.bilhetes_vendidos }}</p>
-            <a href="/pagamento-rifa.html?produto_id={{ produto.id }}">
-              <button class="button">Comprar Bilhete</button>
-            </a>
-            <div class="bilhetes-container">
-              {% for i in range(produto.bilhetes_vendidos + 1, produto.total_bilhetes + 1) %}
-              <div class="bilhete-badge
-                {% if i <= 5 %}verde
-                {% elif i <= 10 %}laranja
-                {% else %}vermelho{% endif %}">
-                {{ i }}
-              </div>
-              {% endfor %}
-            </div>
+            <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
+            <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
+            <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
+            <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
           </div>
         </div>
       </div>
@@ -252,7 +201,11 @@
       track.style.transform = `translateX(${offset}px)`;
 
       cards.forEach((card, index) => {
-        card.classList.toggle('active', index === currentIndex);
+        if (index === currentIndex) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
       });
     }
 
@@ -275,11 +228,10 @@
       if (diff > 0) {
         contadorEl{{ loop.index }}.textContent = "Sorteio em: " + formatarTempo(diff);
       } else {
-        contadorEl{{ loop.index }}.textContent = "Sorteio encerrado";
+        contadorEl{{ loop.index }}.textContent = "Sorteio encerrado!";
       }
     }, 1000);
     {% endfor %}
   </script>
 </body>
 </html>
-
