@@ -351,9 +351,11 @@ async def listar_registros(request: Request):
                 "latitude": data.get("latitude"),
                 "longitude": data.get("longitude"),
                 "produto": produto_nome,
-                "quantidade_bilhetes": data.get("quantidade_bilhetes"),
-                "data_compra": converter_valores_json(data.get("data_compra") or data.get("data_envio"))  # ✅
+                "quantidade_bilhetes": len(data.get("bilhetes", [])),
+                "bilhetes": data.get("bilhetes", []),
+                "data_compra": converter_valores_json(data.get("data_compra") or data.get("data_envio"))
             })
+
 
         # 🔹 2. Coletar dados da coleção "compras"
         compras_ref = db.collection("compras").stream()
