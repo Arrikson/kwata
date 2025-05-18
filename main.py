@@ -123,33 +123,41 @@ def atualizar_rifas_restantes(produto_id: str):
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
-        # 1. Buscar todos os bilhetes comprados uma única vez
+        # 1. Buscar todos os comprovativos para registrar bilhetes comprados (caso queira manter histórico, mas não é usado aqui)
         compras_ref = db.collection("comprovativo-comprados").stream()
         bilhetes_comprados = []
         for compra in compras_ref:
             compra_data = compra.to_dict()
-            bilhetes = compra_data.get("bilhetes", [])  # <- substituído o campo aqui
+            bilhetes = compra_data.get("bilhetes", [])
             bilhetes_comprados.extend(bilhetes)
 
         # 2. Buscar todos os produtos
-        produtos_ref = db.collection('produtos').stream()
+        produtos_ref = db.collection("produtos").stream()
         produtos = []
         for doc in produtos_ref:
             data = doc.to_dict()
-            data["id"] = doc.id
+            produto_id = doc.id
+            data["id"] = produto_id
 
-            # Lista de bilhetes totais
-            bilhetes_total = data.get("bilhetes", [])
-            quantidade_total = len(bilhetes_total)
+            # 3. Buscar bilhetes disponíveis na coleção 'rifas-restantes'
+            try:
+                bilhetes_doc = db.collection("rifas-restantes").document(produto_id).get()
+                if bilhetes_doc.exists:
+                    bilhetes_data = bilhetes_doc.to_dict()
+                    bilhetes_disponiveis = bilhetes_data.get("bilhetes", [])
+                else:
+                    bilhetes_disponiveis = []
+            except Exception as e:
+                print(f"Erro ao buscar bilhetes restantes para produto {produto_id}: {e}")
+                bilhetes_disponiveis = []
 
-            # Filtrar os bilhetes disponíveis para este produto
-            bilhetes_disponiveis = [b for b in bilhetes_total if b not in bilhetes_comprados]
-
-            data["quantidade_total"] = quantidade_total
             data["bilhetes_disponiveis"] = len(bilhetes_disponiveis)
 
-            # Garantir que o preço é um número
-            data["preco_bilhete"] = float(data.get("preco", 0))
+            # Garantir que o preço seja um número
+            try:
+                data["preco_bilhete"] = float(data.get("preco", 0))
+            except:
+                data["preco_bilhete"] = 0
 
             produtos.append(data)
 
