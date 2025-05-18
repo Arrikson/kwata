@@ -131,13 +131,21 @@ async def index(request: Request):
             data = doc.to_dict()
             data["id"] = doc.id
 
-            bilhetes_vendidos = data.get("bilhetes_vendidos", 0)
-            quantidade_total = data.get("quantidade_bilhetes", 0)
+            bilhetes_total = data.get("bilhetes", [])
+            quantidade_total = len(bilhetes_total)
 
-            bilhetes_disponiveis = max(quantidade_total - bilhetes_vendidos, 0)
+            # Busca os bilhetes comprados da coleção 'comprovativo-comprados'
+            compras_ref = db.collection("comprovativo-comprados").stream()
+            bilhetes_comprados = []
+            for compra in compras_ref:
+                compra_data = compra.to_dict()
+                bilhetes = compra_data.get("bilhetes_comprados", [])
+                bilhetes_comprados.extend(bilhetes)
 
-            data["bilhetes_disponiveis"] = bilhetes_disponiveis
-            data["preco_bilhete"] = data.get("preco_bilhete", 0)
+            # Calcula os bilhetes disponíveis
+            bilhetes_disponiveis = [b for b in bilhetes_total if b not in bilhetes_comprados]
+            data["bilhetes_disponiveis"] = len(bilhetes_disponiveis)
+            data["preco_bilhete"] = data.get("preco", 0)
 
             produtos.append(data)
     except Exception as e:
