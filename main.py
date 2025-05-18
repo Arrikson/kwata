@@ -125,29 +125,36 @@ def atualizar_rifas_restantes(produto_id: str):
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     try:
+        # 1. Buscar todos os bilhetes comprados uma única vez
+        compras_ref = db.collection("comprovativo-comprados").stream()
+        bilhetes_comprados = []
+        for compra in compras_ref:
+            compra_data = compra.to_dict()
+            bilhetes = compra_data.get("bilhetes", [])  # <- substituído o campo aqui
+            bilhetes_comprados.extend(bilhetes)
+
+        # 2. Buscar todos os produtos
         produtos_ref = db.collection('produtos').stream()
         produtos = []
         for doc in produtos_ref:
             data = doc.to_dict()
             data["id"] = doc.id
 
+            # Lista de bilhetes totais
             bilhetes_total = data.get("bilhetes", [])
             quantidade_total = len(bilhetes_total)
 
-            # Busca os bilhetes comprados da coleção 'comprovativo-comprados'
-            compras_ref = db.collection("comprovativo-comprados").stream()
-            bilhetes_comprados = []
-            for compra in compras_ref:
-                compra_data = compra.to_dict()
-                bilhetes = compra_data.get("bilhetes_comprados", [])
-                bilhetes_comprados.extend(bilhetes)
-
-            # Calcula os bilhetes disponíveis
+            # Filtrar os bilhetes disponíveis para este produto
             bilhetes_disponiveis = [b for b in bilhetes_total if b not in bilhetes_comprados]
+
+            data["quantidade_total"] = quantidade_total
             data["bilhetes_disponiveis"] = len(bilhetes_disponiveis)
-            data["preco_bilhete"] = data.get("preco", 0)
+
+            # Garantir que o preço é um número
+            data["preco_bilhete"] = float(data.get("preco", 0))
 
             produtos.append(data)
+
     except Exception as e:
         print("❌ Erro ao buscar produtos do Firestore:", e)
         traceback.print_exc()
