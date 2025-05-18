@@ -368,7 +368,7 @@ async def processar_pagamento_rifa(
             rifas_doc_ref.update({"bilhetes_disponiveis": novos_bilhetes})
 
         # ✅ Redirecionar com sucesso
-        return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
+        return RedirectResponse(f"/sorteio-data?produto_id={produto_id}", status_code=303)
 
     except Exception as e:
         print(f"❌ Erro ao processar pagamento: {e}")
