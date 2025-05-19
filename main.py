@@ -825,10 +825,9 @@ async def post_sorteio():
         if produto_id:
             produto_ids.add(produto_id)
 
-    # Verificar se alguma data do sorteio já passou
     data_atual = datetime.now()
-
     sorteio_realizado = False
+    data_sorteio_vencedor = None  # nova variável
 
     for produto_id in produto_ids:
         produto_doc = db.collection("produtos").document(produto_id).get()
@@ -837,20 +836,20 @@ async def post_sorteio():
             data_sorteio_str = produto_data.get("data_sorteio")
             if data_sorteio_str:
                 try:
-                    # Supondo que data_sorteio esteja em ISO format string
                     data_sorteio = datetime.fromisoformat(data_sorteio_str)
                     if data_atual >= data_sorteio:
                         sorteio_realizado = True
-                        break  # Pelo menos um sorteio já passou, pode continuar
+                        break  # Pelo menos um sorteio já passou
                 except Exception:
                     pass
 
     if not sorteio_realizado:
-        return JSONResponse(status_code=400, content={"mensagem": "O sorteio ainda não foi realizado. Aguarde até a data final."})
+        return JSONResponse(
+            status_code=400,
+            content={"mensagem": "O sorteio ainda não foi realizado. Aguarde até a data final."}
+        )
 
-    # Se chegou aqui, significa que o sorteio pode ocorrer
-
-    # Agora recolher os bilhetes para produtos cuja data do sorteio já passou
+    # Agora recolher os bilhetes de produtos cujo sorteio já passou
     docs = db.collection("comprovativo-comprados").stream()
     for doc in docs:
         data = doc.to_dict()
@@ -875,27 +874,31 @@ async def post_sorteio():
         except Exception:
             continue
 
-        # Incluir só bilhetes de produtos cujo sorteio já passou
         if data_atual >= data_sorteio:
             produto_nome = produto_data.get("nome", "Desconhecido")
             for bilhete in bilhetes:
                 bilhetes_com_participantes.append({
                     "nome": nome,
                     "numero_bilhete": bilhete,
-                    "produto": produto_nome
+                    "produto": produto_nome,
+                    "data_sorteio": data_sorteio_str  # inclui a data aqui
                 })
 
     if not bilhetes_com_participantes:
-        return JSONResponse(status_code=404, content={"mensagem": "Nenhum bilhete encontrado para sorteios realizados."})
+        return JSONResponse(
+            status_code=404,
+            content={"mensagem": "Nenhum bilhete encontrado para sorteios realizados."}
+        )
 
-    # Escolher um bilhete aleatório
     vencedor = random.choice(bilhetes_com_participantes)
 
     return {
         "nome": vencedor["nome"],
         "numero_bilhete": vencedor["numero_bilhete"],
-        "produto": vencedor["produto"]
+        "produto": vencedor["produto"],
+        "data_sorteio": vencedor["data_sorteio"]  # retornando data
     }
+
 
 @app.post("/enviar-comprovativo")
 async def enviar_comprovativo(
