@@ -911,6 +911,7 @@ async def enviar_comprovativo(
 ):
     try:
         rifas_ref = db.collection("rifas-compradas")
+        produtos_ref = db.collection("produtos")
         conflitos = []
 
         # Verificação de bilhetes duplicados
@@ -963,7 +964,7 @@ async def enviar_comprovativo(
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
-        # Registro no Firebase com apenas o nome do arquivo
+        # Gravar os dados no Firebase
         for bilhete in bilhetes:
             rifas_ref.add({
                 "nome": nome,
@@ -977,29 +978,31 @@ async def enviar_comprovativo(
                 "comprovativo_path": filename
             })
 
-        # 🔄 Buscar a data de sorteio (data_limite) do produto
-        produto_doc = db.collection("produtos").document(produto_id).get()
-        if not produto_doc.exists:
+        # Buscar a data do sorteio
+        doc = produtos_ref.document(produto_id).get()
+        if not doc.exists:
             return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
 
-        produto_data = produto_doc.to_dict()
-        data_fim_sorteio = produto_data.get("data_limite")  # <-- ⚠️ Usar o campo correto
+        produto_data = doc.to_dict()
+        data_limite = produto_data.get("data_limite")
 
-        if not data_fim_sorteio:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
+        if not data_limite:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=400)
 
-        # Se for do tipo datetime, converter para string amigável (opcional)
-        if isinstance(data_fim_sorteio, datetime):
-            data_fim_sorteio = data_fim_sorteio.strftime("%d/%m/%Y %H:%M")
+        # Converter Timestamp (do Firestore) para string se necessário
+        if hasattr(data_limite, 'strftime'):
+            data_limite_formatada = data_limite.strftime("%d/%m/%Y %H:%M")
+        else:
+            data_limite_formatada = str(data_limite)
 
         return templates.TemplateResponse("sorteio-data.html", {
             "request": request,
-            "data_fim_sorteio": data_fim_sorteio
+            "produto_id": produto_id,
+            "data_limite": data_limite_formatada
         })
 
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
