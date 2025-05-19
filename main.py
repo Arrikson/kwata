@@ -729,7 +729,7 @@ async def enviar_comprovativo(
             return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
 
         # ✅ Renderizar página com cronômetro (com produto_id incluído)
-        return templates.TemplateResponse("sorteio-data.html", {
+        return templates.TemplateResponse("sorte.html", {
             "request": request,
             "data_fim_sorteio": data_fim_sorteio,
             "produto_id": produto_id  # Correção aplicada aqui
@@ -809,59 +809,6 @@ async def comprar_bilhete(
         })
         
 
-@app.get("/sorteio-data", response_class=HTMLResponse)
-async def sorteio_data_get(request: Request, produto_id: str = Query(...)):
-    try:
-        produto_doc = db.collection("produtos").document(produto_id).get()
-        if not produto_doc.exists:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
-
-        produto_data = produto_doc.to_dict()
-        data_sorteio = produto_data.get("data_sorteio")
-        data_fim_sorteio = produto_data.get("data_fim_sorteio", data_sorteio)  # usa a mesma se fim não existir
-
-        if not data_sorteio:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida.</p>", status_code=500)
-
-        return templates.TemplateResponse("sorteio-data.html", {
-            "request": request,
-            "produto_id": produto_id,
-            "data_sorteio": data_sorteio,
-            "data_fim_sorteio": data_fim_sorteio
-        })
-
-    except Exception as e:
-        return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
-
-@app.post("/sorteio-data", response_class=JSONResponse)
-async def sorteio_data_post(produto_id: str = Form(...)):
-    try:
-        rifas_ref = db.collection("rifas-compradas")
-        comprovativos = list(
-            rifas_ref.where("produto_id", "==", produto_id).stream()
-        )
-
-        if not comprovativos:
-            return JSONResponse(status_code=404, content={"erro": "Nenhum comprovativo encontrado para este produto."})
-
-        # Escolhe um vencedor aleatório
-        escolhido = random.choice(comprovativos)
-        dados = escolhido.to_dict()
-
-        # Busca o nome do produto na coleção "produtos"
-        produto_doc = db.collection("produtos").document(produto_id).get()
-        nome_produto = "Produto desconhecido"
-        if produto_doc.exists:
-            nome_produto = produto_doc.to_dict().get("nome", nome_produto)
-
-        return {
-            "nome": dados.get("nome", "Desconhecido"),
-            "numero_bilhete": dados.get("bilhete", "N/A"),
-            "produto": nome_produto
-        }
-
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"erro": f"Erro interno: {str(e)}"})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
