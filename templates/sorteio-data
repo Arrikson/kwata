@@ -41,8 +41,8 @@
   <div class="container">
     <h1>Sorteio ao Vivo 🎉</h1>
 
-    <!-- Adicionado campo para exibir data_limite -->
-    <p>Data do sorteio: {{ data_limite }}</p>
+    <!-- Campo atualizado para exibir data_sorteio -->
+    <p>Data do sorteio: {{ data_sorteio }}</p>
 
     <p>Data do fim do sorteio: <span id="sorteio-fim"></span></p>
     <div class="timer" id="cronometro">Carregando...</div>
@@ -98,4 +98,3 @@
   </script>
 </body>
 </html>
-
