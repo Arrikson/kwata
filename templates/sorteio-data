@@ -41,11 +41,12 @@
   <div class="container">
     <h1>Sorteio ao Vivo 🎉</h1>
 
-    <!-- Campo atualizado para exibir data_sorteio -->
+    <p>Produto: <strong>{{ produto_id }}</strong></p>
     <p>Data do sorteio: {{ data_sorteio }}</p>
-
     <p>Data do fim do sorteio: <span id="sorteio-fim"></span></p>
+
     <div class="timer" id="cronometro">Carregando...</div>
+
     <div class="winner" id="vencedor">
       <p class="highlight">🎊 Parabéns!</p>
       <p>O(a) vencedor(a) é: <span id="nome-vencedor"></span></p>
@@ -55,6 +56,9 @@
   </div>
 
   <script>
+    // Passa o produto_id do backend para JS
+    const produtoId = "{{ produto_id }}";
+
     const fimSorteioStr = "{{ data_fim_sorteio }}";
     const fimSorteio = new Date(fimSorteioStr).getTime();
     document.getElementById("sorteio-fim").innerText = new Date(fimSorteio).toLocaleString();
@@ -82,7 +86,20 @@
 
     async function buscarVencedor() {
       try {
-        const response = await fetch("/sorteio-data", { method: "POST" });
+        // Faz POST enviando produto_id no form data
+        const formData = new FormData();
+        formData.append("produto_id", produtoId);
+
+        const response = await fetch("/sorteio-data", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          cronometro.innerText = "Erro ao buscar vencedor.";
+          return;
+        }
+
         const data = await response.json();
 
         document.getElementById("nome-vencedor").innerText = data.nome;
