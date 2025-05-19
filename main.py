@@ -728,10 +728,11 @@ async def enviar_comprovativo(
         if not data_fim_sorteio:
             return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
 
-        # ✅ Renderizar página com cronômetro
+        # ✅ Renderizar página com cronômetro (com produto_id incluído)
         return templates.TemplateResponse("sorteio-data.html", {
             "request": request,
-            "data_fim_sorteio": data_fim_sorteio
+            "data_fim_sorteio": data_fim_sorteio,
+            "produto_id": produto_id  # Correção aplicada aqui
         })
 
     except Exception as e:
