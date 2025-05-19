@@ -2,47 +2,133 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Sorteio ao Vivo</title>
   <style>
+    /* Cores base do logotipo */
+    :root {
+      --verde: #3a9d23;      /* verde forte */
+      --amarelo: #f2c94c;   /* amarelo vibrante */
+      --vermelho: #e26a6a;  /* vermelho suave */
+      --cinza-escuro: #333;
+      --cinza-claro: #f7f7f7;
+      --sombra: rgba(58, 157, 35, 0.3);
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(45deg, #e6ffe6, #ffffe6, #ffe6e6);
-      color: #222;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, var(--verde) 0%, var(--amarelo) 50%, var(--vermelho) 100%);
+      color: var(--cinza-escuro);
       text-align: center;
-      padding: 40px;
+      padding: 40px 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
+
     .container {
-      max-width: 600px;
-      margin: auto;
-      background: #fff;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      background: var(--cinza-claro);
+      max-width: 480px;
+      width: 100%;
+      border-radius: 16px;
+      padding: 30px 40px 50px 40px;
+      box-shadow: 0 8px 24px var(--sombra);
+      position: relative;
+      box-sizing: border-box;
+      user-select: none;
     }
+
+    /* Logo */
+    .logo {
+      width: 120px;
+      margin: 0 auto 25px auto;
+      display: block;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+    }
+
+    h1 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      color: var(--verde);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    p {
+      font-size: 1.1rem;
+      margin: 8px 0;
+      color: var(--cinza-escuro);
+    }
+
+    p strong {
+      color: var(--vermelho);
+    }
+
+    #sorteio-fim {
+      font-weight: 600;
+      color: var(--amarelo);
+      font-size: 1.1rem;
+    }
+
     .timer {
-      font-size: 2rem;
-      color: green;
-      margin-bottom: 20px;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--verde);
+      margin: 30px 0 20px 0;
+      letter-spacing: 2px;
+      font-family: 'Courier New', Courier, monospace;
+      user-select: text;
+      transition: color 0.3s ease;
     }
+    .timer.sorteando {
+      color: var(--vermelho);
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% {opacity: 1;}
+      50% {opacity: 0.6;}
+    }
+
     .highlight {
-      color: red;
-      font-weight: bold;
+      color: var(--vermelho);
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin-bottom: 10px;
     }
+
     .winner {
       display: none;
-      margin-top: 30px;
-      font-size: 1.5rem;
-      color: #444;
+      margin-top: 35px;
+      font-size: 1.25rem;
+      color: var(--cinza-escuro);
+      background: #fff;
+      padding: 20px 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      user-select: text;
+    }
+
+    .winner p {
+      margin: 10px 0;
+    }
+
+    .winner span {
+      font-weight: 700;
+      color: var(--verde);
+      font-size: 1.2rem;
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <img src="/static/novologo.png" alt="Logo" class="logo" />
     <h1>Sorteio ao Vivo 🎉</h1>
 
     <p>Produto: <strong>{{ produto_id }}</strong></p>
-    <p>Data do fim do sorteio: <span id="sorteio-fim"></span></p>
+    <p>Data do fim do sorteio: <span id="sorteio-fim">Carregando...</span></p>
 
     <div class="timer" id="cronometro">Carregando...</div>
 
@@ -56,20 +142,39 @@
 
   <script>
     const produtoId = "{{ produto_id }}";
-    const fimSorteioStr = "{{ data_fim_sorteio }}";
-    const fimSorteio = new Date(fimSorteioStr).getTime();
-    document.getElementById("sorteio-fim").innerText = new Date(fimSorteio).toLocaleString();
+    let fimSorteioStr = "{{ data_fim_sorteio }}";
+
+    // Forçar formatação legível da data para todos dispositivos
+    function formatarData(date) {
+      const dia = String(date.getDate()).padStart(2, '0');
+      const mes = String(date.getMonth() + 1).padStart(2, '0');
+      const ano = date.getFullYear();
+      const horas = String(date.getHours()).padStart(2, '0');
+      const minutos = String(date.getMinutes()).padStart(2, '0');
+      const segundos = String(date.getSeconds()).padStart(2, '0');
+      return `${dia}/${mes}/${ano} ${horas}:${minutos}:${segundos}`;
+    }
+
+    // Cria objeto Date com cuidado com fusos e formato ISO
+    let fimSorteio = new Date(fimSorteioStr);
+    if (isNaN(fimSorteio)) {
+      // Se a data vier inválida, tenta adicionar 'Z' (UTC) no fim
+      fimSorteio = new Date(fimSorteioStr + "Z");
+    }
+
+    document.getElementById("sorteio-fim").innerText = formatarData(fimSorteio);
 
     const cronometro = document.getElementById("cronometro");
     const vencedorDiv = document.getElementById("vencedor");
 
     const intervalo = setInterval(() => {
       const agora = new Date().getTime();
-      const tempoRestante = fimSorteio - agora;
+      const tempoRestante = fimSorteio.getTime() - agora;
 
       if (tempoRestante <= 0) {
         clearInterval(intervalo);
         cronometro.innerText = "Sorteando vencedor...";
+        cronometro.classList.add('sorteando');
         buscarVencedor();
         return;
       }
@@ -93,6 +198,7 @@
 
         if (!response.ok) {
           cronometro.innerText = "Erro ao buscar vencedor.";
+          cronometro.classList.remove('sorteando');
           return;
         }
 
@@ -106,6 +212,7 @@
         cronometro.style.display = "none";
       } catch (error) {
         cronometro.innerText = "Erro ao buscar vencedor.";
+        cronometro.classList.remove('sorteando');
       }
     }
   </script>
