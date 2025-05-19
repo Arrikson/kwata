@@ -2,64 +2,55 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sorteio ao Vivo</title>
   <style>
-    /* Cores base do logotipo */
     :root {
-      --verde: #3a9d23;      /* verde forte */
-      --amarelo: #f2c94c;   /* amarelo vibrante */
-      --vermelho: #e26a6a;  /* vermelho suave */
+      --verde: #3a9d23;
+      --amarelo: #f2c94c;
+      --vermelho: #e26a6a;
       --cinza-escuro: #333;
       --cinza-claro: #f7f7f7;
-      --sombra: rgba(58, 157, 35, 0.3);
     }
 
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, var(--verde) 0%, var(--amarelo) 50%, var(--vermelho) 100%);
+      background: linear-gradient(135deg, var(--verde), var(--amarelo), var(--vermelho));
       color: var(--cinza-escuro);
-      text-align: center;
-      padding: 40px 20px;
-      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
     }
 
     .container {
       background: var(--cinza-claro);
       max-width: 480px;
       width: 100%;
+      padding: 30px;
       border-radius: 16px;
-      padding: 30px 40px 50px 40px;
-      box-shadow: 0 8px 24px var(--sombra);
-      position: relative;
-      box-sizing: border-box;
+      box-shadow: 0 8px 24px rgba(58, 157, 35, 0.3);
       user-select: none;
     }
 
-    /* Logo */
     .logo {
-      width: 120px;
-      margin: 0 auto 25px auto;
-      display: block;
+      width: 100px;
+      margin-bottom: 25px;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
     }
 
     h1 {
-      font-weight: 700;
-      font-size: 2.5rem;
-      margin-bottom: 15px;
       color: var(--verde);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      font-size: 2rem;
+      margin-bottom: 15px;
     }
 
     p {
-      font-size: 1.1rem;
       margin: 8px 0;
-      color: var(--cinza-escuro);
+      font-size: 1.1rem;
     }
 
     p strong {
@@ -67,21 +58,21 @@
     }
 
     #sorteio-fim {
-      font-weight: 600;
       color: var(--amarelo);
+      font-weight: 600;
       font-size: 1.1rem;
     }
 
     .timer {
-      font-size: 2.4rem;
+      font-family: monospace;
+      font-size: 2rem;
       font-weight: 700;
       color: var(--verde);
-      margin: 30px 0 20px 0;
-      letter-spacing: 2px;
-      font-family: 'Courier New', Courier, monospace;
+      margin: 30px 0 20px;
       user-select: text;
       transition: color 0.3s ease;
     }
+
     .timer.sorteando {
       color: var(--vermelho);
       animation: pulse 1.2s infinite ease-in-out;
@@ -92,27 +83,26 @@
       50% {opacity: 0.6;}
     }
 
-    .highlight {
-      color: var(--vermelho);
-      font-weight: 700;
-      font-size: 1.3rem;
-      margin-bottom: 10px;
-    }
-
     .winner {
       display: none;
       margin-top: 35px;
-      font-size: 1.25rem;
-      color: var(--cinza-escuro);
       background: #fff;
-      padding: 20px 25px;
+      padding: 20px;
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       user-select: text;
+      color: var(--cinza-escuro);
     }
 
     .winner p {
       margin: 10px 0;
+    }
+
+    .winner .highlight {
+      color: var(--vermelho);
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin-bottom: 10px;
     }
 
     .winner span {
@@ -130,9 +120,9 @@
     <p>Produto: <strong>{{ produto_id }}</strong></p>
     <p>Data do fim do sorteio: <span id="sorteio-fim">Carregando...</span></p>
 
-    <div class="timer" id="cronometro">Carregando...</div>
+    <div id="cronometro" class="timer">Carregando...</div>
 
-    <div class="winner" id="vencedor">
+    <div id="vencedor" class="winner">
       <p class="highlight">🎊 Parabéns!</p>
       <p>O(a) vencedor(a) é: <span id="nome-vencedor"></span></p>
       <p>Número do Bilhete: <span id="numero-bilhete"></span></p>
@@ -142,76 +132,61 @@
 
   <script>
     const produtoId = "{{ produto_id }}";
-    let fimSorteioStr = "{{ data_fim_sorteio }}";
+    const fimSorteioStr = "{{ data_fim_sorteio }}";
 
-    // Forçar formatação legível da data para todos dispositivos
     function formatarData(date) {
-      const dia = String(date.getDate()).padStart(2, '0');
-      const mes = String(date.getMonth() + 1).padStart(2, '0');
-      const ano = date.getFullYear();
-      const horas = String(date.getHours()).padStart(2, '0');
-      const minutos = String(date.getMinutes()).padStart(2, '0');
-      const segundos = String(date.getSeconds()).padStart(2, '0');
-      return `${dia}/${mes}/${ano} ${horas}:${minutos}:${segundos}`;
+      return date.toLocaleString('pt-PT', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
     }
 
-    // Cria objeto Date com cuidado com fusos e formato ISO
     let fimSorteio = new Date(fimSorteioStr);
-    if (isNaN(fimSorteio)) {
-      // Se a data vier inválida, tenta adicionar 'Z' (UTC) no fim
-      fimSorteio = new Date(fimSorteioStr + "Z");
-    }
+    if (isNaN(fimSorteio)) fimSorteio = new Date(fimSorteioStr + 'Z');
 
-    document.getElementById("sorteio-fim").innerText = formatarData(fimSorteio);
+    document.getElementById('sorteio-fim').textContent = formatarData(fimSorteio);
 
-    const cronometro = document.getElementById("cronometro");
-    const vencedorDiv = document.getElementById("vencedor");
+    const cronometro = document.getElementById('cronometro');
+    const vencedorDiv = document.getElementById('vencedor');
 
     const intervalo = setInterval(() => {
-      const agora = new Date().getTime();
-      const tempoRestante = fimSorteio.getTime() - agora;
+      const agora = Date.now();
+      const tempoRestante = fimSorteio - agora;
 
       if (tempoRestante <= 0) {
         clearInterval(intervalo);
-        cronometro.innerText = "Sorteando vencedor...";
+        cronometro.textContent = 'Sorteando vencedor...';
         cronometro.classList.add('sorteando');
         buscarVencedor();
         return;
       }
 
-      const horas = Math.floor((tempoRestante % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutos = Math.floor((tempoRestante % (1000 * 60 * 60)) / (1000 * 60));
-      const segundos = Math.floor((tempoRestante % (1000 * 60)) / 1000);
+      const horas = Math.floor((tempoRestante / (1000 * 60 * 60)) % 24);
+      const minutos = Math.floor((tempoRestante / (1000 * 60)) % 60);
+      const segundos = Math.floor((tempoRestante / 1000) % 60);
 
-      cronometro.innerText = `${horas}h ${minutos}m ${segundos}s`;
+      cronometro.textContent = `${horas}h ${minutos}m ${segundos}s`;
     }, 1000);
 
     async function buscarVencedor() {
       try {
-        const formData = new FormData();
-        formData.append("produto_id", produtoId);
-
-        const response = await fetch("/sorteio-data", {
-          method: "POST",
-          body: formData
+        const response = await fetch('/sorteio-data', {
+          method: 'POST',
+          body: new URLSearchParams({ produto_id: produtoId })
         });
 
-        if (!response.ok) {
-          cronometro.innerText = "Erro ao buscar vencedor.";
-          cronometro.classList.remove('sorteando');
-          return;
-        }
+        if (!response.ok) throw new Error('Erro na resposta');
 
         const data = await response.json();
 
-        document.getElementById("nome-vencedor").innerText = data.nome;
-        document.getElementById("numero-bilhete").innerText = data.numero_bilhete;
-        document.getElementById("produto").innerText = data.produto;
+        document.getElementById('nome-vencedor').textContent = data.nome;
+        document.getElementById('numero-bilhete').textContent = data.numero_bilhete;
+        document.getElementById('produto').textContent = data.produto;
 
-        vencedorDiv.style.display = "block";
-        cronometro.style.display = "none";
-      } catch (error) {
-        cronometro.innerText = "Erro ao buscar vencedor.";
+        vencedorDiv.style.display = 'block';
+        cronometro.style.display = 'none';
+      } catch {
+        cronometro.textContent = 'Erro ao buscar vencedor.';
         cronometro.classList.remove('sorteando');
       }
     }
