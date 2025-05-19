@@ -166,14 +166,14 @@ async def adicionar_produto(
     lucro_desejado: float = Form(...),
     preco_bilhete: float = Form(None),
     quantidade_bilhetes: int = Form(None),
-    data_limite: str = Form(...)  # novo campo vindo do formulário
+    data_sorteio: str = Form(...)  # ⬅️ Nome atualizado
 ):
     try:
         print("🔧 ROTA /admin ACIONADA")
-        print("📅 data_limite recebido:", data_limite)
+        print("📅 data_sorteio recebido:", data_sorteio)
 
         # ✅ Converter diretamente para datetime (Firestore aceita datetime)
-        data_limite_dt = datetime.fromisoformat(data_limite)
+        data_sorteio_dt = datetime.fromisoformat(data_sorteio)
 
         # Salva a imagem no servidor
         conteudo_imagem = await imagem.read()
@@ -207,7 +207,7 @@ async def adicionar_produto(
             "preco_bilhete": round(preco_bilhete, 2),
             "quantidade_bilhetes": quantidade_calculada,
             "bilhetes_vendidos": 0,
-            "data_limite": data_limite_dt  # ✅ usar datetime, não Timestamp
+            "data_sorteio": data_sorteio_dt  # ⬅️ Nome atualizado
         }
 
         print("📝 Produto a ser salvo:", produto)
