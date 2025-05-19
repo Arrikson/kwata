@@ -806,206 +806,61 @@ async def comprar_bilhete(
             "request": request,
             "erro": "Erro ao processar a compra, tente novamente."
         })
+        
 
 @app.get("/sorteio-data", response_class=HTMLResponse)
-async def get_sorteio(request: Request):
-    return templates.TemplateResponse("sorteio-data.html", {"request": request})
-
-@app.post("/sorteio-data")
-async def post_sorteio():
-    docs = db.collection("comprovativo-comprados").stream()
-
-    bilhetes_com_participantes = []
-    produto_ids = set()
-
-    # Coletar todos os produto_ids para verificar a data do sorteio depois
-    for doc in docs:
-        data = doc.to_dict()
-        produto_id = data.get("produto_id")
-        if produto_id:
-            produto_ids.add(produto_id)
-
-    data_atual = datetime.now()
-    sorteio_realizado = False
-    data_sorteio_vencedor = None  # nova variável
-
-    for produto_id in produto_ids:
-        produto_doc = db.collection("produtos").document(produto_id).get()
-        if produto_doc.exists:
-            produto_data = produto_doc.to_dict()
-            data_sorteio_str = produto_data.get("data_sorteio")
-            if data_sorteio_str:
-                try:
-                    data_sorteio = datetime.fromisoformat(data_sorteio_str)
-                    if data_atual >= data_sorteio:
-                        sorteio_realizado = True
-                        break  # Pelo menos um sorteio já passou
-                except Exception:
-                    pass
-
-    if not sorteio_realizado:
-        return JSONResponse(
-            status_code=400,
-            content={"mensagem": "O sorteio ainda não foi realizado. Aguarde até a data final."}
-        )
-
-    # Agora recolher os bilhetes de produtos cujo sorteio já passou
-    docs = db.collection("comprovativo-comprados").stream()
-    for doc in docs:
-        data = doc.to_dict()
-        nome = data.get("nome")
-        bilhetes = data.get("bilhetes", [])
-        produto_id = data.get("produto_id")
-
-        if not produto_id:
-            continue
-
+async def sorteio_data_get(request: Request, produto_id: str = Query(...)):
+    try:
         produto_doc = db.collection("produtos").document(produto_id).get()
         if not produto_doc.exists:
-            continue
-
-        produto_data = produto_doc.to_dict()
-        data_sorteio_str = produto_data.get("data_sorteio")
-        if not data_sorteio_str:
-            continue
-
-        try:
-            data_sorteio = datetime.fromisoformat(data_sorteio_str)
-        except Exception:
-            continue
-
-        if data_atual >= data_sorteio:
-            produto_nome = produto_data.get("nome", "Desconhecido")
-            for bilhete in bilhetes:
-                bilhetes_com_participantes.append({
-                    "nome": nome,
-                    "numero_bilhete": bilhete,
-                    "produto": produto_nome,
-                    "data_sorteio": data_sorteio_str  # inclui a data aqui
-                })
-
-    if not bilhetes_com_participantes:
-        return JSONResponse(
-            status_code=404,
-            content={"mensagem": "Nenhum bilhete encontrado para sorteios realizados."}
-        )
-
-    vencedor = random.choice(bilhetes_com_participantes)
-
-    return {
-        "nome": vencedor["nome"],
-        "numero_bilhete": vencedor["numero_bilhete"],
-        "produto": vencedor["produto"],
-        "data_sorteio": vencedor["data_sorteio"]  # retornando data
-    }
-
-
-@app.post("/enviar-comprovativo")
-async def enviar_comprovativo(
-    request: Request,
-    nome: str = Form(...),
-    bi: str = Form(...),
-    telefone: str = Form(...),
-    latitude: str = Form(...),
-    longitude: str = Form(...),
-    produto_id: str = Form(...),
-    comprovativo: UploadFile = File(...),
-    bilhetes: list[str] = Form(...)
-):
-    try:
-        rifas_ref = db.collection("rifas-compradas")
-        produtos_ref = db.collection("produtos")
-        conflitos = []
-
-        # Verificação de bilhetes duplicados
-        for bilhete in bilhetes:
-            query = list(
-                rifas_ref.where("produto_id", "==", produto_id)
-                         .where("bilhete", "==", bilhete)
-                         .stream()
-            )
-            if query:
-                conflitos.append(f"Bilhete {bilhete} já foi comprado.")
-
-        # Verificação de B.I duplicado
-        bi_conf = list(
-            rifas_ref.where("produto_id", "==", produto_id)
-                     .where("bi", "==", bi)
-                     .limit(1)
-                     .stream()
-        )
-        if bi_conf:
-            conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
-
-        # Verificação de nome duplicado
-        nome_conf = list(
-            rifas_ref.where("produto_id", "==", produto_id)
-                     .where("nome", "==", nome)
-                     .limit(1)
-                     .stream()
-        )
-        if nome_conf:
-            conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
-
-        if conflitos:
-            erro_msg = " | ".join(conflitos)
-            return HTMLResponse(content=f"<h2>Erro:</h2><p>{erro_msg}</p>", status_code=400)
-
-        # Caminho da pasta de destino
-        pasta = os.path.join("static", "static", "comprovativos")
-        os.makedirs(pasta, exist_ok=True)
-
-        # Nome único para o arquivo
-        file_ext = comprovativo.filename.split(".")[-1].lower()
-        if file_ext not in ["pdf", "jpg", "jpeg", "png"]:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Formato de arquivo não suportado.</p>", status_code=400)
-
-        filename = f"{uuid4()}.{file_ext}"
-        file_path = os.path.join(pasta, filename)
-
-        # Salvar o arquivo no local especificado
-        with open(file_path, "wb") as f:
-            f.write(await comprovativo.read())
-
-        # Gravar os dados no Firebase
-        for bilhete in bilhetes:
-            rifas_ref.add({
-                "nome": nome,
-                "bi": bi,
-                "telefone": telefone,
-                "latitude": latitude,
-                "longitude": longitude,
-                "produto_id": produto_id,
-                "bilhete": bilhete,
-                "data_envio": datetime.utcnow().isoformat(),
-                "comprovativo_path": filename
-            })
-
-        # Buscar a data do sorteio
-        doc = produtos_ref.document(produto_id).get()
-        if not doc.exists:
             return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
 
-        produto_data = doc.to_dict()
+        produto_data = produto_doc.to_dict()
         data_sorteio = produto_data.get("data_sorteio")
+        data_fim_sorteio = produto_data.get("data_fim_sorteio", data_sorteio)  # usa a mesma se fim não existir
 
         if not data_sorteio:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=400)
-
-        # Converter Timestamp (do Firestore) para string se necessário
-        if hasattr(data_sorteio, 'strftime'):
-            data_sorteio_formatada = data_sorteio.strftime("%d/%m/%Y %H:%M")
-        else:
-            data_sorteio_formatada = str(data_sorteio)
+            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida.</p>", status_code=500)
 
         return templates.TemplateResponse("sorteio-data.html", {
             "request": request,
             "produto_id": produto_id,
-            "data_sorteio": data_sorteio_formatada
+            "data_sorteio": data_sorteio,
+            "data_fim_sorteio": data_fim_sorteio
         })
 
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
+
+@app.post("/sorteio-data", response_class=JSONResponse)
+async def sorteio_data_post(produto_id: str = Form(...)):
+    try:
+        rifas_ref = db.collection("rifas-compradas")
+        comprovativos = list(
+            rifas_ref.where("produto_id", "==", produto_id).stream()
+        )
+
+        if not comprovativos:
+            return JSONResponse(status_code=404, content={"erro": "Nenhum comprovativo encontrado para este produto."})
+
+        # Escolhe um vencedor aleatório
+        escolhido = random.choice(comprovativos)
+        dados = escolhido.to_dict()
+
+        # Busca o nome do produto na coleção "produtos"
+        produto_doc = db.collection("produtos").document(produto_id).get()
+        nome_produto = "Produto desconhecido"
+        if produto_doc.exists:
+            nome_produto = produto_doc.to_dict().get("nome", nome_produto)
+
+        return {
+            "nome": dados.get("nome", "Desconhecido"),
+            "numero_bilhete": dados.get("bilhete", "N/A"),
+            "produto": nome_produto
+        }
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"erro": f"Erro interno: {str(e)}"})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
