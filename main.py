@@ -987,21 +987,21 @@ async def enviar_comprovativo(
             return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
 
         produto_data = doc.to_dict()
-        data_limite = produto_data.get("data_limite")
+        data_sorteio = produto_data.get("data_sorteio")
 
-        if not data_limite:
+        if not data_sorteio:
             return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=400)
 
         # Converter Timestamp (do Firestore) para string se necessário
-        if hasattr(data_limite, 'strftime'):
-            data_limite_formatada = data_limite.strftime("%d/%m/%Y %H:%M")
+        if hasattr(data_sorteio, 'strftime'):
+            data_sorteio_formatada = data_sorteio.strftime("%d/%m/%Y %H:%M")
         else:
-            data_limite_formatada = str(data_limite)
+            data_sorteio_formatada = str(data_sorteio)
 
         return templates.TemplateResponse("sorteio-data.html", {
             "request": request,
             "produto_id": produto_id,
-            "data_limite": data_limite_formatada
+            "data_sorteio": data_sorteio_formatada
         })
 
     except Exception as e:
