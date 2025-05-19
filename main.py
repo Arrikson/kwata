@@ -877,20 +877,22 @@ async def enviar_comprovativo(
     # Verifica se já existe algum conflito
     conflitos = []
     for bilhete in bilhetes:
-        query = rifas_ref.where("produto_id", "==", produto_id).where("bilhete", "==", bilhete).stream()
+        query = rifas_ref.where(field_path="produto_id", op_string="==", value=produto_id)\
+                         .where(field_path="bilhete", op_string="==", value=bilhete).stream()
         for doc in query:
             conflitos.append(f"Bilhete {bilhete} já foi comprado.")
 
-    bi_conf = rifas_ref.where("bi", "==", bi).where("produto_id", "==", produto_id).limit(1).stream()
+    bi_conf = rifas_ref.where(field_path="bi", op_string="==", value=bi)\
+                       .where(field_path="produto_id", op_string="==", value=produto_id).limit(1).stream()
     if any(bi_conf):
         conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
 
-    nome_conf = rifas_ref.where("nome", "==", nome).where("produto_id", "==", produto_id).limit(1).stream()
+    nome_conf = rifas_ref.where(field_path="nome", op_string="==", value=nome)\
+                         .where(field_path="produto_id", op_string="==", value=produto_id).limit(1).stream()
     if any(nome_conf):
         conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
 
     if conflitos:
-        # Retorna erro com HTMLResponse
         erro_msg = " | ".join(conflitos)
         return HTMLResponse(content=f"<h2>Erro:</h2><p>{erro_msg}</p>", status_code=400)
 
@@ -919,8 +921,8 @@ async def enviar_comprovativo(
     return templates.TemplateResponse("sorteio-data.html", {
         "request": request,
         "produto_id": produto_id,
-        # você pode passar outras variáveis que quiser usar no template
     })
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
