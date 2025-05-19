@@ -692,19 +692,18 @@ async def enviar_comprovativo(
         pasta = os.path.join("static", "static", "comprovativos")
         os.makedirs(pasta, exist_ok=True)
 
-        # Nome único para o arquivo
+        # Verificar formato do arquivo
         file_ext = comprovativo.filename.split(".")[-1].lower()
         if file_ext not in ["pdf", "jpg", "jpeg", "png"]:
             return HTMLResponse(content="<h2>Erro:</h2><p>Formato de arquivo não suportado.</p>", status_code=400)
 
+        # Salvar o comprovativo
         filename = f"{uuid4()}.{file_ext}"
         file_path = os.path.join(pasta, filename)
-
-        # Salvar o arquivo no local especificado
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
-        # Registro no Firebase com apenas o nome do arquivo
+        # Registrar cada bilhete no Firebase
         for bilhete in bilhetes:
             rifas_ref.add({
                 "nome": nome,
@@ -715,12 +714,24 @@ async def enviar_comprovativo(
                 "produto_id": produto_id,
                 "bilhete": bilhete,
                 "data_envio": datetime.utcnow().isoformat(),
-                "comprovativo_path": filename  # apenas o nome do arquivo
+                "comprovativo_path": filename
             })
 
+        # 🔍 Obter a data do sorteio do produto
+        produto_doc = db.collection("produtos").document(produto_id).get()
+        if not produto_doc.exists:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
+
+        produto_data = produto_doc.to_dict()
+        data_fim_sorteio = produto_data.get("data_sorteio")
+
+        if not data_fim_sorteio:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
+
+        # ✅ Renderizar página com cronômetro
         return templates.TemplateResponse("sorteio-data.html", {
             "request": request,
-            "produto_id": produto_id
+            "data_fim_sorteio": data_fim_sorteio
         })
 
     except Exception as e:
