@@ -907,58 +907,98 @@ async def enviar_comprovativo(
     longitude: str = Form(...),
     produto_id: str = Form(...),
     comprovativo: UploadFile = File(...),
-    bilhetes: list[str] = Form(...),  # Pode vir múltiplos
+    bilhetes: list[str] = Form(...)
 ):
-    rifas_ref = db.collection("rifas-compradas")
+    try:
+        rifas_ref = db.collection("rifas-compradas")
+        conflitos = []
 
-    # Verifica se já existe algum conflito
-    conflitos = []
-    for bilhete in bilhetes:
-        query = rifas_ref.where(field_path="produto_id", op_string="==", value=produto_id)\
-                         .where(field_path="bilhete", op_string="==", value=bilhete).stream()
-        for doc in query:
-            conflitos.append(f"Bilhete {bilhete} já foi comprado.")
+        # Verificação de bilhetes duplicados
+        for bilhete in bilhetes:
+            query = list(
+                rifas_ref.where("produto_id", "==", produto_id)
+                         .where("bilhete", "==", bilhete)
+                         .stream()
+            )
+            if query:
+                conflitos.append(f"Bilhete {bilhete} já foi comprado.")
 
-    bi_conf = rifas_ref.where(field_path="bi", op_string="==", value=bi)\
-                       .where(field_path="produto_id", op_string="==", value=produto_id).limit(1).stream()
-    if any(bi_conf):
-        conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
+        # Verificação de B.I duplicado
+        bi_conf = list(
+            rifas_ref.where("produto_id", "==", produto_id)
+                     .where("bi", "==", bi)
+                     .limit(1)
+                     .stream()
+        )
+        if bi_conf:
+            conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
 
-    nome_conf = rifas_ref.where(field_path="nome", op_string="==", value=nome)\
-                         .where(field_path="produto_id", op_string="==", value=produto_id).limit(1).stream()
-    if any(nome_conf):
-        conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
+        # Verificação de nome duplicado
+        nome_conf = list(
+            rifas_ref.where("produto_id", "==", produto_id)
+                     .where("nome", "==", nome)
+                     .limit(1)
+                     .stream()
+        )
+        if nome_conf:
+            conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
 
-    if conflitos:
-        erro_msg = " | ".join(conflitos)
-        return HTMLResponse(content=f"<h2>Erro:</h2><p>{erro_msg}</p>", status_code=400)
+        if conflitos:
+            erro_msg = " | ".join(conflitos)
+            return HTMLResponse(content=f"<h2>Erro:</h2><p>{erro_msg}</p>", status_code=400)
 
-    # Salva os comprovativos (em memória local temporária)
-    pasta = "comprovativos"
-    os.makedirs(pasta, exist_ok=True)
-    file_path = f"{pasta}/{uuid4()}.pdf"
-    with open(file_path, "wb") as f:
-        f.write(await comprovativo.read())
+        # Caminho da pasta de destino
+        pasta = os.path.join("static", "static", "comprovativos")
+        os.makedirs(pasta, exist_ok=True)
 
-    # Gravação dos bilhetes no Firebase
-    for bilhete in bilhetes:
-        rifas_ref.add({
-            "nome": nome,
-            "bi": bi,
-            "telefone": telefone,
-            "latitude": latitude,
-            "longitude": longitude,
-            "produto_id": produto_id,
-            "bilhete": bilhete,
-            "data_envio": datetime.utcnow().isoformat(),
-            "comprovativo_path": file_path
+        # Nome único para o arquivo
+        file_ext = comprovativo.filename.split(".")[-1].lower()
+        if file_ext not in ["pdf", "jpg", "jpeg", "png"]:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Formato de arquivo não suportado.</p>", status_code=400)
+
+        filename = f"{uuid4()}.{file_ext}"
+        file_path = os.path.join(pasta, filename)
+
+        # Salvar o arquivo no local especificado
+        with open(file_path, "wb") as f:
+            f.write(await comprovativo.read())
+
+        # Registro no Firebase com apenas o nome do arquivo
+        for bilhete in bilhetes:
+            rifas_ref.add({
+                "nome": nome,
+                "bi": bi,
+                "telefone": telefone,
+                "latitude": latitude,
+                "longitude": longitude,
+                "produto_id": produto_id,
+                "bilhete": bilhete,
+                "data_envio": datetime.utcnow().isoformat(),
+                "comprovativo_path": filename
+            })
+
+        # 🔄 Buscar a data de sorteio (data_limite) do produto
+        produto_doc = db.collection("produtos").document(produto_id).get()
+        if not produto_doc.exists:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
+
+        produto_data = produto_doc.to_dict()
+        data_fim_sorteio = produto_data.get("data_limite")  # <-- ⚠️ Usar o campo correto
+
+        if not data_fim_sorteio:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
+
+        # Se for do tipo datetime, converter para string amigável (opcional)
+        if isinstance(data_fim_sorteio, datetime):
+            data_fim_sorteio = data_fim_sorteio.strftime("%d/%m/%Y %H:%M")
+
+        return templates.TemplateResponse("sorteio-data.html", {
+            "request": request,
+            "data_fim_sorteio": data_fim_sorteio
         })
 
-    # Em vez de redirect, retorna o template sorteio-data.html passando request e produto_id
-    return templates.TemplateResponse("sorteio-data.html", {
-        "request": request,
-        "produto_id": produto_id,
-    })
+    except Exception as e:
+        return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
 
 
 if __name__ == "__main__":
