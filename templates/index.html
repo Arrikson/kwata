@@ -20,13 +20,19 @@
 
     html, body {
       font-family: 'Segoe UI', sans-serif;
-      background: transparent;
       min-height: 100vh;
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      background-color: rgba(255, 255, 255, 0.05); /* Fundo quase transparente */
       color: #fff;
       padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-image: url("/static/fun.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
     }
 
     h2 {
@@ -34,14 +40,15 @@
       color: #ffffffcc;
       margin-bottom: 2rem;
       font-weight: normal;
+      font-size: 1.8rem;
     }
 
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 15px;
+      width: 100%;
       max-width: 500px;
-      margin: 0 auto;
     }
 
     .tile {
@@ -52,7 +59,7 @@
       font-size: 1.1rem;
       font-weight: 500;
       color: white;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.3s;
       text-align: center;
@@ -71,13 +78,24 @@
     .azul { background-color: var(--azul); }
 
     @media (max-width: 600px) {
-      body {
+      html, body {
         padding: 1rem;
+      }
+
+      h2 {
+        font-size: 1.4rem;
+        margin-bottom: 1.5rem;
       }
 
       .tile {
         height: 80px;
         font-size: 1rem;
+        padding: 0.8rem;
+        border-radius: 10px;
+      }
+
+      .grid {
+        gap: 12px;
       }
     }
 
@@ -102,6 +120,7 @@
 
     #main-content {
       display: none;
+      width: 100%;
     }
   </style>
 </head>
