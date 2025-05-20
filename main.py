@@ -130,7 +130,6 @@ cred_dict = json.loads(cred_json)
 cred_dict["private_key"] = cred_dict["private_key"].replace('\\n', '\n')
 
 cred = credentials.Certificate(cred_dict)
-firebase_admin.initialize_app(cred)
 
 def atualizar_contadores():
     # 1. Buscar todos os bilhetes comprados
