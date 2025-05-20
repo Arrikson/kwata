@@ -131,13 +131,17 @@ def index(request: Request):
         data = doc.to_dict()
         produto_id = doc.id
 
-        # Buscar o bilhetes_disponiveis na coleção "rifas-restantes" pelo mesmo id do produto
+        # Buscar o bilhetes_disponiveis
         rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
-        if rifa_doc.exists:
-            rifa_data = rifa_doc.to_dict()
-            bilhetes_disponiveis = rifa_data.get("bilhetes_disponiveis", 0)
+        bilhetes_disponiveis = rifa_doc.to_dict().get("bilhetes_disponiveis", 0) if rifa_doc.exists else 0
+
+        # Corrigir: usar data_sorteio como campo de data
+        data_sorteio = data.get("data_sorteio")
+        if isinstance(data_sorteio, datetime):
+            data_sorteio_iso = data_sorteio.isoformat()
         else:
-            bilhetes_disponiveis = 0
+            # Caso não esteja presente ou esteja num formato inválido
+            data_sorteio_iso = "2025-12-31T23:59:59Z"
 
         produto = {
             "id": produto_id,
@@ -145,7 +149,7 @@ def index(request: Request):
             "descricao": data.get("descricao", ""),
             "preco_bilhete": data.get("preco_bilhete", 0),
             "imagem": data.get("imagem", "/static/imagem_padrao.jpg"),
-            "data_limite_iso": data.get("data_limite_iso", "2025-12-31T23:59:59Z"),
+            "data_limite_iso": data_sorteio_iso,  # mantém o nome para o HTML usar igual
             "bilhetes_disponiveis": bilhetes_disponiveis
         }
         produtos.append(produto)
