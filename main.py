@@ -735,48 +735,12 @@ async def enviar_comprovativo(
         # ✅ Renderizar página com cronômetro (com produto_id incluído)
         return templates.TemplateResponse("sorte.html", {
             "request": request,
-            "data_sorteio": data_sorteio,
+            "data_fim_sorteio": data_sorteio,
             "produto_id": produto_id  # Correção aplicada aqui
         })
 
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
-
-@app.get("/sorte", response_class=HTMLResponse)
-async def sorte_get(request: Request, produto_id: str):
-    produto_ref = db.collection("produtos").document(produto_id)
-    produto_doc = produto_ref.get()
-
-    if not produto_doc.exists:
-        return HTMLResponse(content=f"Produto com ID '{produto_id}' não encontrado.", status_code=404)
-
-    produto_data = produto_doc.to_dict()
-    data_sorteio = produto_data.get("data_sorteio")
-
-    if not data_sorteio:
-        return HTMLResponse(content="O produto não possui data de sorteio definida.", status_code=400)
-
-    return templates.TemplateResponse("sorte.html", {
-        "request": request,
-        "produto_id": produto_id,
-        "data_sorteio": data_sorteio  # esse nome é usado no HTML
-    })
-
-@app.post("/sorte")
-async def sorte_post(produto_id: str = Form(...)):
-    docs = db.collection("comprovativo-comprados").where("produto_id", "==", produto_id).stream()
-    participantes = [doc.to_dict() for doc in docs]
-
-    if not participantes:
-        return JSONResponse(status_code=404, content={"erro": "Nenhum participante encontrado"})
-
-    vencedor = random.choice(participantes)
-
-    return {
-        "nome": vencedor.get("nome", "Desconhecido"),
-        "numero_bilhete": vencedor.get("numero_bilhete", "N/A"),
-        "produto": vencedor.get("produto", produto_id)
-    }
 
 @app.post("/comprar-bilhete")
 async def comprar_bilhete(
