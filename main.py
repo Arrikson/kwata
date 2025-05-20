@@ -131,30 +131,33 @@ cred_dict["private_key"] = cred_dict["private_key"].replace('\\n', '\n')
 
 cred = credentials.Certificate(cred_dict)
 
+def atualizar_contadores_todos_produtos():
+    # 1. Buscar todos os produtos (apenas os IDs)
+    produtos_snapshot = db.collection("produtos").stream()
+
+    for produto_doc in produtos_snapshot:
+        id_produto = produto_doc.id  # ou produto_doc.to_dict().get('id'), se tiver campo id interno
+
+        # Chamar a função que atualiza os contadores para o produto específico
+        atualizar_contadores(id_produto)
+
+
 def atualizar_contadores(id_produto):
-    # 1. Buscar todos os bilhetes comprados do produto específico
+    # Buscar bilhetes comprados do produto específico
     comprados_snapshot = db.collection("rifas-compradas").where("id_produto", "==", id_produto).stream()
-    bilhetes_comprados = []
-
-    for doc in comprados_snapshot:
-        data = doc.to_dict()
-        if "bilhete" in data:
-            bilhetes_comprados.append(data["bilhete"])
-
+    bilhetes_comprados = [doc.to_dict().get("bilhete") for doc in comprados_snapshot if "bilhete" in doc.to_dict()]
     total_comprados = len(bilhetes_comprados)
 
-    # 2. Buscar os bilhetes disponíveis do produto específico
-    restantes_snapshot = db.collection("rifas-restantes").document(id_produto).get()
-
+    # Buscar bilhetes disponíveis do produto específico
+    restantes_doc = db.collection("rifas-restantes").document(id_produto).get()
     bilhetes_disponiveis = []
-    if restantes_snapshot.exists:
-        data = restantes_snapshot.to_dict()
-        bilhetes_disponiveis = data.get("bilhetes_disponiveis", [])
+    if restantes_doc.exists:
+        bilhetes_disponiveis = restantes_doc.to_dict().get("bilhetes_disponiveis", [])
 
-    # 3. Calcular os bilhetes que sobraram
+    # Calcular bilhetes sobrando
     bilhetes_sobrando = [b for b in bilhetes_disponiveis if b not in bilhetes_comprados]
 
-    # 4. Atualizar a coleção "contadores" com base no produto
+    # Atualizar contadores no Firestore
     db.collection("contadores").document(id_produto).set({
         "id_produto": id_produto,
         "total_comprados": total_comprados,
@@ -164,9 +167,9 @@ def atualizar_contadores(id_produto):
 
     print(f"Contadores do produto {id_produto} atualizados com sucesso!")
 
-# Exemplo de uso
+
 if __name__ == "__main__":
-    atualizar_contadores("id-do-produto-exemplo")
+    atualizar_contadores_todos_produtos()
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
