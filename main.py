@@ -141,6 +141,41 @@ def sobre_nos():
 def ganhadores():
     return render_template("ganhadores.html")
 
+@app.get("/produtos")
+def produtos_disponiveis(request: Request):
+    db = firestore.client()
+    produtos_ref = db.collection("produtos")
+    docs = produtos_ref.stream()
+
+    produtos = []
+    for doc in docs:
+        data = doc.to_dict()
+        produto_id = doc.id
+
+        # Buscar o bilhetes_disponiveis
+        rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
+        bilhetes_disponiveis = rifa_doc.to_dict().get("bilhetes_disponiveis", 0) if rifa_doc.exists else 0
+
+        # Corrigir: usar data_sorteio como campo de data
+        data_sorteio = data.get("data_sorteio")
+        if isinstance(data_sorteio, datetime):
+            data_sorteio_iso = data_sorteio.isoformat()
+        else:
+            data_sorteio_iso = "2025-12-31T23:59:59Z"
+
+        produto = {
+            "id": produto_id,
+            "nome": data.get("nome", "Sem nome"),
+            "descricao": data.get("descricao", ""),
+            "preco_bilhete": data.get("preco_bilhete", 0),
+            "imagem": data.get("imagem", "/static/imagem_padrao.jpg"),
+            "data_limite_iso": data_sorteio_iso,
+            "bilhetes_disponiveis": bilhetes_disponiveis
+        }
+        produtos.append(produto)
+
+    return templates.TemplateResponse("produtos_disponiveis.html", {"request": request, "produtos": produtos})
+
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
