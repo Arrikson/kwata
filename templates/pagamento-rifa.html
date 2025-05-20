@@ -107,18 +107,8 @@
     margin-top: 0.25rem;
     display: block;
   }
-  .erro {
-    background-color: #fef2f2;
-    color: #b91c1c;
-    border-radius: 6px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    font-weight: 600;
-    text-align: center;
-    border: 1px solid #fecaca; 
-  }
   .invisivel {
-    color: #ffffff
+    color: #ffffff;
   }
   @media (max-width: 600px) {
     main {
@@ -135,7 +125,21 @@
     <h1>Pagamento da Rifa</h1>
 
     {% if erro %}
-      <div class="erro" role="alert">{{ erro }}</div>
+      <div style='
+          background-color: #fff5f5;
+          padding: 15px;
+          border-left: 6px solid #f87171;
+          border-radius: 8px;
+          color: #7f1d1d;
+          font-family: sans-serif;
+          max-width: 600px;
+          margin: 20px auto;
+      '>
+          <strong style='font-size: 1.1em;'>⚠️ Atenção:</strong>
+          <ul style='padding-left: 20px; margin-top: 10px;'>
+            <li>{{ erro }}</li>
+          </ul>
+      </div>
     {% else %}
     <form id="form-pagamento" action="/enviar-comprovativo" method="post" enctype="multipart/form-data" novalidate>
       <section aria-live="polite" aria-atomic="true">
@@ -159,7 +163,6 @@
         </div>
       </section>
 
-      <!-- CAMPOS HIDDEN ESSENCIAIS (agora dentro do formulário) -->
       <input type="hidden" id="quantidade-selecionada" name="quantidade_bilhetes" value="{{ quantidade_bilhetes }}" />
       <input type="hidden" id="produto-id" name="produto_id" value="{{ produto_id }}" />
       <input type="hidden" id="localizacao" name="localizacao" />
