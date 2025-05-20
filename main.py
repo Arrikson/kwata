@@ -121,12 +121,28 @@ def atualizar_rifas_restantes(produto_id: str):
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    return render_template("index.html")
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
-@app.route("/disponiveis", methods=["GET"])
-def produtos_disponiveis():
+@app.get("/disponiveis", response_class=HTMLResponse)
+async def produtos_disponiveis(request: Request):
+    return templates.TemplateResponse("produtos_disponiveis.html", {"request": request})
+
+@app.get("/sorteio", response_class=HTMLResponse)
+async def sorteio(request: Request):
+    return templates.TemplateResponse("sorte.html", {"request": request})
+
+@app.get("/sobre", response_class=HTMLResponse)
+async def sobre_nos(request: Request):
+    return templates.TemplateResponse("sobre.html", {"request": request})
+
+@app.get("/ganhadores", response_class=HTMLResponse)
+async def ganhadores(request: Request):
+    return templates.TemplateResponse("ganhadores.html", {"request": request})
+
+@app.get("/produtos", response_class=HTMLResponse)
+async def produtos_disponiveis_detalhados(request: Request):
     db = firestore.Client()
     produtos_ref = db.collection("produtos")
     docs = produtos_ref.stream()
@@ -156,19 +172,8 @@ def produtos_disponiveis():
         }
         produtos.append(produto)
 
-    return render_template("produtos_disponiveis.html", produtos=produtos)
+    return templates.TemplateResponse("produtos_disponiveis.html", {"request": request, "produtos": produtos})
 
-@app.route("/sorteio", methods=["GET"])
-def sorteio():
-    return render_template("sorte.html")
-
-@app.route("/sobre", methods=["GET"])
-def sobre_nos():
-    return render_template("sobre.html")
-
-@app.route("/ganhadores", methods=["GET"])
-def ganhadores():
-    return render_template("ganhadores.html")
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
