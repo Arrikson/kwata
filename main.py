@@ -735,7 +735,7 @@ async def enviar_comprovativo(
         # ✅ Renderizar página com cronômetro (com produto_id incluído)
         return templates.TemplateResponse("sorte.html", {
             "request": request,
-            "data_fim_sorteio": data_sorteio
+            "data_fim_sorteio": data_sorteio,
             "produto_id": produto_id  # Correção aplicada aqui
         })
 
