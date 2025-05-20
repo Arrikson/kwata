@@ -735,7 +735,7 @@ async def enviar_comprovativo(
         # ✅ Renderizar página com cronômetro (com produto_id incluído)
         return templates.TemplateResponse("sorte.html", {
             "request": request,
-            "data_fim_sorteio": data_sorteio,
+            "data_sorteio": data_sorteio,
             "produto_id": produto_id  # Correção aplicada aqui
         })
 
@@ -759,7 +759,7 @@ async def sorte_get(request: Request, produto_id: str):
     return templates.TemplateResponse("sorte.html", {
         "request": request,
         "produto_id": produto_id,
-        "data_fim_sorteio": data_sorteio  # esse nome é usado no HTML
+        "data_sorteio": data_sorteio  # esse nome é usado no HTML
     })
 
 @app.post("/sorte")
