@@ -137,9 +137,9 @@ async def sobre_nos(request: Request):
 async def ganhadores(request: Request):
     return templates.TemplateResponse("ganhadores.html", {"request": request})
 
-@app.get("/produtos_disponiveis", response_class=HTMLResponse)
-async def produtos_disponiveis(request: Request):
-    db = firestore.Client()
+@app.get("/produtos_disponiveis")
+def index(request: Request):
+    db = firestore.client()
     produtos_ref = db.collection("produtos")
     docs = produtos_ref.stream()
 
@@ -148,18 +148,16 @@ async def produtos_disponiveis(request: Request):
         data = doc.to_dict()
         produto_id = doc.id
 
-        # VERIFICAÇÃO SEGURA
+        # Buscar o bilhetes_disponiveis
         rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
-        if rifa_doc.exists:
-            rifa_data = rifa_doc.to_dict()
-            bilhetes_disponiveis = rifa_data.get("bilhetes_disponiveis", 0)
-        else:
-            bilhetes_disponiveis = 0
+        bilhetes_disponiveis = rifa_doc.to_dict().get("bilhetes_disponiveis", 0) if rifa_doc.exists else 0
 
+        # Corrigir: usar data_sorteio como campo de data
         data_sorteio = data.get("data_sorteio")
         if isinstance(data_sorteio, datetime):
             data_sorteio_iso = data_sorteio.isoformat()
         else:
+            # Caso não esteja presente ou esteja num formato inválido
             data_sorteio_iso = "2025-12-31T23:59:59Z"
 
         produto = {
@@ -168,13 +166,13 @@ async def produtos_disponiveis(request: Request):
             "descricao": data.get("descricao", ""),
             "preco_bilhete": data.get("preco_bilhete", 0),
             "imagem": data.get("imagem", "/static/imagem_padrao.jpg"),
-            "data_limite_iso": data_sorteio_iso,
+            "data_limite_iso": data_sorteio_iso,  # mantém o nome para o HTML usar igual
             "bilhetes_disponiveis": bilhetes_disponiveis
         }
         produtos.append(produto)
 
     return templates.TemplateResponse("produtos_disponiveis.html", {"request": request, "produtos": produtos})
-
+    
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
