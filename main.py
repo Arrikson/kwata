@@ -721,22 +721,26 @@ async def enviar_comprovativo(
                 "comprovativo_path": filename
             })
 
-        # 🔍 Obter a data do sorteio do produto
+        # 🔍 Obter os dados do produto
         produto_doc = db.collection("produtos").document(produto_id).get()
         if not produto_doc.exists:
             return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
 
         produto_data = produto_doc.to_dict()
         data_fim_sorteio = produto_data.get("data_sorteio")
+        nome_produto = produto_data.get("nome", "Produto")
+        imagem_produto = produto_data.get("imagem", "")  # ex: "/static/imagens/produto.jpg"
 
         if not data_fim_sorteio:
             return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
 
-        # ✅ Renderizar página com cronômetro (com produto_id incluído)
+        # ✅ Renderizar página com cronômetro e detalhes do produto
         return templates.TemplateResponse("sorte.html", {
             "request": request,
             "data_fim_sorteio": data_fim_sorteio,
-            "produto_id": produto_id  # Correção aplicada aqui
+            "produto_id": produto_id,
+            "nome_produto": nome_produto,
+            "imagem_produto": imagem_produto
         })
 
     except Exception as e:
