@@ -120,6 +120,12 @@ def atualizar_rifas_restantes(produto_id: str):
     except Exception as e:
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
+        
+# Inicializar o Firebase
+cred = credentials.Certificate("credenciais/chave-firebase.json")
+firebase_admin.initialize_app(cred)
+
+db = firestore.client()
 
 def atualizar_contadores():
     # 1. Buscar todos os bilhetes comprados
@@ -152,6 +158,10 @@ def atualizar_contadores():
     })
 
     print("Contadores atualizados com sucesso!")
+
+# Chamada direta
+if __name__ == "__main__":
+    atualizar_contadores()
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
