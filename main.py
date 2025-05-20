@@ -131,9 +131,9 @@ cred_dict["private_key"] = cred_dict["private_key"].replace('\\n', '\n')
 
 cred = credentials.Certificate(cred_dict)
 
-def atualizar_contadores():
-    # 1. Buscar todos os bilhetes comprados
-    comprados_snapshot = db.collection("rifas-compradas").stream()
+def atualizar_contadores(id_produto):
+    # 1. Buscar todos os bilhetes comprados do produto específico
+    comprados_snapshot = db.collection("rifas-compradas").where("id_produto", "==", id_produto).stream()
     bilhetes_comprados = []
 
     for doc in comprados_snapshot:
@@ -143,29 +143,30 @@ def atualizar_contadores():
 
     total_comprados = len(bilhetes_comprados)
 
-    # 2. Buscar os bilhetes disponíveis (esperamos apenas 1 documento em rifas-restantes)
-    restantes_snapshot = db.collection("rifas-restantes").limit(1).stream()
-    bilhetes_disponiveis = []
+    # 2. Buscar os bilhetes disponíveis do produto específico
+    restantes_snapshot = db.collection("rifas-restantes").document(id_produto).get()
 
-    for doc in restantes_snapshot:
-        data = doc.to_dict()
+    bilhetes_disponiveis = []
+    if restantes_snapshot.exists:
+        data = restantes_snapshot.to_dict()
         bilhetes_disponiveis = data.get("bilhetes_disponiveis", [])
 
     # 3. Calcular os bilhetes que sobraram
     bilhetes_sobrando = [b for b in bilhetes_disponiveis if b not in bilhetes_comprados]
 
-    # 4. Atualizar a coleção "contadores"
-    db.collection("contadores").document("resumo").set({
+    # 4. Atualizar a coleção "contadores" com base no produto
+    db.collection("contadores").document(id_produto).set({
+        "id_produto": id_produto,
         "total_comprados": total_comprados,
         "bilhetes_sobrando": bilhetes_sobrando,
         "atualizado_em": firestore.SERVER_TIMESTAMP
     })
 
-    print("Contadores atualizados com sucesso!")
+    print(f"Contadores do produto {id_produto} atualizados com sucesso!")
 
-# Chamada direta
+# Exemplo de uso
 if __name__ == "__main__":
-    atualizar_contadores()
+    atualizar_contadores("id-do-produto-exemplo")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
