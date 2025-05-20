@@ -121,6 +121,38 @@ def atualizar_rifas_restantes(produto_id: str):
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
 
+def atualizar_contadores():
+    # 1. Buscar todos os bilhetes comprados
+    comprados_snapshot = db.collection("rifas-compradas").stream()
+    bilhetes_comprados = []
+
+    for doc in comprados_snapshot:
+        data = doc.to_dict()
+        if "bilhete" in data:
+            bilhetes_comprados.append(data["bilhete"])
+
+    total_comprados = len(bilhetes_comprados)
+
+    # 2. Buscar os bilhetes disponíveis (esperamos apenas 1 documento em rifas-restantes)
+    restantes_snapshot = db.collection("rifas-restantes").limit(1).stream()
+    bilhetes_disponiveis = []
+
+    for doc in restantes_snapshot:
+        data = doc.to_dict()
+        bilhetes_disponiveis = data.get("bilhetes_disponiveis", [])
+
+    # 3. Calcular os bilhetes que sobraram
+    bilhetes_sobrando = [b for b in bilhetes_disponiveis if b not in bilhetes_comprados]
+
+    # 4. Atualizar a coleção "contadores"
+    db.collection("contadores").document("resumo").set({
+        "total_comprados": total_comprados,
+        "bilhetes_sobrando": bilhetes_sobrando,
+        "atualizado_em": firestore.SERVER_TIMESTAMP
+    })
+
+    print("Contadores atualizados com sucesso!")
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -756,8 +788,8 @@ async def enviar_comprovativo(
                 "produto_id": produto_id,
                 "bilhete": bilhete,
                 "data_envio": datetime.utcnow().isoformat(),
-                "comprovativo_path": comprovativo.filename,  # <-- este é o nome original usado na verificação
-                "comprovativo_salvo": filename                # <-- este é o nome único do arquivo salvo
+                "comprovativo_path": comprovativo.filename,  
+                "comprovativo_salvo": filename                
             })
 
         # Obter dados do produto
