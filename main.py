@@ -121,41 +121,25 @@ def atualizar_rifas_restantes(produto_id: str):
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
 
-@app.get("/")
-def index(request: Request):
-    db = firestore.client()
-    produtos_ref = db.collection("produtos")
-    docs = produtos_ref.stream()
+@app.route("/", methods=["GET", "POST"])
+def index():
+    return render_template("index.html")
 
-    produtos = []
-    for doc in docs:
-        data = doc.to_dict()
-        produto_id = doc.id
+@app.route("/disponiveis", methods=["GET"])
+def produtos_disponiveis():
+    return render_template("produtos_disponiveis.html")
 
-        # Buscar o bilhetes_disponiveis
-        rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
-        bilhetes_disponiveis = rifa_doc.to_dict().get("bilhetes_disponiveis", 0) if rifa_doc.exists else 0
+@app.route("/sorteio", methods=["GET"])
+def sorteio():
+    return render_template("sorte.html")
 
-        # Corrigir: usar data_sorteio como campo de data
-        data_sorteio = data.get("data_sorteio")
-        if isinstance(data_sorteio, datetime):
-            data_sorteio_iso = data_sorteio.isoformat()
-        else:
-            # Caso não esteja presente ou esteja num formato inválido
-            data_sorteio_iso = "2025-12-31T23:59:59Z"
+@app.route("/sobre", methods=["GET"])
+def sobre_nos():
+    return render_template("sobre.html")
 
-        produto = {
-            "id": produto_id,
-            "nome": data.get("nome", "Sem nome"),
-            "descricao": data.get("descricao", ""),
-            "preco_bilhete": data.get("preco_bilhete", 0),
-            "imagem": data.get("imagem", "/static/imagem_padrao.jpg"),
-            "data_limite_iso": data_sorteio_iso,  # mantém o nome para o HTML usar igual
-            "bilhetes_disponiveis": bilhetes_disponiveis
-        }
-        produtos.append(produto)
-
-    return templates.TemplateResponse("index.html", {"request": request, "produtos": produtos})
+@app.route("/ganhadores", methods=["GET"])
+def ganhadores():
+    return render_template("ganhadores.html")
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
