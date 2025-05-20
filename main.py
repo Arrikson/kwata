@@ -125,10 +125,6 @@ def atualizar_rifas_restantes(produto_id: str):
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/produtos_disponiveis", response_class=HTMLResponse)
-async def produtos_disponiveis(request: Request):
-    return templates.TemplateResponse("produtos_disponiveis.html", {"request": request})
-
 @app.get("/sorteio", response_class=HTMLResponse)
 async def sorteio(request: Request):
     return templates.TemplateResponse("sorte.html", {"request": request})
@@ -141,8 +137,8 @@ async def sobre_nos(request: Request):
 async def ganhadores(request: Request):
     return templates.TemplateResponse("ganhadores.html", {"request": request})
 
-@app.get("/produtos", response_class=HTMLResponse)
-async def produtos_disponiveis_detalhados(request: Request):
+@app.get("/produtos_disponiveis", response_class=HTMLResponse)
+async def produtos_disponiveis(request: Request):
     db = firestore.Client()
     produtos_ref = db.collection("produtos")
     docs = produtos_ref.stream()
@@ -173,7 +169,6 @@ async def produtos_disponiveis_detalhados(request: Request):
         produtos.append(produto)
 
     return templates.TemplateResponse("produtos_disponiveis.html", {"request": request, "produtos": produtos})
-
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
