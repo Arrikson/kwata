@@ -5,6 +5,7 @@ import uvicorn
 import uuid
 import random
 import sys
+from uuid import uuid4
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Request, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -686,7 +687,13 @@ async def enviar_comprovativo(
         if nome_conf:
             conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
 
-        # Se houver conflitos, exibir mensagem leve e elegante
+        # ✅ Verificar se o nome original do comprovativo já foi usado (no campo 'comprovativo_path')
+        comprovativo_duplicado = list(
+            rifas_ref.where("comprovativo_path", "==", comprovativo.filename).stream()
+        )
+        if comprovativo_duplicado:
+            conflitos.append(f"O comprovativo '{comprovativo.filename}' já foi usado. Por favor, envie outro diferente.")
+
         if conflitos:
             erro_msg = """
             <div style='
@@ -711,18 +718,18 @@ async def enviar_comprovativo(
         pasta = os.path.join("static", "static", "comprovativos")
         os.makedirs(pasta, exist_ok=True)
 
-        # Verificar formato de arquivo permitido
+        # Validar extensão
         file_ext = comprovativo.filename.split(".")[-1].lower()
         if file_ext not in ["pdf", "jpg", "jpeg", "png"]:
             return HTMLResponse(content="<h2>Erro:</h2><p>Formato de arquivo não suportado.</p>", status_code=400)
 
-        # Salvar o comprovativo
+        # Gerar nome único para salvar o arquivo
         filename = f"{uuid4()}.{file_ext}"
         file_path = os.path.join(pasta, filename)
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
-        # Salvar cada bilhete individualmente no Firebase
+        # Salvar cada bilhete individualmente
         for bilhete in bilhetes:
             rifas_ref.add({
                 "nome": nome,
@@ -733,10 +740,11 @@ async def enviar_comprovativo(
                 "produto_id": produto_id,
                 "bilhete": bilhete,
                 "data_envio": datetime.utcnow().isoformat(),
-                "comprovativo_path": filename
+                "comprovativo_path": comprovativo.filename,  # <-- este é o nome original usado na verificação
+                "comprovativo_salvo": filename                # <-- este é o nome único do arquivo salvo
             })
 
-        # Obter dados do produto para a página de sorteio
+        # Obter dados do produto
         produto_doc = db.collection("produtos").document(produto_id).get()
         if not produto_doc.exists:
             return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
@@ -749,7 +757,7 @@ async def enviar_comprovativo(
         if not data_fim_sorteio:
             return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
 
-        # Exibir a página com cronômetro regressivo
+        # Renderizar página de sucesso com cronômetro
         return templates.TemplateResponse("sorte.html", {
             "request": request,
             "data_fim_sorteio": data_fim_sorteio,
