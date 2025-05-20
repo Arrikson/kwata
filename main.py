@@ -125,7 +125,7 @@ def atualizar_rifas_restantes(produto_id: str):
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/disponiveis", response_class=HTMLResponse)
+@app.get("/produtos_disponiveis", response_class=HTMLResponse)
 async def produtos_disponiveis(request: Request):
     return templates.TemplateResponse("produtos_disponiveis.html", {"request": request})
 
