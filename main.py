@@ -121,11 +121,11 @@ def atualizar_rifas_restantes(produto_id: str):
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
         
-# Inicializar o Firebase
-cred = credentials.Certificate("credenciais/chave-firebase.json")
-firebase_admin.initialize_app(cred)
+cred_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+cred_dict = json.loads(cred_json)
+cred = credentials.Certificate(cred_dict)
 
-db = firestore.client()
+initialize_app(cred)
 
 def atualizar_contadores():
     # 1. Buscar todos os bilhetes comprados
