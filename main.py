@@ -127,23 +127,7 @@ def index():
 
 @app.route("/disponiveis", methods=["GET"])
 def produtos_disponiveis():
-    return render_template("produtos_disponiveis.html")
-
-@app.route("/sorteio", methods=["GET"])
-def sorteio():
-    return render_template("sorte.html")
-
-@app.route("/sobre", methods=["GET"])
-def sobre_nos():
-    return render_template("sobre.html")
-
-@app.route("/ganhadores", methods=["GET"])
-def ganhadores():
-    return render_template("ganhadores.html")
-
-@app.get("/produtos")
-def produtos_disponiveis(request: Request):
-    db = firestore.client()
+    db = firestore.Client()
     produtos_ref = db.collection("produtos")
     docs = produtos_ref.stream()
 
@@ -152,11 +136,9 @@ def produtos_disponiveis(request: Request):
         data = doc.to_dict()
         produto_id = doc.id
 
-        # Buscar o bilhetes_disponiveis
         rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
         bilhetes_disponiveis = rifa_doc.to_dict().get("bilhetes_disponiveis", 0) if rifa_doc.exists else 0
 
-        # Corrigir: usar data_sorteio como campo de data
         data_sorteio = data.get("data_sorteio")
         if isinstance(data_sorteio, datetime):
             data_sorteio_iso = data_sorteio.isoformat()
@@ -174,7 +156,19 @@ def produtos_disponiveis(request: Request):
         }
         produtos.append(produto)
 
-    return templates.TemplateResponse("produtos_disponiveis.html", {"request": request, "produtos": produtos})
+    return render_template("produtos_disponiveis.html", produtos=produtos)
+
+@app.route("/sorteio", methods=["GET"])
+def sorteio():
+    return render_template("sorte.html")
+
+@app.route("/sobre", methods=["GET"])
+def sobre_nos():
+    return render_template("sobre.html")
+
+@app.route("/ganhadores", methods=["GET"])
+def ganhadores():
+    return render_template("ganhadores.html")
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_form(request: Request):
