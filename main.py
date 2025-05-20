@@ -658,7 +658,7 @@ async def enviar_comprovativo(
         rifas_ref = db.collection("rifas-compradas")
         conflitos = []
 
-        # Verificação de bilhetes duplicados
+        # Verificar conflitos: bilhetes, BI e nome
         for bilhete in bilhetes:
             query = list(
                 rifas_ref.where("produto_id", "==", produto_id)
@@ -668,7 +668,6 @@ async def enviar_comprovativo(
             if query:
                 conflitos.append(f"Bilhete {bilhete} já foi comprado.")
 
-        # Verificação de B.I duplicado
         bi_conf = list(
             rifas_ref.where("produto_id", "==", produto_id)
                      .where("bi", "==", bi)
@@ -678,7 +677,6 @@ async def enviar_comprovativo(
         if bi_conf:
             conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
 
-        # Verificação de nome duplicado
         nome_conf = list(
             rifas_ref.where("produto_id", "==", produto_id)
                      .where("nome", "==", nome)
@@ -688,15 +686,32 @@ async def enviar_comprovativo(
         if nome_conf:
             conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
 
+        # Se houver conflitos, exibir mensagem leve e elegante
         if conflitos:
-            erro_msg = " | ".join(conflitos)
-            return HTMLResponse(content=f"<h2>Erro:</h2><p>{erro_msg}</p>", status_code=400)
+            erro_msg = """
+            <div style='
+                background-color: #fff5f5;
+                padding: 15px;
+                border-left: 6px solid #f87171;
+                border-radius: 8px;
+                color: #7f1d1d;
+                font-family: sans-serif;
+                max-width: 600px;
+                margin: 20px auto;
+            '>
+                <strong style='font-size: 1.1em;'>⚠️ Atenção:</strong>
+                <ul style='padding-left: 20px; margin-top: 10px;'>
+            """
+            for conflito in conflitos:
+                erro_msg += f"<li>{conflito}</li>"
+            erro_msg += "</ul></div>"
+            return HTMLResponse(content=erro_msg, status_code=400)
 
         # Caminho da pasta de destino
         pasta = os.path.join("static", "static", "comprovativos")
         os.makedirs(pasta, exist_ok=True)
 
-        # Verificar formato do arquivo
+        # Verificar formato de arquivo permitido
         file_ext = comprovativo.filename.split(".")[-1].lower()
         if file_ext not in ["pdf", "jpg", "jpeg", "png"]:
             return HTMLResponse(content="<h2>Erro:</h2><p>Formato de arquivo não suportado.</p>", status_code=400)
@@ -707,7 +722,7 @@ async def enviar_comprovativo(
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
-        # Registrar cada bilhete no Firebase
+        # Salvar cada bilhete individualmente no Firebase
         for bilhete in bilhetes:
             rifas_ref.add({
                 "nome": nome,
@@ -721,7 +736,7 @@ async def enviar_comprovativo(
                 "comprovativo_path": filename
             })
 
-        # 🔍 Obter os dados do produto
+        # Obter dados do produto para a página de sorteio
         produto_doc = db.collection("produtos").document(produto_id).get()
         if not produto_doc.exists:
             return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
@@ -729,12 +744,12 @@ async def enviar_comprovativo(
         produto_data = produto_doc.to_dict()
         data_fim_sorteio = produto_data.get("data_sorteio")
         nome_produto = produto_data.get("nome", "Produto")
-        imagem_produto = produto_data.get("imagem", "")  # ex: "/static/imagens/produto.jpg"
+        imagem_produto = produto_data.get("imagem", "")
 
         if not data_fim_sorteio:
             return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
 
-        # ✅ Renderizar página com cronômetro e detalhes do produto
+        # Exibir a página com cronômetro regressivo
         return templates.TemplateResponse("sorte.html", {
             "request": request,
             "data_fim_sorteio": data_fim_sorteio,
