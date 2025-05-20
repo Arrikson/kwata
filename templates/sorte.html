@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -110,14 +110,28 @@
       color: var(--verde);
       font-size: 1.2rem;
     }
+
+    .produto-img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <img src="/static/novologo.png" alt="Logo" class="logo" />
+
     <h1>Sorteio ao Vivo 🎉</h1>
 
-    <p>Produto: <strong>{{ produto_id }}</strong></p>
+    {% if imagem_produto %}
+    <img src="{{ imagem_produto }}" alt="Produto" class="produto-img" />
+    {% endif %}
+
+    <p>Produto: <strong>{{ nome_produto }}</strong></p>
     <p>Data do fim do sorteio: <span id="sorteio-fim">Carregando...</span></p>
 
     <div id="cronometro" class="timer">Carregando...</div>
@@ -132,6 +146,7 @@
 
   <script>
     const produtoId = "{{ produto_id }}";
+    const nomeProduto = "{{ nome_produto }}";
     const fimSorteioStr = "{{ data_fim_sorteio }}";
 
     function formatarData(date) {
@@ -170,24 +185,19 @@
 
     async function buscarVencedor() {
       try {
-        const response = await fetch('/sorteio-data', {
-          method: 'POST',
-          body: new URLSearchParams({ produto_id: produtoId })
-        });
-
-        if (!response.ok) throw new Error('Erro na resposta');
-
+        const response = await fetch(`/sorteio-data?produto_id=${produtoId}`);
         const data = await response.json();
 
-        document.getElementById('nome-vencedor').textContent = data.nome;
-        document.getElementById('numero-bilhete').textContent = data.numero_bilhete;
-        document.getElementById('produto').textContent = data.produto;
-
-        vencedorDiv.style.display = 'block';
-        cronometro.style.display = 'none';
-      } catch {
+        if (data && data.nome && data.bilhete) {
+          document.getElementById('nome-vencedor').textContent = data.nome;
+          document.getElementById('numero-bilhete').textContent = data.bilhete;
+          document.getElementById('produto').textContent = nomeProduto;
+          vencedorDiv.style.display = 'block';
+        } else {
+          cronometro.textContent = 'Nenhum vencedor encontrado.';
+        }
+      } catch (e) {
         cronometro.textContent = 'Erro ao buscar vencedor.';
-        cronometro.classList.remove('sorteando');
       }
     }
   </script>
