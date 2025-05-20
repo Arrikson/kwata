@@ -148,8 +148,13 @@ async def produtos_disponiveis(request: Request):
         data = doc.to_dict()
         produto_id = doc.id
 
+        # VERIFICAÇÃO SEGURA
         rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
-        bilhetes_disponiveis = rifa_doc.to_dict().get("bilhetes_disponiveis", 0) if rifa_doc.exists else 0
+        if rifa_doc.exists:
+            rifa_data = rifa_doc.to_dict()
+            bilhetes_disponiveis = rifa_data.get("bilhetes_disponiveis", 0)
+        else:
+            bilhetes_disponiveis = 0
 
         data_sorteio = data.get("data_sorteio")
         if isinstance(data_sorteio, datetime):
