@@ -121,11 +121,16 @@ def atualizar_rifas_restantes(produto_id: str):
         print("❌ Erro ao atualizar rifas:")
         traceback.print_exc()
         
-cred_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
-cred_dict = json.loads(cred_json)
-cred = credentials.Certificate(cred_dict)
+cred_json = os.environ.get("FIREBASE_CONFIG")
 
-initialize_app(cred)
+if cred_json is None:
+    raise ValueError("A variável FIREBASE_CONFIG não foi encontrada.")
+
+cred_dict = json.loads(cred_json)
+cred_dict["private_key"] = cred_dict["private_key"].replace('\\n', '\n')
+
+cred = credentials.Certificate(cred_dict)
+firebase_admin.initialize_app(cred)
 
 def atualizar_contadores():
     # 1. Buscar todos os bilhetes comprados
