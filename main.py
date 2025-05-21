@@ -548,6 +548,7 @@ async def gerar_arquivo_produtos():
             status_code=500
         )
 
+
 @app.get("/produtos")
 async def listar_produtos():
     try:
@@ -574,102 +575,6 @@ def converter_valores_json(data_str):
     # Aqui você pode colocar a lógica de conversão que quiser
     # Exemplo simples: apenas retornar a data se não for None
     return data_str if data_str else "Data inválida"
-
-
-@app.get("/registros", response_class=HTMLResponse)
-async def listar_registros(request: Request):
-    try:
-        registros = []
-
-        # 🔹 1. Coletar dados da coleção "comprovativo-comprados"
-        comprovativos_ref = db.collection("comprovativo-comprados").stream()
-        for doc in comprovativos_ref:
-            data = doc.to_dict()
-            produto_id = data.get("produto_id")
-            produto_nome = "Desconhecido"
-
-            if produto_id:
-                produto_doc = db.collection("produtos").document(produto_id).get()
-                if produto_doc.exists:
-                    produto_nome = produto_doc.to_dict().get("nome", "Sem Nome")
-
-            registros.append({
-                "nome": data.get("nome"),
-                "bi": data.get("bi"),
-                "telefone": data.get("telefone", "N/A"),
-                "localizacao": data.get("localizacao"),
-                "latitude": data.get("latitude"),
-                "longitude": data.get("longitude"),
-                "produto": produto_nome,
-                "quantidade_bilhetes": len(data.get("bilhetes", [])),
-                "bilhetes": data.get("bilhetes", []),
-                "data_compra": converter_valores_json(data.get("data_compra") or data.get("data_envio"))
-            })
-
-        # 🔹 2. Coletar dados da coleção "compras"
-        compras_ref = db.collection("compras").stream()
-        for doc in compras_ref:
-            data = doc.to_dict()
-            produto_id = data.get("produto_id")
-            produto_nome = "Desconhecido"
-
-            if produto_id:
-                produto_doc = db.collection("produtos").document(produto_id).get()
-                if produto_doc.exists:
-                    produto_nome = produto_doc.to_dict().get("nome", "Sem Nome")
-
-            registros.append({
-                "nome": data.get("nome"),
-                "bi": data.get("bi"),
-                "telefone": data.get("telefone", "N/A"),
-                "localizacao": data.get("localizacao"),
-                "latitude": data.get("latitude"),
-                "longitude": data.get("longitude"),
-                "produto": produto_nome,
-                "quantidade_bilhetes": data.get("quantidade_bilhetes"),
-                "bilhetes": data.get("bilhetes", []),  # opcional, pode não ter
-                "data_compra": converter_valores_json(data.get("data_compra"))
-            })
-
-        # 🔹 3. Ordenar por data mais recente (pode ser None)
-        registros.sort(key=lambda x: x["data_compra"] or "", reverse=True)
-
-        return templates.TemplateResponse("registros.html", {
-            "request": request,
-            "registros": registros
-        })
-
-    except Exception as e:
-        print("❌ Erro ao listar registros:", e)
-        import traceback
-        traceback.print_exc()
-        return templates.TemplateResponse("registros.html", {
-            "request": request,
-            "registros": [],
-            "erro": "Erro ao carregar os registros."
-        })
-
-@app.get("/comprovativo-comprados")
-def listar_comprovativos():
-    with open(CAMINHO_JSON, "r") as f:
-        dados = json.load(f)
-    return JSONResponse(content=dados)
-
-
-@app.post("/comprovativo-comprados")
-def adicionar_comprovativo(comprovativo: Comprovativo):
-    with open(CAMINHO_JSON, "r") as f:
-        dados = json.load(f)
-
-    novo_comprovativo = comprovativo.dict()
-    novo_comprovativo["id"] = str(uuid.uuid4())
-
-    dados.append(novo_comprovativo)
-
-    with open(CAMINHO_JSON, "w") as f:
-        json.dump(dados, f, indent=2)
-
-    return {"mensagem": "Comprovativo adicionado com sucesso", "id": novo_comprovativo["id"]}
 
 @app.post("/comprovativos/")
 async def enviar_comprovativo(
