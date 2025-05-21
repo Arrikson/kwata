@@ -312,6 +312,7 @@ async def adicionar_produto(
         print(f"❌ Erro ao adicionar produto: {e}")
         return RedirectResponse(url="/admin?erro=1", status_code=303)
 
+
 @app.get("/pagamento-rifa.html", response_class=HTMLResponse)
 async def pagamento_rifa(request: Request, produto_id: str = Query(default=None), sucesso: str = Query(default=None)):
     if not produto_id:
@@ -321,7 +322,6 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         })
 
     try:
-        # 🔹 Buscar o produto no Firebase
         doc_ref = db.collection("produtos").document(produto_id)
         doc = doc_ref.get()
 
@@ -335,33 +335,43 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         nome_produto = dados_produto.get("nome", "Produto")
         preco_bilhete = float(dados_produto.get("preco_bilhete", 0.00))
 
-        # 🔹 Buscar rifas restantes no documento específico
         rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
         if rifas_restantes_doc.exists:
             bilhetes_disponiveis = rifas_restantes_doc.to_dict().get("bilhetes_disponiveis", [])
         else:
-            # 🔄 Caso não exista documento, calcula com base na quantidade total e vendidos
             quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
             bilhetes_vendidos = int(dados_produto.get("bilhetes_vendidos", 0))
             bilhetes_disponiveis = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
 
-            # ✅ Criar documento na coleção "rifas-restantes"
             db.collection("rifas-restantes").document(produto_id).set({
                 "bilhetes_disponiveis": bilhetes_disponiveis,
                 "atualizado_em": datetime.now().isoformat()
             })
 
-        # 🔸 Montar contexto para o template
+        rifas_compradas_ref = db.collection("rifas-compradas").where("produto_id", "==", produto_id)
+        rifas_compradas_docs = rifas_compradas_ref.stream()
+        bilhetes_indisponiveis = []
+
+        for doc in rifas_compradas_docs:
+            dados = doc.to_dict()
+            bilhete = dados.get("bilhete")
+            if isinstance(bilhete, list):
+                bilhetes_indisponiveis.extend(bilhete)
+            elif isinstance(bilhete, int) or isinstance(bilhete, str):
+                bilhetes_indisponiveis.append(int(bilhete))
+
+        bilhetes_indisponiveis = list(set(int(b) for b in bilhetes_indisponiveis if str(b).isdigit()))
+
         contexto = {
             "request": request,
             "produto_id": produto_id,
             "nome_produto": nome_produto,
             "preco_bilhete": preco_bilhete,
             "quantidade_bilhetes": 1,
-            "bilhetes_disponiveis": bilhetes_disponiveis
+            "bilhetes_disponiveis": bilhetes_disponiveis,
+            "bilhetes_indisponiveis": bilhetes_indisponiveis
         }
 
-        # ✅ Mostrar mensagem de sucesso se for redirecionado após o POST
         if sucesso == "1":
             contexto["sucesso"] = "Pagamento enviado com sucesso! Seus bilhetes foram reservados."
 
@@ -374,94 +384,52 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
             "erro": "Erro ao carregar os dados. Verifique sua conexão e tente novamente."
         })
 
+
 @app.post("/pagamento-rifa.html")
-async def processar_pagamento_rifa(
+async def receber_pagamento_rifa(
     request: Request,
-    produto_id: str = Form(...),
     nome: str = Form(...),
-    numero_bi: str = Form(...),
     telefone: str = Form(...),
-    bilhetes_selecionados: List[int] = Form(...),
-    nome_comprovativo: str = Form(...),
-    numero_comprovativo: str = Form(...),
-    comprovativo: UploadFile = Form(...)
+    produto_id: str = Form(...),
+    latitude: str = Form(...),
+    longitude: str = Form(...),
+    bilhetes: list[str] = Form(...),
+    comprovativo: UploadFile = File(...)
 ):
     try:
-        # 🔍 Buscar todos os registros existentes
-        registros_ref = db.collection("registros")
-        registros = registros_ref.stream()
+        # 🔹 Ler e validar o PDF (tamanho)
+        conteudo = await comprovativo.read()
+        if len(conteudo) > 32 * 1024:
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "O comprovativo deve ter no máximo 32KB.",
+                "produto_id": produto_id
+            })
 
-        # 🔁 Verificar se já existe nome, BI, telefone ou comprovativo duplicado
-        for registro in registros:
-            dados = registro.to_dict()
+        nome_arquivo = f"{uuid.uuid4()}.pdf"
 
-            if dados.get("nome") == nome:
-                return templates.TemplateResponse("pagamento-rifa.html", {
-                    "request": request,
-                    "produto_id": produto_id,
-                    "erro": "Este nome já foi usado para registro."
-                })
-
-            if dados.get("numero_bi") == numero_bi:
-                return templates.TemplateResponse("pagamento-rifa.html", {
-                    "request": request,
-                    "produto_id": produto_id,
-                    "erro": "Este número de B.I já está registrado."
-                })
-
-            if dados.get("telefone") == telefone:
-                return templates.TemplateResponse("pagamento-rifa.html", {
-                    "request": request,
-                    "produto_id": produto_id,
-                    "erro": "Este número de telefone já está registrado."
-                })
-
-            if dados.get("numero_comprovativo") == numero_comprovativo and dados.get("nome_comprovativo") == nome_comprovativo:
-                return templates.TemplateResponse("pagamento-rifa.html", {
-                    "request": request,
-                    "produto_id": produto_id,
-                    "erro": "Este comprovativo já foi utilizado por outro usuário."
-                })
-
-            bilhetes_utilizados = dados.get("bilhetes", [])
-            for bilhete in bilhetes_selecionados:
-                if bilhete in bilhetes_utilizados:
-                    return templates.TemplateResponse("pagamento-rifa.html", {
-                        "request": request,
-                        "produto_id": produto_id,
-                        "erro": f"O bilhete número {bilhete} já foi comprado por outro usuário."
-                    })
-
-        # ✅ Se passou nas verificações, salvar os dados no Firebase
-        novo_registro = {
+        doc = {
             "nome": nome,
-            "numero_bi": numero_bi,
             "telefone": telefone,
-            "bilhetes": bilhetes_selecionados,
-            "nome_comprovativo": nome_comprovativo,
-            "numero_comprovativo": numero_comprovativo,
+            "produto_id": produto_id,
+            "latitude": latitude,
+            "longitude": longitude,
+            "bilhete": [int(b) for b in bilhetes],
+            "comprovativo_nome": nome_arquivo,
+            "comprovativo_bytes": conteudo,
             "data_envio": datetime.now().isoformat()
         }
 
-        db.collection("registros").add(novo_registro)
+        db.collection("comprovativo-comprados").add(doc)
 
-        # 🔁 Atualizar lista de bilhetes restantes
-        rifas_doc_ref = db.collection("rifas-restantes").document(produto_id)
-        rifas_doc = rifas_doc_ref.get()
-        if rifas_doc.exists:
-            bilhetes_restantes = rifas_doc.to_dict().get("bilhetes_disponiveis", [])
-            novos_bilhetes = [b for b in bilhetes_restantes if b not in bilhetes_selecionados]
-            rifas_doc_ref.update({"bilhetes_disponiveis": novos_bilhetes})
-
-        # ✅ Redirecionar com sucesso
-        return RedirectResponse(f"/sorteio-data?produto_id={produto_id}", status_code=303)
+        return RedirectResponse(url=f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
 
     except Exception as e:
         print(f"❌ Erro ao processar pagamento: {e}")
         return templates.TemplateResponse("pagamento-rifa.html", {
             "request": request,
-            "produto_id": produto_id,
-            "erro": "Erro ao processar o pagamento. Tente novamente."
+            "erro": "Erro ao processar o pagamento. Verifique os dados e tente novamente.",
+            "produto_id": produto_id
         })
 
 
