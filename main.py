@@ -793,8 +793,9 @@ async def comprar_bilhete(
             "erro": "Erro ao processar a compra, tente novamente."
         })
 
+
 @app.get("/contadores", response_class=HTMLResponse)
-async def contadores(request: Request, produto_id: str = Query(default=None)):
+async def contadores(request: Request, produto_id: Optional[str] = None):
     if not produto_id:
         return templates.TemplateResponse("contadores.html", {
             "request": request,
@@ -804,7 +805,7 @@ async def contadores(request: Request, produto_id: str = Query(default=None)):
             "erro": "Produto não selecionado."
         })
 
-    # Pega dados do produto
+    # Recuperar dados do produto e rifas compradas/restantes
     doc_ref = db.collection("produtos").document(produto_id)
     doc = doc_ref.get()
     if not doc.exists:
@@ -818,7 +819,6 @@ async def contadores(request: Request, produto_id: str = Query(default=None)):
 
     dados_produto = doc.to_dict()
 
-    # Rifas restantes
     rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
     if rifas_restantes_doc.exists:
         rifas_restantes = rifas_restantes_doc.to_dict().get("bilhetes_disponiveis", [])
@@ -827,7 +827,6 @@ async def contadores(request: Request, produto_id: str = Query(default=None)):
         bilhetes_vendidos = int(dados_produto.get("bilhetes_vendidos", 0))
         rifas_restantes = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
 
-    # Rifas compradas (todos os bilhetes vendidos)
     rifas_compradas_ref = db.collection("rifas-compradas").where("produto_id", "==", produto_id)
     rifas_compradas_docs = rifas_compradas_ref.stream()
     rifas_compradas = []
@@ -839,7 +838,6 @@ async def contadores(request: Request, produto_id: str = Query(default=None)):
         elif isinstance(bilhete, (int, str)):
             rifas_compradas.append(int(bilhete))
     rifas_compradas = sorted(set(rifas_compradas))
-
     total_vendido = len(rifas_compradas)
 
     return templates.TemplateResponse("contadores.html", {
@@ -849,6 +847,53 @@ async def contadores(request: Request, produto_id: str = Query(default=None)):
         "total_vendido": total_vendido,
         "erro": None,
     })
+
+
+@app.post("/contadores", response_class=HTMLResponse)
+async def atualizar_contadores(
+    request: Request,
+    produto_id: str = Form(...),
+    rifas_compradas: Optional[str] = Form(None),  # string com bilhetes separados por vírgula, ex: "1,5,7,10"
+    rifas_restantes: Optional[str] = Form(None)  # string com bilhetes separados por vírgula
+):
+    # Validar que produto_id existe
+    doc_ref = db.collection("produtos").document(produto_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+
+    # Parse dos bilhetes para listas inteiras
+    def parse_bilhetes(bilhetes_str):
+        if not bilhetes_str:
+            return []
+        try:
+            return sorted(set(int(b.strip()) for b in bilhetes_str.split(",") if b.strip().isdigit()))
+        except Exception:
+            return []
+
+    rifas_compradas_list = parse_bilhetes(rifas_compradas)
+    rifas_restantes_list = parse_bilhetes(rifas_restantes)
+
+    # Atualizar rifas compradas no Firestore (exemplo simplificado)
+    # Aqui pode salvar conforme seu modelo de dados — ex: coleção rifas-compradas
+    # Por simplicidade, vamos salvar em um documento único:
+    db.collection("rifas-compradas").document(produto_id).set({
+        "bilhetes": rifas_compradas_list
+    })
+
+    # Atualizar rifas restantes (exemplo)
+    db.collection("rifas-restantes").document(produto_id).set({
+        "bilhetes_disponiveis": rifas_restantes_list
+    })
+
+    # Atualizar o total vendido no produto
+    doc_ref.update({
+        "bilhetes_vendidos": len(rifas_compradas_list)
+    })
+
+    # Após salvar, redirecionar para GET para mostrar dados atualizados
+    url = app.url_path_for("contadores") + f"?produto_id={produto_id}"
+    return RedirectResponse(url, status_code=303)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
