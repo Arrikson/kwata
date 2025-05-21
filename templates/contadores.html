@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
@@ -200,7 +200,7 @@
       </tbody>
     </table>
 
-    <!-- Tabela adicional de todas as rifas-compradas -->
+    <!-- Tabela adicional de todas as rifas-compradas usando rifas_compradas_todas -->
     <h2>📦 Todas as Rifas Compradas</h2>
     <table>
       <thead>
@@ -213,16 +213,14 @@
         </tr>
       </thead>
       <tbody>
-        {% for c in contadores %}
-          {% for rifa in c.rifas_compradas %}
-          <tr>
-            <td>{{ c.nome_produto }}</td>
-            <td>{{ c.id_produto }}</td>
-            <td>{{ rifa.nome_comprador or "N/A" }}</td>
-            <td>{{ rifa.numeros | join(', ') if rifa.numeros else "N/A" }}</td>
-            <td>{{ rifa.data_compra or "N/A" }}</td>
-          </tr>
-          {% endfor %}
+        {% for rifa in rifas_compradas_todas %}
+        <tr>
+          <td>{{ rifa.nome_produto }}</td>
+          <td>{{ rifa.id_produto }}</td>
+          <td>{{ rifa.nome_comprador or "N/A" }}</td>
+          <td>{{ rifa.numeros | join(', ') if rifa.numeros else "N/A" }}</td>
+          <td>{{ rifa.data_compra or "N/A" }}</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
@@ -236,3 +234,4 @@
   </div>
 </body>
 </html>
+
