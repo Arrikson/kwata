@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Contadores de Rifas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: linear-gradient(to right, #f9f9f9, #e6f0ff);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    form {
+      margin-top: 2rem;
+      text-align: center;
+    }
+    input[type="text"] {
+      padding: 8px;
+      width: 300px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #28a745;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <h1>Contadores de Rifas</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>ID</th>
+        <th>Total Comprados</th>
+        <th>Bilhetes Sobrando</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in contadores %}
+      <tr>
+        <td>{{ c.nome_produto }}</td>
+        <td>{{ c.id_produto }}</td>
+        <td>{{ c.total_comprados }}</td>
+        <td>{{ c.bilhetes_sobrando }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <form method="post" action="/contadores">
+    <h2>Atualizar Contador Manualmente</h2>
+    <input type="text" name="id_produto" placeholder="Digite o ID do Produto">
+    <button type="submit">Atualizar</button>
+  </form>
+</body>
+</html>
