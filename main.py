@@ -5,6 +5,7 @@ import uvicorn
 import uuid
 import random
 import sys
+from typing import Optional
 from uuid import uuid4
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Request, Form, File, UploadFile
@@ -853,8 +854,8 @@ async def contadores(request: Request, produto_id: Optional[str] = None):
 async def atualizar_contadores(
     request: Request,
     produto_id: str = Form(...),
-    rifas_compradas: Optional[str] = Form(None),  # string com bilhetes separados por vírgula, ex: "1,5,7,10"
-    rifas_restantes: Optional[str] = Form(None)  # string com bilhetes separados por vírgula
+    rifas_compradas: Optional[str] = Form(None),  
+    rifas_restantes: Optional[str] = Form(None)  
 ):
     # Validar que produto_id existe
     doc_ref = db.collection("produtos").document(produto_id)
