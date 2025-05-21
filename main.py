@@ -13,7 +13,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
 from datetime import datetime
-import traceback  # ✅ Para exibir erros completos
+import traceback  
 import hashlib
 from fastapi import Form
 from typing import List
@@ -825,20 +825,21 @@ async def listar_contadores(request: Request):
         "contadores": contadores
     })
 
-@app.get("/contadores", response_class=HTMLResponse)
+@router.get("/contadores", response_class=HTMLResponse)
 async def listar_contadores(request: Request):
     docs = db.collection("contadores").stream()
-    rifas_compradas_docs = db.collection("rifas-compradas").stream()
+    rifas_compradas_docs = list(db.collection("rifas-compradas").stream())
 
     # Agrupar rifas compradas por id_produto
     rifas_por_produto = {}
+    rifas_compradas_todas = []
+
     for doc in rifas_compradas_docs:
         data = doc.to_dict()
+        rifas_compradas_todas.append(data)
         id_produto = data.get("id_produto")
         if id_produto:
-            if id_produto not in rifas_por_produto:
-                rifas_por_produto[id_produto] = []
-            rifas_por_produto[id_produto].append(data)
+            rifas_por_produto.setdefault(id_produto, []).append(data)
 
     contadores = []
     for doc in docs:
@@ -852,9 +853,6 @@ async def listar_contadores(request: Request):
             "rifas_compradas": rifas_por_produto.get(id_produto, [])
         })
 
-    # Adicionado conforme solicitado
-    rifas_compradas_todas = [doc.to_dict() for doc in db.collection("rifas-compradas").stream()]
-
     return templates.TemplateResponse("contadores.html", {
         "request": request,
         "contadores": contadores,
@@ -862,26 +860,26 @@ async def listar_contadores(request: Request):
     })
 
 
-@app.post("/contadores", response_class=HTMLResponse)
+# POST /contadores
+@router.post("/contadores", response_class=HTMLResponse)
 async def atualizar_manual(request: Request, id_produto: str = Form(...)):
-    from atualizar_contadores import atualizar_contadores  # Importa a função de atualização
-    atualizar_contadores(id_produto)  # Atualiza os dados do produto informado
+    from atualizar_contadores import atualizar_contadores
+    atualizar_contadores(id_produto)
 
-    # Agora busca novamente os dados atualizados de 'contadores' e 'rifas-compradas'
     docs = db.collection("contadores").stream()
-    rifas_compradas_docs = db.collection("rifas-compradas").stream()
+    rifas_compradas_docs = list(db.collection("rifas-compradas").stream())
 
     # Agrupar rifas compradas por id_produto
     rifas_por_produto = {}
+    rifas_compradas_todas = []
+
     for doc in rifas_compradas_docs:
         data = doc.to_dict()
+        rifas_compradas_todas.append(data)
         produto_id = data.get("id_produto")
         if produto_id:
-            if produto_id not in rifas_por_produto:
-                rifas_por_produto[produto_id] = []
-            rifas_por_produto[produto_id].append(data)
+            rifas_por_produto.setdefault(produto_id, []).append(data)
 
-    # Preparar os dados para exibição no template
     contadores = []
     for doc in docs:
         data = doc.to_dict()
@@ -893,9 +891,6 @@ async def atualizar_manual(request: Request, id_produto: str = Form(...)):
             "bilhetes_sobrando": len(data.get("bilhetes_sobrando", [])),
             "rifas_compradas": rifas_por_produto.get(produto_id, [])
         })
-
-    # Adicionado conforme solicitado
-    rifas_compradas_todas = [doc.to_dict() for doc in db.collection("rifas-compradas").stream()]
 
     return templates.TemplateResponse("contadores.html", {
         "request": request,
