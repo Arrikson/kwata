@@ -923,22 +923,71 @@ async def comprar_bilhete(
 @app.get("/contadores", response_class=HTMLResponse)
 async def listar_contadores(request: Request):
     docs = db.collection("contadores").stream()
+    rifas_compradas_docs = db.collection("rifas-compradas").stream()
+
+    # Agrupar rifas compradas por id_produto
+    rifas_por_produto = {}
+    for doc in rifas_compradas_docs:
+        data = doc.to_dict()
+        id_produto = data.get("id_produto")
+        if id_produto:
+            if id_produto not in rifas_por_produto:
+                rifas_por_produto[id_produto] = []
+            rifas_por_produto[id_produto].append(data)
+
     contadores = []
     for doc in docs:
         data = doc.to_dict()
+        id_produto = data.get("id_produto", "")
         contadores.append({
-            "id_produto": data.get("id_produto", ""),
+            "id_produto": id_produto,
             "nome_produto": data.get("nome_produto", ""),
             "total_comprados": data.get("total_comprados", 0),
-            "bilhetes_sobrando": len(data.get("bilhetes_sobrando", []))
+            "bilhetes_sobrando": len(data.get("bilhetes_sobrando", [])),
+            "rifas_compradas": rifas_por_produto.get(id_produto, [])
         })
-    return templates.TemplateResponse("contadores.html", {"request": request, "contadores": contadores})
+
+    return templates.TemplateResponse("contadores.html", {
+        "request": request,
+        "contadores": contadores
+    })
 
 @app.post("/contadores", response_class=HTMLResponse)
 async def atualizar_manual(request: Request, id_produto: str = Form(...)):
-    from atualizar_contadores import atualizar_contadores  # função criada antes
-    atualizar_contadores(id_produto)
-    return await listar_contadores(request)
+    from atualizar_contadores import atualizar_contadores  # Importa a função de atualização
+    atualizar_contadores(id_produto)  # Atualiza os dados do produto informado
+
+    # Agora busca novamente os dados atualizados de 'contadores' e 'rifas-compradas'
+    docs = db.collection("contadores").stream()
+    rifas_compradas_docs = db.collection("rifas-compradas").stream()
+
+    # Agrupar rifas compradas por id_produto
+    rifas_por_produto = {}
+    for doc in rifas_compradas_docs:
+        data = doc.to_dict()
+        produto_id = data.get("id_produto")
+        if produto_id:
+            if produto_id not in rifas_por_produto:
+                rifas_por_produto[produto_id] = []
+            rifas_por_produto[produto_id].append(data)
+
+    # Preparar os dados para exibição no template
+    contadores = []
+    for doc in docs:
+        data = doc.to_dict()
+        produto_id = data.get("id_produto", "")
+        contadores.append({
+            "id_produto": produto_id,
+            "nome_produto": data.get("nome_produto", ""),
+            "total_comprados": data.get("total_comprados", 0),
+            "bilhetes_sobrando": len(data.get("bilhetes_sobrando", [])),
+            "rifas_compradas": rifas_por_produto.get(produto_id, [])
+        })
+
+    return templates.TemplateResponse("contadores.html", {
+        "request": request,
+        "contadores": contadores
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
