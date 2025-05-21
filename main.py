@@ -141,7 +141,6 @@ def atualizar_contadores_todos_produtos():
         # Chamar a função que atualiza os contadores para o produto específico
         atualizar_contadores(id_produto)
 
-
 def atualizar_contadores(id_produto):
     # Buscar bilhetes comprados do produto específico
     comprados_snapshot = db.collection("rifas-compradas").where("id_produto", "==", id_produto).stream()
@@ -168,11 +167,18 @@ def atualizar_contadores(id_produto):
         "id_produto": id_produto,
         "nome_produto": nome_produto,
         "total_comprados": total_comprados,
+        "bilhetes_comprados": bilhetes_comprados,  # Novo campo
         "bilhetes_sobrando": bilhetes_sobrando,
         "atualizado_em": firestore.SERVER_TIMESTAMP
     })
 
     print(f"Contadores do produto '{nome_produto}' ({id_produto}) atualizados com sucesso!")
+
+
+def atualizar_contadores_todos_produtos():
+    produtos = db.collection("produtos").stream()
+    for produto in produtos:
+        atualizar_contadores(produto.id)
 
 
 if __name__ == "__main__":
