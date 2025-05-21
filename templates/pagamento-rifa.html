@@ -84,6 +84,12 @@
     color: white;
     border-color: #15803d;
   }
+  #lista-bilhetes input[disabled] + label {
+    background-color: #fecaca !important;
+    color: #7f1d1d !important;
+    border-color: #f87171 !important;
+    cursor: not-allowed;
+  }
   .button {
     display: block;
     width: 100%;
@@ -157,8 +163,13 @@
         <label for="lista-bilhetes">Ou escolha visualmente:</label>
         <div id="lista-bilhetes" role="group" aria-label="Bilhetes disponíveis para seleção">
           {% for numero in bilhetes_disponiveis %}
-            <input type="checkbox" id="bilhete-{{ numero }}" name="bilhetes" value="{{ numero }}" />
-            <label for="bilhete-{{ numero }}">{{ numero }}</label>
+            {% if numero in bilhetes_indisponiveis %}
+              <input type="checkbox" id="bilhete-{{ numero }}" value="{{ numero }}" disabled hidden />
+              <label for="bilhete-{{ numero }}" style="background-color: #fecaca; color: #7f1d1d; border: 1px solid #f87171; cursor: not-allowed;">{{ numero }}</label>
+            {% else %}
+              <input type="checkbox" id="bilhete-{{ numero }}" name="bilhetes_selecionados" value="{{ numero }}" hidden />
+              <label for="bilhete-{{ numero }}">{{ numero }}</label>
+            {% endif %}
           {% endfor %}
         </div>
       </section>
