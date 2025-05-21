@@ -84,12 +84,6 @@
     color: white;
     border-color: #15803d;
   }
-  #lista-bilhetes input[disabled] + label {
-    background-color: #fecaca !important;
-    color: #7f1d1d !important;
-    border-color: #f87171 !important;
-    cursor: not-allowed;
-  }
   .button {
     display: block;
     width: 100%;
@@ -156,17 +150,16 @@
         <label for="bilhetes-multi">Escolha os números dos bilhetes (modo lista):</label>
         <select id="bilhetes-multi" name="bilhetes" multiple size="5" aria-describedby="instrucoes-bilhetes">
           {% for numero in bilhetes_disponiveis %}
-            <option value="{{ numero }}">{{ numero }}</option>
+            {% if numero not in bilhetes_indisponiveis %}
+              <option value="{{ numero }}">{{ numero }}</option>
+            {% endif %}
           {% endfor %}
         </select>
 
         <label for="lista-bilhetes">Ou escolha visualmente:</label>
         <div id="lista-bilhetes" role="group" aria-label="Bilhetes disponíveis para seleção">
           {% for numero in bilhetes_disponiveis %}
-            {% if numero in bilhetes_indisponiveis %}
-              <input type="checkbox" id="bilhete-{{ numero }}" value="{{ numero }}" disabled hidden />
-              <label for="bilhete-{{ numero }}" style="background-color: #fecaca; color: #7f1d1d; border: 1px solid #f87171; cursor: not-allowed;">{{ numero }}</label>
-            {% else %}
+            {% if numero not in bilhetes_indisponiveis %}
               <input type="checkbox" id="bilhete-{{ numero }}" name="bilhetes_selecionados" value="{{ numero }}" hidden />
               <label for="bilhete-{{ numero }}">{{ numero }}</label>
             {% endif %}
@@ -223,14 +216,13 @@ function capturarLocalizacao(event) {
       const long = pos.coords.longitude.toFixed(6);
       document.getElementById("latitude").value = lat;
       document.getElementById("longitude").value = long;
-      document.getElementById("localizacao").value = `${lat},${long}`;
-      btn.textContent = "Localização Capturada";
-      btn.style.backgroundColor = "#16a34a";
+      btn.textContent = "Localização capturada!";
     },
-    (error) => {
-      alert(`Erro ao obter localização: ${error.message}`);
+    (err) => {
+      console.error(err);
+      alert("Erro ao capturar localização.");
       btn.disabled = false;
-      btn.textContent = "Tentar novamente";
+      btn.textContent = "Obter Localização";
     }
   );
 }
