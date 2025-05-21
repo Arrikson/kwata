@@ -793,39 +793,8 @@ async def comprar_bilhete(
             "erro": "Erro ao processar a compra, tente novamente."
         })
 
+
 @app.get("/contadores", response_class=HTMLResponse)
-async def listar_contadores(request: Request):
-    docs = db.collection("contadores").stream()
-    rifas_compradas_docs = db.collection("rifas-compradas").stream()
-
-    # Agrupar rifas compradas por id_produto
-    rifas_por_produto = {}
-    for doc in rifas_compradas_docs:
-        data = doc.to_dict()
-        id_produto = data.get("id_produto")
-        if id_produto:
-            if id_produto not in rifas_por_produto:
-                rifas_por_produto[id_produto] = []
-            rifas_por_produto[id_produto].append(data)
-
-    contadores = []
-    for doc in docs:
-        data = doc.to_dict()
-        id_produto = data.get("id_produto", "")
-        contadores.append({
-            "id_produto": id_produto,
-            "nome_produto": data.get("nome_produto", ""),
-            "total_comprados": data.get("total_comprados", 0),
-            "bilhetes_sobrando": len(data.get("bilhetes_sobrando", [])),
-            "rifas_compradas": rifas_por_produto.get(id_produto, [])
-        })
-
-    return templates.TemplateResponse("contadores.html", {
-        "request": request,
-        "contadores": contadores
-    })
-
-@router.get("/contadores", response_class=HTMLResponse)
 async def listar_contadores(request: Request):
     docs = db.collection("contadores").stream()
     rifas_compradas_docs = list(db.collection("rifas-compradas").stream())
@@ -860,8 +829,7 @@ async def listar_contadores(request: Request):
     })
 
 
-# POST /contadores
-@router.post("/contadores", response_class=HTMLResponse)
+@app.post("/contadores", response_class=HTMLResponse)
 async def atualizar_manual(request: Request, id_produto: str = Form(...)):
     from atualizar_contadores import atualizar_contadores
     atualizar_contadores(id_produto)
@@ -897,7 +865,6 @@ async def atualizar_manual(request: Request, id_produto: str = Form(...)):
         "contadores": contadores,
         "rifas_compradas_todas": rifas_compradas_todas
     })
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
