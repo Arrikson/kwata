@@ -3,78 +3,208 @@
 <head>
   <meta charset="UTF-8">
   <title>Contadores de Rifas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+      --verde: #28a745;
+      --verde-escuro: #218838;
+      --amarelo-claro: #fff9cc;
+      --vermelho-claro: #ffdddd;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      padding: 2rem;
+      margin: 0;
+      padding: 1rem;
       background: linear-gradient(to right, #f9f9f9, #e6f0ff);
     }
-    h1 {
+
+    h1, h2 {
       text-align: center;
       color: #333;
     }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1rem;
+      font-size: 0.95rem;
     }
+
     th, td {
-      padding: 12px;
+      padding: 10px;
       border: 1px solid #ccc;
-      text-align: center;
+      vertical-align: top;
+      text-align: left;
     }
+
     th {
-      background-color: #007bff;
+      background-color: var(--verde);
       color: white;
     }
+
+    tr:nth-child(even) {
+      background-color: #f5f5f5;
+    }
+
+    ul {
+      padding-left: 18px;
+    }
+
+    .atencao {
+      background-color: var(--vermelho-claro);
+      padding: 10px;
+      border-left: 5px solid red;
+      margin-bottom: 1rem;
+    }
+
     form {
       margin-top: 2rem;
       text-align: center;
     }
+
     input[type="text"] {
-      padding: 8px;
-      width: 300px;
+      padding: 10px;
+      width: 70%;
+      max-width: 300px;
+      margin-bottom: 10px;
     }
+
     button {
-      padding: 8px 16px;
-      background-color: #28a745;
+      padding: 10px 20px;
+      background-color: var(--verde);
       border: none;
       color: white;
       cursor: pointer;
+      font-size: 1rem;
+      border-radius: 5px;
+      margin-top: 0.5rem;
     }
+
     button:hover {
-      background-color: #218838;
+      background-color: var(--verde-escuro);
+    }
+
+    .pdf-btn {
+      background-color: #f0ad4e;
+      margin-bottom: 1rem;
+    }
+
+    .pdf-btn:hover {
+      background-color: #ec971f;
+    }
+
+    @media (max-width: 768px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      th {
+        position: absolute;
+        left: -9999px;
+        top: -9999px;
+      }
+
+      td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+        white-space: pre-line;
+      }
+
+      td::before {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+
+      td:nth-of-type(1)::before { content: "Produto"; }
+      td:nth-of-type(2)::before { content: "ID"; }
+      td:nth-of-type(3)::before { content: "Total Comprados"; }
+      td:nth-of-type(4)::before { content: "Bilhetes Sobrando"; }
+      td:nth-of-type(5)::before { content: "Total Rifas Compradas"; }
+      td:nth-of-type(6)::before { content: "Detalhes das Rifas"; }
     }
   </style>
+
+  <!-- jsPDF CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+
+      doc.html(document.querySelector(".container"), {
+        callback: function (pdf) {
+          pdf.save("relatorio-contadores.pdf");
+        },
+        x: 20,
+        y: 20,
+        html2canvas: { scale: 0.6 }
+      });
+    }
+  </script>
 </head>
 <body>
-  <h1>Contadores de Rifas</h1>
+  <div class="container">
+    <h1>Contadores de Rifas</h1>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Produto</th>
-        <th>ID</th>
-        <th>Total Comprados</th>
-        <th>Bilhetes Sobrando</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for c in contadores %}
-      <tr>
-        <td>{{ c.nome_produto }}</td>
-        <td>{{ c.id_produto }}</td>
-        <td>{{ c.total_comprados }}</td>
-        <td>{{ c.bilhetes_sobrando }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <div style="text-align: right;">
+      <button class="pdf-btn" onclick="gerarPDF()">📄 Gerar PDF</button>
+    </div>
 
-  <form method="post" action="/contadores">
-    <h2>Atualizar Contador Manualmente</h2>
-    <input type="text" name="id_produto" placeholder="Digite o ID do Produto">
-    <button type="submit">Atualizar</button>
-  </form>
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>ID</th>
+          <th>Total Comprados</th>
+          <th>Bilhetes Sobrando</th>
+          <th>Total Rifas Compradas</th>
+          <th>Detalhes das Rifas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in contadores %}
+        <tr>
+          <td>{{ c.nome_produto }}</td>
+          <td>{{ c.id_produto }}</td>
+          <td>{{ c.total_comprados }}</td>
+          <td>{{ c.bilhetes_sobrando }}</td>
+          <td>{{ c.rifas_compradas | length }}</td>
+          <td>
+            {% if c.rifas_compradas %}
+              <ul>
+                {% for rifa in c.rifas_compradas %}
+                <li>
+                  <strong>Comprador:</strong> {{ rifa.nome_comprador or "N/A" }}<br>
+                  <strong>Bilhetes:</strong> {{ rifa.numeros | join(', ') if rifa.numeros else "N/A" }}<br>
+                  <strong>Data:</strong> {{ rifa.data_compra or "N/A" }}
+                </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="atencao">Nenhuma rifa comprada</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <form method="post" action="/contadores">
+      <h2>Atualizar Contador Manualmente</h2>
+      <input type="text" name="id_produto" placeholder="Digite o ID do Produto">
+      <br>
+      <button type="submit">Atualizar</button>
+    </form>
+  </div>
 </body>
 </html>
