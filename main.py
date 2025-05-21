@@ -157,15 +157,22 @@ def atualizar_contadores(id_produto):
     # Calcular bilhetes sobrando
     bilhetes_sobrando = [b for b in bilhetes_disponiveis if b not in bilhetes_comprados]
 
+    # Buscar o nome do produto da coleção "produtos"
+    nome_produto = "Desconhecido"
+    produto_doc = db.collection("produtos").document(id_produto).get()
+    if produto_doc.exists:
+        nome_produto = produto_doc.to_dict().get("nome", "Sem nome")
+
     # Atualizar contadores no Firestore
     db.collection("contadores").document(id_produto).set({
         "id_produto": id_produto,
+        "nome_produto": nome_produto,
         "total_comprados": total_comprados,
         "bilhetes_sobrando": bilhetes_sobrando,
         "atualizado_em": firestore.SERVER_TIMESTAMP
     })
 
-    print(f"Contadores do produto {id_produto} atualizados com sucesso!")
+    print(f"Contadores do produto '{nome_produto}' ({id_produto}) atualizados com sucesso!")
 
 
 if __name__ == "__main__":
