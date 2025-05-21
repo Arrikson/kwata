@@ -857,6 +857,43 @@ async def listar_contadores(request: Request):
         "contadores": contadores
     })
 
+@app.get("/contadores", response_class=HTMLResponse)
+async def listar_contadores(request: Request):
+    docs = db.collection("contadores").stream()
+    rifas_compradas_docs = db.collection("rifas-compradas").stream()
+
+    # Agrupar rifas compradas por id_produto
+    rifas_por_produto = {}
+    for doc in rifas_compradas_docs:
+        data = doc.to_dict()
+        id_produto = data.get("id_produto")
+        if id_produto:
+            if id_produto not in rifas_por_produto:
+                rifas_por_produto[id_produto] = []
+            rifas_por_produto[id_produto].append(data)
+
+    contadores = []
+    for doc in docs:
+        data = doc.to_dict()
+        id_produto = data.get("id_produto", "")
+        contadores.append({
+            "id_produto": id_produto,
+            "nome_produto": data.get("nome_produto", ""),
+            "total_comprados": data.get("total_comprados", 0),
+            "bilhetes_sobrando": len(data.get("bilhetes_sobrando", [])),
+            "rifas_compradas": rifas_por_produto.get(id_produto, [])
+        })
+
+    # Adicionado conforme solicitado
+    rifas_compradas_todas = [doc.to_dict() for doc in db.collection("rifas-compradas").stream()]
+
+    return templates.TemplateResponse("contadores.html", {
+        "request": request,
+        "contadores": contadores,
+        "rifas_compradas_todas": rifas_compradas_todas
+    })
+
+
 @app.post("/contadores", response_class=HTMLResponse)
 async def atualizar_manual(request: Request, id_produto: str = Form(...)):
     from atualizar_contadores import atualizar_contadores  # Importa a função de atualização
@@ -889,10 +926,15 @@ async def atualizar_manual(request: Request, id_produto: str = Form(...)):
             "rifas_compradas": rifas_por_produto.get(produto_id, [])
         })
 
+    # Adicionado conforme solicitado
+    rifas_compradas_todas = [doc.to_dict() for doc in db.collection("rifas-compradas").stream()]
+
     return templates.TemplateResponse("contadores.html", {
         "request": request,
-        "contadores": contadores
+        "contadores": contadores,
+        "rifas_compradas_todas": rifas_compradas_todas
     })
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
