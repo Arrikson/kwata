@@ -179,7 +179,15 @@
           <td>{{ c.id_produto }}</td>
           <td>{{ c.total_comprados }}</td>
           <td>{{ c.bilhetes_sobrando }}</td>
-          <td>{{ c.rifas_compradas | length }}</td>
+          <td>
+            {% set total_bilhetes_comprados = [] %}
+            {% for rifa in c.rifas_compradas %}
+              {% if rifa.numeros %}
+                {% set _ = total_bilhetes_comprados.extend(rifa.numeros) %}
+              {% endif %}
+            {% endfor %}
+            {{ total_bilhetes_comprados | length }}
+          </td>
           <td>
             {% if c.rifas_compradas %}
               <ul>
@@ -200,7 +208,7 @@
       </tbody>
     </table>
 
-    <!-- Tabela adicional de todas as rifas-compradas usando rifas_compradas_todas -->
+    <!-- Tabela adicional de todas as rifas-compradas -->
     <h2>📦 Todas as Rifas Compradas</h2>
     <table>
       <thead>
