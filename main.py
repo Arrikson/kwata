@@ -793,74 +793,26 @@ async def comprar_bilhete(
             "erro": "Erro ao processar a compra, tente novamente."
         })
 
-
 @app.get("/contadores", response_class=HTMLResponse)
-async def listar_contadores(request: Request):
-    docs = db.collection("contadores").stream()
-    rifas_compradas_docs = list(db.collection("rifas-compradas").stream())
+async def contadores(request: Request):
+    # Dados do Firebase
+    comprovativos = db.collection("comprovativo-comprados").stream()
+    comprados = []
+    for doc in comprovativos:
+        dados = doc.to_dict()
+        bilhetes = dados.get("bilhetes", [])
+        comprados.extend(bilhetes)
 
-    rifas_por_produto = {}
-    rifas_compradas_todas = []
-
-    for doc in rifas_compradas_docs:
-        data = doc.to_dict()
-        rifas_compradas_todas.append(data)
-        id_produto = data.get("id_produto")
-        if id_produto:
-            rifas_por_produto.setdefault(id_produto, []).append(data)
-
-    contadores = []
-    for doc in docs:
-        data = doc.to_dict()
-        id_produto = data.get("id_produto", "")
-        contadores.append({
-            "id_produto": id_produto,
-            "nome_produto": data.get("nome_produto", ""),
-            "total_comprados": data.get("total_comprados", 0),
-            "bilhetes_sobrando": len(data.get("bilhetes_sobrando", [])),
-            "rifas_compradas": rifas_por_produto.get(id_produto, [])
-        })
+    comprados = sorted(set(comprados))
+    todos = list(range(1, 101))  # Supondo que são 100 bilhetes numerados de 1 a 100
+    restantes = sorted(set(todos) - set(comprados))
 
     return templates.TemplateResponse("contadores.html", {
         "request": request,
-        "contadores": contadores,
-        "rifas_compradas_todas": rifas_compradas_todas
+        "comprados": comprados,
+        "restantes": restantes,
+        "total_vendido": len(comprados)
     })
-
-
-@app.post("/contadores", response_class=HTMLResponse)
-async def atualizar_manual(request: Request, id_produto: str = Form(...)):
-    cont_ref = db.collection("contadores").where("id_produto", "==", id_produto).get()
-    if not cont_ref:
-        return templates.TemplateResponse("contadores.html", {
-            "request": request,
-            "contadores": [],
-            "rifas_compradas_todas": [],
-            "mensagem": f"Nenhum produto com ID {id_produto} encontrado."
-        })
-
-    # Calcular total de bilhetes comprados com base nas rifas-compradas
-    rifas_docs = db.collection("rifas-compradas").where("id_produto", "==", id_produto).stream()
-    total_bilhetes = 0
-    for doc in rifas_docs:
-        data = doc.to_dict()
-        numeros = data.get("numeros", [])
-        if isinstance(numeros, list):
-            total_bilhetes += len(numeros)
-
-    # Atualizar o documento correspondente
-    contador_doc = cont_ref[0]
-    contador_doc_ref = contador_doc.reference
-
-    # Atualiza total_comprados com base no total de bilhetes comprados
-    contador_doc_ref.update({
-        "total_comprados": total_bilhetes
-        # Se desejar também pode atualizar bilhetes_sobrando aqui
-    })
-
-    # Redireciona de volta para GET com valores atualizados
-    return await listar_contadores(request)
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
