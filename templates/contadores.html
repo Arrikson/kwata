@@ -1,245 +1,166 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <title>Contadores de Rifas</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contadores da Rifa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-    :root {
-      --verde: #28a745;
-      --verde-escuro: #218838;
-      --amarelo-claro: #fff9cc;
-      --vermelho-claro: #ffdddd;
-    }
-
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Inter', sans-serif;
       margin: 0;
-      padding: 1rem;
-      background: linear-gradient(to right, #f9f9f9, #e6f0ff);
-    }
-
-    h1, h2 {
-      text-align: center;
+      background-color: #f3fdf6;
       color: #333;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 1rem;
     }
-
-    .container {
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    table {
+    main {
+      background: #ffffff;
+      max-width: 700px;
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      font-size: 0.95rem;
+      border-radius: 12px;
+      padding: 2rem 2.5rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      border-top: 6px solid #16a34a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-
-    th, td {
-      padding: 10px;
-      border: 1px solid #ccc;
-      vertical-align: top;
-      text-align: left;
+    header {
+      width: 100%;
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
-
-    th {
-      background-color: var(--verde);
-      color: white;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f5f5f5;
-    }
-
-    ul {
-      padding-left: 18px;
-    }
-
-    .atencao {
-      background-color: var(--vermelho-claro);
-      padding: 10px;
-      border-left: 5px solid red;
+    header img {
+      height: 60px;
       margin-bottom: 1rem;
     }
-
-    form {
-      margin-top: 2rem;
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #14532d;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      width: 100%;
+      margin-top: 1rem;
+    }
+    .card {
+      background-color: #fefefe;
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 180px;
       text-align: center;
     }
-
-    input[type="text"] {
-      padding: 10px;
-      width: 70%;
-      max-width: 300px;
-      margin-bottom: 10px;
+    .card h2 {
+      margin: 0 0 0.5rem;
+      font-weight: 700;
+      font-size: 1.25rem;
     }
-
-    button {
-      padding: 10px 20px;
-      background-color: var(--verde);
-      border: none;
-      color: white;
-      cursor: pointer;
+    .rifas-compradas {
+      background-color: #d1fae5; /* verde claro */
+      color: #065f46;
+      border: 2px solid #16a34a;
+    }
+    .restantes {
+      background-color: #fef3c7; /* amarelo claro */
+      color: #92400e;
+      border: 2px solid #facc15;
+    }
+    .total-vendido {
+      background-color: #fee2e2; /* vermelho claro */
+      color: #991b1b;
+      border: 2px solid #f87171;
+    }
+    ul {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
+      max-height: 120px;
+      overflow-y: auto;
+      width: 100%;
+      font-weight: 600;
       font-size: 1rem;
-      border-radius: 5px;
-      margin-top: 0.5rem;
+      user-select: text;
     }
-
-    button:hover {
-      background-color: var(--verde-escuro);
+    ul li {
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      margin-bottom: 0.3rem;
+      background: rgba(0,0,0,0.03);
     }
-
-    .pdf-btn {
-      background-color: #f0ad4e;
-      margin-bottom: 1rem;
+    .total-count {
+      font-size: 2.5rem;
+      font-weight: 900;
+      margin-top: 1rem;
     }
-
-    .pdf-btn:hover {
-      background-color: #ec971f;
-    }
-
-    @media (max-width: 768px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
+    @media (max-width: 720px) {
+      main {
+        padding: 1.5rem 1.5rem;
       }
-
-      th {
-        position: absolute;
-        left: -9999px;
-        top: -9999px;
+      .grid {
+        grid-template-columns: 1fr;
       }
-
-      td {
-        border: none;
-        position: relative;
-        padding-left: 50%;
-        white-space: pre-line;
+      .card {
+        min-height: auto;
+        margin-bottom: 1.5rem;
       }
-
-      td::before {
-        position: absolute;
-        left: 10px;
-        top: 10px;
-        white-space: nowrap;
-        font-weight: bold;
+      .total-count {
+        font-size: 2rem;
       }
-
-      td:nth-of-type(1)::before { content: "Produto"; }
-      td:nth-of-type(2)::before { content: "ID"; }
-      td:nth-of-type(3)::before { content: "Total Comprados"; }
-      td:nth-of-type(4)::before { content: "Bilhetes Sobrando"; }
-      td:nth-of-type(5)::before { content: "Total Rifas Compradas"; }
-      td:nth-of-type(6)::before { content: "Detalhes das Rifas"; }
     }
   </style>
-
-  <!-- jsPDF CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script>
-    function gerarPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-
-      doc.html(document.querySelector(".container"), {
-        callback: function (pdf) {
-          pdf.save("relatorio-contadores.pdf");
-        },
-        x: 20,
-        y: 20,
-        html2canvas: { scale: 0.6 }
-      });
-    }
-  </script>
 </head>
 <body>
-  <div class="container">
-    <h1>Contadores de Rifas</h1>
+  <main>
+    <header>
+      <img src="/static/novologo.png" alt="Logotipo" />
+      <h1>Contadores da Rifa</h1>
+    </header>
 
-    <div style="text-align: right;">
-      <button class="pdf-btn" onclick="gerarPDF()">📄 Gerar PDF</button>
-    </div>
-
-    <!-- Tabela principal dos contadores -->
-    <table>
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th>ID</th>
-          <th>Total Comprados</th>
-          <th>Bilhetes Sobrando</th>
-          <th>Total Rifas Compradas</th>
-          <th>Detalhes das Rifas</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for c in contadores %}
-        <tr>
-          <td>{{ c.nome_produto }}</td>
-          <td>{{ c.id_produto }}</td>
-          <td>{{ c.total_comprados }}</td>
-          <td>{{ c.bilhetes_sobrando }}</td>
-          <td>
-            {% set total_bilhetes_comprados = [] %}
-            {% for rifa in c.rifas_compradas %}
-              {% if rifa.numeros %}
-                {% set _ = total_bilhetes_comprados.extend(rifa.numeros) %}
-              {% endif %}
+    <div class="grid">
+      <section class="card rifas-compradas" aria-label="Rifas Compradas">
+        <h2>Rifas Compradas</h2>
+        {% if rifas_compradas %}
+          <ul>
+            {% for bilhete in rifas_compradas %}
+              <li>{{ bilhete }}</li>
             {% endfor %}
-            {{ total_bilhetes_comprados | length }}
-          </td>
-          <td>
-            {% if c.rifas_compradas %}
-              <ul>
-                {% for rifa in c.rifas_compradas %}
-                <li>
-                  <strong>Comprador:</strong> {{ rifa.nome_comprador or "N/A" }}<br>
-                  <strong>Bilhetes:</strong> {{ rifa.numeros | join(', ') if rifa.numeros else "N/A" }}<br>
-                  <strong>Data:</strong> {{ rifa.data_compra or "N/A" }}
-                </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <div class="atencao">Nenhuma rifa comprada</div>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </ul>
+        {% else %}
+          <p>Nenhum bilhete comprado ainda.</p>
+        {% endif %}
+      </section>
 
-    <!-- Tabela adicional de todas as rifas-compradas -->
-    <h2>📦 Todas as Rifas Compradas</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th>ID Produto</th>
-          <th>Nome do Comprador</th>
-          <th>Bilhetes</th>
-          <th>Data da Compra</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for rifa in rifas_compradas_todas %}
-        <tr>
-          <td>{{ rifa.nome_produto }}</td>
-          <td>{{ rifa.id_produto }}</td>
-          <td>{{ rifa.nome_comprador or "N/A" }}</td>
-          <td>{{ rifa.numeros | join(', ') if rifa.numeros else "N/A" }}</td>
-          <td>{{ rifa.data_compra or "N/A" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      <section class="card restantes" aria-label="Rifas Restantes">
+        <h2>Restantes</h2>
+        {% if rifas_restantes %}
+          <ul>
+            {% for bilhete in rifas_restantes %}
+              <li>{{ bilhete }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>Sem bilhetes restantes.</p>
+        {% endif %}
+      </section>
 
-    <form method="post" action="/contadores">
-      <h2>Atualizar Contador Manualmente</h2>
-      <input type="text" name="id_produto" placeholder="Digite o ID do Produto">
-      <br>
-      <button type="submit">Atualizar</button>
-    </form>
-  </div>
+      <section class="card total-vendido" aria-label="Total Vendido">
+        <h2>Total Vendido</h2>
+        <div class="total-count">{{ total_vendido }}</div>
+      </section>
+    </div>
+  </main>
 </body>
 </html>
 
