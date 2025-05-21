@@ -794,24 +794,60 @@ async def comprar_bilhete(
         })
 
 @app.get("/contadores", response_class=HTMLResponse)
-async def contadores(request: Request):
-    # Dados do Firebase
-    comprovativos = db.collection("comprovativo-comprados").stream()
-    comprados = []
-    for doc in comprovativos:
-        dados = doc.to_dict()
-        bilhetes = dados.get("bilhetes", [])
-        comprados.extend(bilhetes)
+async def contadores(request: Request, produto_id: str = Query(default=None)):
+    if not produto_id:
+        return templates.TemplateResponse("contadores.html", {
+            "request": request,
+            "rifas_compradas": [],
+            "rifas_restantes": [],
+            "total_vendido": 0,
+            "erro": "Produto não selecionado."
+        })
 
-    comprados = sorted(set(comprados))
-    todos = list(range(1, 101))  # Supondo que são 100 bilhetes numerados de 1 a 100
-    restantes = sorted(set(todos) - set(comprados))
+    # Pega dados do produto
+    doc_ref = db.collection("produtos").document(produto_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        return templates.TemplateResponse("contadores.html", {
+            "request": request,
+            "rifas_compradas": [],
+            "rifas_restantes": [],
+            "total_vendido": 0,
+            "erro": "Produto não encontrado."
+        })
+
+    dados_produto = doc.to_dict()
+
+    # Rifas restantes
+    rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
+    if rifas_restantes_doc.exists:
+        rifas_restantes = rifas_restantes_doc.to_dict().get("bilhetes_disponiveis", [])
+    else:
+        quantidade_bilhetes = int(dados_produto.get("quantidade_bilhetes", 0))
+        bilhetes_vendidos = int(dados_produto.get("bilhetes_vendidos", 0))
+        rifas_restantes = list(range(bilhetes_vendidos + 1, quantidade_bilhetes + 1))
+
+    # Rifas compradas (todos os bilhetes vendidos)
+    rifas_compradas_ref = db.collection("rifas-compradas").where("produto_id", "==", produto_id)
+    rifas_compradas_docs = rifas_compradas_ref.stream()
+    rifas_compradas = []
+    for doc in rifas_compradas_docs:
+        dados = doc.to_dict()
+        bilhete = dados.get("bilhete")
+        if isinstance(bilhete, list):
+            rifas_compradas.extend(bilhete)
+        elif isinstance(bilhete, (int, str)):
+            rifas_compradas.append(int(bilhete))
+    rifas_compradas = sorted(set(rifas_compradas))
+
+    total_vendido = len(rifas_compradas)
 
     return templates.TemplateResponse("contadores.html", {
         "request": request,
-        "comprados": comprados,
-        "restantes": restantes,
-        "total_vendido": len(comprados)
+        "rifas_compradas": rifas_compradas,
+        "rifas_restantes": rifas_restantes,
+        "total_vendido": total_vendido,
+        "erro": None,
     })
 
 if __name__ == "__main__":
