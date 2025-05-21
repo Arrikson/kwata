@@ -794,7 +794,6 @@ async def comprar_bilhete(
             "erro": "Erro ao processar a compra, tente novamente."
         })
 
-
 @app.get("/contadores", response_class=HTMLResponse)
 async def contadores(request: Request, produto_id: Optional[str] = None):
     if not produto_id:
@@ -806,7 +805,7 @@ async def contadores(request: Request, produto_id: Optional[str] = None):
             "erro": "Produto não selecionado."
         })
 
-    # Recuperar dados do produto e rifas compradas/restantes
+    # recuperar dados do produto e rifas
     doc_ref = db.collection("produtos").document(produto_id)
     doc = doc_ref.get()
     if not doc.exists:
@@ -854,8 +853,8 @@ async def contadores(request: Request, produto_id: Optional[str] = None):
 async def atualizar_contadores(
     request: Request,
     produto_id: str = Form(...),
-    rifas_compradas: Optional[str] = Form(None),  
-    rifas_restantes: Optional[str] = Form(None)  
+    rifas_compradas: Optional[str] = Form(None),
+    rifas_restantes: Optional[str] = Form(None)
 ):
     # Validar que produto_id existe
     doc_ref = db.collection("produtos").document(produto_id)
@@ -863,7 +862,7 @@ async def atualizar_contadores(
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
 
-    # Parse dos bilhetes para listas inteiras
+    # Função para transformar string "1,2,3" em lista de inteiros
     def parse_bilhetes(bilhetes_str):
         if not bilhetes_str:
             return []
@@ -875,24 +874,18 @@ async def atualizar_contadores(
     rifas_compradas_list = parse_bilhetes(rifas_compradas)
     rifas_restantes_list = parse_bilhetes(rifas_restantes)
 
-    # Atualizar rifas compradas no Firestore (exemplo simplificado)
-    # Aqui pode salvar conforme seu modelo de dados — ex: coleção rifas-compradas
-    # Por simplicidade, vamos salvar em um documento único:
+    # Atualiza Firestore conforme seu modelo
     db.collection("rifas-compradas").document(produto_id).set({
         "bilhetes": rifas_compradas_list
     })
-
-    # Atualizar rifas restantes (exemplo)
     db.collection("rifas-restantes").document(produto_id).set({
         "bilhetes_disponiveis": rifas_restantes_list
     })
-
-    # Atualizar o total vendido no produto
     doc_ref.update({
         "bilhetes_vendidos": len(rifas_compradas_list)
     })
 
-    # Após salvar, redirecionar para GET para mostrar dados atualizados
+    # Redireciona para GET com query produto_id para mostrar atualizados
     url = app.url_path_for("contadores") + f"?produto_id={produto_id}"
     return RedirectResponse(url, status_code=303)
 
