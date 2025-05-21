@@ -849,12 +849,13 @@ async def contadores(request: Request, produto_id: Optional[str] = None):
     })
 
 
-@app.post("/contadores", response_class=HTMLResponse)
+from fastapi import Form
+
+@app.post("/contadores")
 async def atualizar_contadores(
-    request: Request,
     produto_id: str = Form(...),
-    rifas_compradas: Optional[str] = Form(None),
-    rifas_restantes: Optional[str] = Form(None)
+    rifas_compradas: str = Form(...),
+    rifas_restantes: str = Form(...)
 ):
     # Validar que produto_id existe
     doc_ref = db.collection("produtos").document(produto_id)
