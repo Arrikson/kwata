@@ -799,7 +799,6 @@ async def listar_contadores(request: Request):
     docs = db.collection("contadores").stream()
     rifas_compradas_docs = list(db.collection("rifas-compradas").stream())
 
-    # Agrupar rifas compradas por id_produto
     rifas_por_produto = {}
     rifas_compradas_todas = []
 
@@ -831,40 +830,37 @@ async def listar_contadores(request: Request):
 
 @app.post("/contadores", response_class=HTMLResponse)
 async def atualizar_manual(request: Request, id_produto: str = Form(...)):
-    from atualizar_contadores import atualizar_contadores
-    atualizar_contadores(id_produto)
-
-    docs = db.collection("contadores").stream()
-    rifas_compradas_docs = list(db.collection("rifas-compradas").stream())
-
-    # Agrupar rifas compradas por id_produto
-    rifas_por_produto = {}
-    rifas_compradas_todas = []
-
-    for doc in rifas_compradas_docs:
-        data = doc.to_dict()
-        rifas_compradas_todas.append(data)
-        produto_id = data.get("id_produto")
-        if produto_id:
-            rifas_por_produto.setdefault(produto_id, []).append(data)
-
-    contadores = []
-    for doc in docs:
-        data = doc.to_dict()
-        produto_id = data.get("id_produto", "")
-        contadores.append({
-            "id_produto": produto_id,
-            "nome_produto": data.get("nome_produto", ""),
-            "total_comprados": data.get("total_comprados", 0),
-            "bilhetes_sobrando": len(data.get("bilhetes_sobrando", [])),
-            "rifas_compradas": rifas_por_produto.get(produto_id, [])
+    cont_ref = db.collection("contadores").where("id_produto", "==", id_produto).get()
+    if not cont_ref:
+        return templates.TemplateResponse("contadores.html", {
+            "request": request,
+            "contadores": [],
+            "rifas_compradas_todas": [],
+            "mensagem": f"Nenhum produto com ID {id_produto} encontrado."
         })
 
-    return templates.TemplateResponse("contadores.html", {
-        "request": request,
-        "contadores": contadores,
-        "rifas_compradas_todas": rifas_compradas_todas
+    # Calcular total de bilhetes comprados com base nas rifas-compradas
+    rifas_docs = db.collection("rifas-compradas").where("id_produto", "==", id_produto).stream()
+    total_bilhetes = 0
+    for doc in rifas_docs:
+        data = doc.to_dict()
+        numeros = data.get("numeros", [])
+        if isinstance(numeros, list):
+            total_bilhetes += len(numeros)
+
+    # Atualizar o documento correspondente
+    contador_doc = cont_ref[0]
+    contador_doc_ref = contador_doc.reference
+
+    # Atualiza total_comprados com base no total de bilhetes comprados
+    contador_doc_ref.update({
+        "total_comprados": total_bilhetes
+        # Se desejar também pode atualizar bilhetes_sobrando aqui
     })
+
+    # Redireciona de volta para GET com valores atualizados
+    return await listar_contadores(request)
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
