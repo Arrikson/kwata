@@ -431,7 +431,7 @@ async def enviar_comprovativo(
         if nome_conf:
             conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
 
-        # ✅ Verificar se o nome original do comprovativo já foi usado
+        # Verificar se o nome original do comprovativo já foi usado
         comprovativo_duplicado = list(
             rifas_ref.where("comprovativo_path", "==", comprovativo.filename).stream()
         )
@@ -484,8 +484,8 @@ async def enviar_comprovativo(
                 "produto_id": produto_id,
                 "bilhete": bilhete,
                 "data_envio": datetime.utcnow().isoformat(),
-                "comprovativo_path": comprovativo.filename,
-                "comprovativo_salvo": filename
+                "comprovativo_path": comprovativo.filename,  
+                "comprovativo_salvo": filename                
             })
 
         # Obter dados do produto
@@ -494,28 +494,24 @@ async def enviar_comprovativo(
             return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
 
         produto_data = produto_doc.to_dict()
-        data_fim_sorteio = produto_data.get("data_sorteio")
+        data_fim_sorteio_raw = produto_data.get("data_sorteio")
         nome_produto = produto_data.get("nome", "Produto")
         imagem_produto = produto_data.get("imagem", "")
 
-        if not data_fim_sorteio:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
+        # Converter data_fim_sorteio para ISO 8601 com Z no final (UTC)
+        try:
+            if data_fim_sorteio_raw:
+                if "T" not in data_fim_sorteio_raw:
+                    data_fim_sorteio_raw = data_fim_sorteio_raw.replace(" ", "T")
+                data_fim_sorteio_dt = datetime.fromisoformat(data_fim_sorteio_raw)
+                data_fim_sorteio = data_fim_sorteio_dt.isoformat() + "Z"
+            else:
+                raise ValueError("Data ausente")
+        except Exception:
+            data_fim_sorteio = datetime.utcnow().isoformat() + "Z"
 
-        # ✅ Converter data_fim_sorteio para ISO 8601 string
-        if isinstance(data_fim_sorteio, Timestamp):
-            data_fim_sorteio = datetime.fromtimestamp(data_fim_sorteio.seconds).isoformat()
-        elif hasattr(data_fim_sorteio, "isoformat"):
-            data_fim_sorteio = data_fim_sorteio.isoformat()
-        elif isinstance(data_fim_sorteio, str):
-            try:
-                data_fim_sorteio = datetime.fromisoformat(data_fim_sorteio).isoformat()
-            except ValueError:
-                return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio inválida.</p>", status_code=500)
-        else:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Formato de data do sorteio não suportado.</p>", status_code=500)
-
-        # Renderizar página de sucesso com cronômetro
-        return templates.TemplateResponse("sorte.html", {
+        # Renderizar página de sorteio com data formatada
+        return templates.TemplateResponse("sorteio-data.html", {
             "request": request,
             "data_fim_sorteio": data_fim_sorteio,
             "produto_id": produto_id,
