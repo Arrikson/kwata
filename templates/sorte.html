@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html> 
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -144,25 +144,10 @@
     </div>
   </div>
 
-  <script> 
+  <script>
     const produtoId = "{{ produto_id }}";
     const nomeProduto = "{{ nome_produto }}";
-    let fimSorteioStr = "{{ data_fim_sorteio }}";
-
-    // ✅ Ajustar formato da data se necessário
-    if (!fimSorteioStr.includes('T')) {
-      fimSorteioStr = fimSorteioStr.replace(" ", "T");
-    }
-    if (!fimSorteioStr.endsWith('Z')) {
-      fimSorteioStr += 'Z';
-    }
-
-    let fimSorteio = new Date(fimSorteioStr);
-    if (isNaN(fimSorteio)) {
-      fimSorteio = new Date();  // fallback em caso de erro
-    }
-
-    document.getElementById('sorteio-fim').textContent = formatarData(fimSorteio);
+    const fimSorteioStr = "{{ data_fim_sorteio }}";
 
     function formatarData(date) {
       return date.toLocaleString('pt-PT', {
@@ -170,6 +155,11 @@
         hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
     }
+
+    let fimSorteio = new Date(fimSorteioStr);
+    if (isNaN(fimSorteio)) fimSorteio = new Date(fimSorteioStr + 'Z');
+
+    document.getElementById('sorteio-fim').textContent = formatarData(fimSorteio);
 
     const cronometro = document.getElementById('cronometro');
     const vencedorDiv = document.getElementById('vencedor');
