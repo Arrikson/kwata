@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -128,7 +128,7 @@
     <h1>Sorteio ao Vivo 🎉</h1>
 
     {% if imagem_produto %}
-    <img src="{{ imagem_produto }}" alt="Produto" class="produto-img" />
+      <img src="{{ imagem_produto }}" alt="Produto" class="produto-img" />
     {% endif %}
 
     <p>Produto: <strong>{{ nome_produto }}</strong></p>
@@ -144,112 +144,66 @@
     </div>
   </div>
 
-  <!-- SCRIPT ORIGINAL (comentado para evitar conflito)
-  <script>
-    const produtoId = "{{ produto_id }}";
-    const nomeProduto = "{{ nome_produto }}";
-    const fimSorteioStr = "{{ data_fim_sorteio }}";
-
-    function formatarData(date) {
-      return date.toLocaleString('pt-PT', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-    }
-
-    let fimSorteio;
-    try {
-      let fix = fimSorteioStr.replace(" ", "T");
-      if (!fix.endsWith("Z")) fix += "Z";
-      fimSorteio = new Date(fix);
-    } catch (e) {
-      fimSorteio = new Date();
-    }
-
-    if (isNaN(fimSorteio.getTime())) {
-      document.getElementById('sorteio-fim').textContent = 'Data inválida';
-    } else {
-      document.getElementById('sorteio-fim').textContent = formatarData(fimSorteio);
-    }
-
-    const cronometro = document.getElementById('cronometro');
-    const vencedorDiv = document.getElementById('vencedor');
-
-    const intervalo = setInterval(() => {
-      const agora = Date.now();
-      const tempoRestante = fimSorteio - agora;
-
-      if (tempoRestante <= 0) {
-        clearInterval(intervalo);
-        cronometro.textContent = 'Sorteando vencedor...';
-        cronometro.classList.add('sorteando');
-        buscarVencedor();
-        return;
-      }
-
-      const horas = Math.floor((tempoRestante / (1000 * 60 * 60)) % 24);
-      const minutos = Math.floor((tempoRestante / (1000 * 60)) % 60);
-      const segundos = Math.floor((tempoRestante / 1000) % 60);
-
-      cronometro.textContent = `${horas}h ${minutos}m ${segundos}s`;
-    }, 1000);
-
-    async function buscarVencedor() {
-      try {
-        const response = await fetch(`/sorteio-data?produto_id=${produtoId}`);
-        const data = await response.json();
-
-        if (data && data.nome && data.bilhete) {
-          document.getElementById('nome-vencedor').textContent = data.nome;
-          document.getElementById('numero-bilhete').textContent = data.bilhete;
-          document.getElementById('produto').textContent = nomeProduto;
-          vencedorDiv.style.display = 'block';
-        } else {
-          cronometro.textContent = 'Nenhum vencedor encontrado.';
-        }
-      } catch (e) {
-        cronometro.textContent = 'Erro ao buscar vencedor.';
-      }
-    }
-  </script>
-  -->
-
-  <!-- NOVO SCRIPT COM CONTADOR COM DIAS -->
+  <!-- SCRIPT FINAL -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const fimTexto = "{{ data_fim_sorteio }}";
-      const fimSorteio = new Date(fimTexto);
+      const produtoId = "{{ produto_id }}";
+      const nomeProduto = "{{ nome_produto }}";
+      const fimSorteioStr = "{{ data_fim_sorteio }}";
 
-      if (isNaN(fimSorteio)) {
+      const fimSorteio = new Date(fimSorteioStr);
+
+      if (isNaN(fimSorteio.getTime())) {
         document.getElementById("cronometro").textContent = "Data inválida";
         document.getElementById("sorteio-fim").textContent = "Erro na data!";
         return;
       }
 
-      document.getElementById("sorteio-fim").textContent = fimSorteio.toLocaleString();
+      document.getElementById("sorteio-fim").textContent = fimSorteio.toLocaleString('pt-PT');
+
+      const cronometro = document.getElementById("cronometro");
+      const vencedorDiv = document.getElementById("vencedor");
 
       function atualizarCronometro() {
         const agora = new Date();
-        const diff = fimSorteio - agora;
+        const tempoRestante = fimSorteio - agora;
 
-        if (diff <= 0) {
-          document.getElementById("cronometro").textContent = "🎉 Sorteio encerrado!";
-          document.getElementById("cronometro").classList.add("sorteando");
+        if (tempoRestante <= 0) {
           clearInterval(intervalo);
+          cronometro.textContent = "Sorteando vencedor...";
+          cronometro.classList.add("sorteando");
+          buscarVencedor();
           return;
         }
 
-        const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const minutos = Math.floor((diff / (1000 * 60)) % 60);
-        const segundos = Math.floor((diff / 1000) % 60);
+        const dias = Math.floor(tempoRestante / (1000 * 60 * 60 * 24));
+        const horas = Math.floor((tempoRestante / (1000 * 60 * 60)) % 24);
+        const minutos = Math.floor((tempoRestante / (1000 * 60)) % 60);
+        const segundos = Math.floor((tempoRestante / 1000) % 60);
 
-        document.getElementById("cronometro").textContent =
-          `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+        cronometro.textContent = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
       }
 
       const intervalo = setInterval(atualizarCronometro, 1000);
       atualizarCronometro();
+
+      async function buscarVencedor() {
+        try {
+          const response = await fetch(`/sorteio-data?produto_id=${produtoId}`);
+          const data = await response.json();
+
+          if (data && data.nome && data.bilhete) {
+            document.getElementById("nome-vencedor").textContent = data.nome;
+            document.getElementById("numero-bilhete").textContent = data.bilhete;
+            document.getElementById("produto").textContent = nomeProduto;
+            vencedorDiv.style.display = "block";
+          } else {
+            cronometro.textContent = "Nenhum vencedor encontrado.";
+          }
+        } catch (e) {
+          cronometro.textContent = "Erro ao buscar vencedor.";
+        }
+      }
     });
   </script>
 </body>
