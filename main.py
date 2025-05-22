@@ -192,6 +192,10 @@ if __name__ == "__main__":
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/inicial", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("inicial.html", {"request": request})
+
 @app.get("/sorteio", response_class=HTMLResponse)
 async def sorteio(request: Request):
     return templates.TemplateResponse("sorte.html", {"request": request})
