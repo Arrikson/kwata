@@ -110,6 +110,32 @@
     .invisivel {
       color: #ffffff;
     }
+    .banco-container {
+      margin-top: 1rem;
+      background-color: #e0f2f1;
+      padding: 1rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .banco-container code {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #065f46;
+      user-select: all;
+    }
+    .copy-button {
+      background: none;
+      border: none;
+      color: #16a34a;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0.3rem;
+    }
+    .copy-button:hover {
+      color: #0f5132;
+    }
     @media (max-width: 600px) {
       main {
         padding: 1.5rem 1.5rem;
@@ -186,13 +212,18 @@
       <label for="longitude">Longitude:</label>
       <input type="text" id="longitude" name="longitude" readonly />
 
-      <label for="comprovativo">Envie o comprovativo de pagamento</label>
-      <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required />
-      <small>Só comprovativo em PDF.</small>
-
       <button type="button" onclick="capturarLocalizacao(event)" class="button" style="margin-bottom: 10px;">
         Obter Localização
       </button>
+
+      <div class="banco-container">
+        <code id="iban-texto">004000008230978610166</code>
+        <button type="button" class="copy-button" onclick="copiarCoordenadas()">📋</button>
+      </div>
+
+      <label for="comprovativo">Envie o comprovativo de pagamento</label>
+      <input type="file" id="comprovativo" name="comprovativo" accept="application/pdf" required />
+      <small>Só comprovativo em PDF.</small>
 
       <button type="submit" class="button">Enviar Comprovativo</button>
 
@@ -227,17 +258,23 @@
       );
     }
 
-    // Script para sincronizar checkboxes com o select
+    function copiarCoordenadas() {
+      const texto = document.getElementById("iban-texto").innerText;
+      navigator.clipboard.writeText(texto).then(() => {
+        alert("Coordenadas bancárias copiadas com sucesso!");
+      }, () => {
+        alert("Falha ao copiar.");
+      });
+    }
+
     document.getElementById("form-pagamento").addEventListener("submit", function (event) {
       const checkboxes = document.querySelectorAll('input[name="bilhetes_selecionados"]:checked');
       const select = document.getElementById("bilhetes-multi");
-      
-      // Limpa todas as seleções anteriores
+
       for (let opt of select.options) {
         opt.selected = false;
       }
 
-      // Seleciona os bilhetes marcados via checkbox no <select>
       checkboxes.forEach((checkbox) => {
         for (let opt of select.options) {
           if (opt.value === checkbox.value) {
