@@ -192,9 +192,16 @@ if __name__ == "__main__":
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/inicial", response_class=HTMLResponse)
-async def index(request: Request):
-    return templates.TemplateResponse("inicial.html", {"request": request})
+@app.get("/principal", response_class=HTMLResponse)
+async def exibir_principal(request: Request):
+    return templates.TemplateResponse("principal.html", {"request": request})
+
+@app.post("/principal", response_class=HTMLResponse)
+async def processar_principal(request: Request):
+    # Você pode capturar dados com request.form() se tiver um formulário
+    form_data = await request.form()
+    # Aqui, você poderia processar os dados, salvar no banco, etc.
+    return templates.TemplateResponse("principal.html", {"request": request, "mensagem": "Formulário recebido!"})
 
 @app.get("/sorteio", response_class=HTMLResponse)
 async def sorteio(request: Request):
