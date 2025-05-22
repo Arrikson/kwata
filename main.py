@@ -517,7 +517,7 @@ async def enviar_comprovativo(
         except Exception:
             data_fim_sorteio = datetime.utcnow().isoformat() + "Z"
 
-        return templates.TemplateResponse("sorteio-data.html", {
+        return templates.TemplateResponse("sorte.html", {
             "request": request,
             "data_fim_sorteio": data_fim_sorteio,
             "produto_id": produto_id,
