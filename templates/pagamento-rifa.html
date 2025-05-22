@@ -6,119 +6,119 @@
   <title>Pagamento da Rifa</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-  body {
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    background-color: #f3fdf6;
-    color: #333;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 2rem 1rem;
-  }
-  main {
-    background: #ffffff;
-    max-width: 600px;
-    width: 100%;
-    border-radius: 12px;
-    padding: 2rem 2.5rem;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    border-top: 6px solid #16a34a;
-  }
-  h1 {
-    margin-top: 0;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #14532d;
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-  h2, h3 {
-    margin-bottom: 0.3rem;
-    font-weight: 600;
-    color: #065f46;
-  }
-  label {
-    display: block;
-    margin-top: 1rem;
-    margin-bottom: 0.3rem;
-    font-weight: 600;
-    color: #374151;
-  }
-  select, input[type="text"], input[type="tel"], input[type="file"] {
-    width: 100%;
-    padding: 0.6rem 0.9rem;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 1rem;
-    background-color: #fcfdfc;
-    transition: border-color 0.3s ease;
-  }
-  select:focus, input:focus {
-    outline: none;
-    border-color: #16a34a;
-    background-color: #ffffff;
-  }
-  #lista-bilhetes {
-    margin-top: 0.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  #lista-bilhetes label {
-    display: flex;
-    align-items: center;
-    background: #fef9c3;
-    border-radius: 6px;
-    padding: 0.3rem 0.6rem;
-    cursor: pointer;
-    user-select: none;
-    font-weight: 500;
-    color: #92400e;
-    border: 1px solid transparent;
-    transition: background-color 0.2s, border-color 0.2s;
-  }
-  #lista-bilhetes input[type="checkbox"]:checked + label {
-    background-color: #16a34a;
-    color: white;
-    border-color: #15803d;
-  }
-  .button {
-    display: block;
-    width: 100%;
-    margin-top: 1.5rem;
-    padding: 0.75rem;
-    font-size: 1.1rem;
-    font-weight: 700;
-    background-color: #16a34a;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  .button:hover {
-    background-color: #15803d;
-  }
-  small {
-    font-size: 0.85rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
-    display: block;
-  }
-  .invisivel {
-    color: #ffffff;
-  }
-  @media (max-width: 600px) {
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background-color: #f3fdf6;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 1rem;
+    }
     main {
-      padding: 1.5rem 1.5rem;
+      background: #ffffff;
+      max-width: 600px;
+      width: 100%;
+      border-radius: 12px;
+      padding: 2rem 2.5rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      border-top: 6px solid #16a34a;
     }
     h1 {
-      font-size: 1.5rem;
+      margin-top: 0;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #14532d;
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
-  }
-</style>
+    h2, h3 {
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+      color: #065f46;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+      color: #374151;
+    }
+    select, input[type="text"], input[type="tel"], input[type="file"] {
+      width: 100%;
+      padding: 0.6rem 0.9rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1rem;
+      background-color: #fcfdfc;
+      transition: border-color 0.3s ease;
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: #16a34a;
+      background-color: #ffffff;
+    }
+    #lista-bilhetes {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    #lista-bilhetes label {
+      display: flex;
+      align-items: center;
+      background: #fef9c3;
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 500;
+      color: #92400e;
+      border: 1px solid transparent;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    #lista-bilhetes input[type="checkbox"]:checked + label {
+      background-color: #16a34a;
+      color: white;
+      border-color: #15803d;
+    }
+    .button {
+      display: block;
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background-color: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .button:hover {
+      background-color: #15803d;
+    }
+    small {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+      display: block;
+    }
+    .invisivel {
+      color: #ffffff;
+    }
+    @media (max-width: 600px) {
+      main {
+        padding: 1.5rem 1.5rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <main>
@@ -126,19 +126,19 @@
 
     {% if erro %}
       <div style='
-          background-color: #fff5f5;
-          padding: 15px;
-          border-left: 6px solid #f87171;
-          border-radius: 8px;
-          color: #7f1d1d;
-          font-family: sans-serif;
-          max-width: 600px;
-          margin: 20px auto;
+        background-color: #fff5f5;
+        padding: 15px;
+        border-left: 6px solid #f87171;
+        border-radius: 8px;
+        color: #7f1d1d;
+        font-family: sans-serif;
+        max-width: 600px;
+        margin: 20px auto;
       '>
-          <strong style='font-size: 1.1em;'>⚠️ Atenção:</strong>
-          <ul style='padding-left: 20px; margin-top: 10px;'>
-            <li>{{ erro }}</li>
-          </ul>
+        <strong style='font-size: 1.1em;'>⚠️ Atenção:</strong>
+        <ul style='padding-left: 20px; margin-top: 10px;'>
+          <li>{{ erro }}</li>
+        </ul>
       </div>
     {% else %}
     <form id="form-pagamento" action="/enviar-comprovativo" method="post" enctype="multipart/form-data" novalidate>
@@ -201,31 +201,51 @@
     {% endif %}
   </main>
 
-<script>
-function capturarLocalizacao(event) {
-  const btn = event.target;
-  if (!navigator.geolocation) {
-    alert("Geolocalização não é suportada pelo seu navegador.");
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = "Capturando localização...";
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const lat = pos.coords.latitude.toFixed(6);
-      const long = pos.coords.longitude.toFixed(6);
-      document.getElementById("latitude").value = lat;
-      document.getElementById("longitude").value = long;
-      btn.textContent = "Localização capturada!";
-    },
-    (err) => {
-      console.error(err);
-      alert("Erro ao capturar localização.");
-      btn.disabled = false;
-      btn.textContent = "Obter Localização";
+  <script>
+    function capturarLocalizacao(event) {
+      const btn = event.target;
+      if (!navigator.geolocation) {
+        alert("Geolocalização não é suportada pelo seu navegador.");
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Capturando localização...";
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude.toFixed(6);
+          const long = pos.coords.longitude.toFixed(6);
+          document.getElementById("latitude").value = lat;
+          document.getElementById("longitude").value = long;
+          btn.textContent = "Localização capturada!";
+        },
+        (err) => {
+          console.error(err);
+          alert("Erro ao capturar localização.");
+          btn.disabled = false;
+          btn.textContent = "Obter Localização";
+        }
+      );
     }
-  );
-}
-</script>
+
+    // Script para sincronizar checkboxes com o select
+    document.getElementById("form-pagamento").addEventListener("submit", function (event) {
+      const checkboxes = document.querySelectorAll('input[name="bilhetes_selecionados"]:checked');
+      const select = document.getElementById("bilhetes-multi");
+      
+      // Limpa todas as seleções anteriores
+      for (let opt of select.options) {
+        opt.selected = false;
+      }
+
+      // Seleciona os bilhetes marcados via checkbox no <select>
+      checkboxes.forEach((checkbox) => {
+        for (let opt of select.options) {
+          if (opt.value === checkbox.value) {
+            opt.selected = true;
+          }
+        }
+      });
+    });
+  </script>
 </body>
 </html>
