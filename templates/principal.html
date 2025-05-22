@@ -88,28 +88,27 @@
     .azul { background-color: var(--azul); }
 
     @media (max-width: 600px) {
-      html, body {
-        padding: 1rem;
-      }
+  html, body {
+    padding: 1rem;
+  }
 
-      h2 {
-        font-size: 1.6rem;
-        margin-bottom: 1.5rem;
-      }
+  h2 {
+    font-size: 1.6rem;
+    margin-bottom: 1.5rem;
+  }
 
-      .tile {
-        height: 120px;
-        font-size: 1.2rem;
-        padding: 1rem;
-        border-radius: 10px;
-      }
+  .tile {
+    height: 90px;
+    font-size: 0.9rem;
+    padding: 1rem;
+    border-radius: 10px;
+  }
 
-      .grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-      }
-    }
-
+  .grid {
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px;
+  }
+}
     #preloader {
       position: fixed;
       top: 0;
@@ -147,7 +146,7 @@
     <h2>Kwata - Divirta-se</h2>
 
     <div class="grid">
-      <div class="tile verde" onclick="window.location.href='/produtos_disponiveis'">Disponíveis</div>
+      <div class="tile verde" onclick="window.location.href='/produtos_disponiveis'">Produtos</div>
       <div class="tile amarelo" onclick="window.location.href='/sorte'">Sorteio</div>
       <div class="tile azul" onclick="window.location.href='/sobre'">Sobre Nós</div>
       <div class="tile vermelho" onclick="window.location.href='/ganhadores'">Ganhadores</div>
