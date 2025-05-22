@@ -156,10 +156,21 @@
       });
     }
 
-    let fimSorteio = new Date(fimSorteioStr);
-    if (isNaN(fimSorteio)) fimSorteio = new Date(fimSorteioStr + 'Z');
+    // FORÇA CONVERSÃO PARA ISO (compatível com todos navegadores)
+    let fimSorteio;
+    try {
+      let fix = fimSorteioStr.replace(" ", "T");
+      if (!fix.endsWith("Z")) fix += "Z"; // força UTC
+      fimSorteio = new Date(fix);
+    } catch (e) {
+      fimSorteio = new Date(); // fallback
+    }
 
-    document.getElementById('sorteio-fim').textContent = formatarData(fimSorteio);
+    if (isNaN(fimSorteio.getTime())) {
+      document.getElementById('sorteio-fim').textContent = 'Data inválida';
+    } else {
+      document.getElementById('sorteio-fim').textContent = formatarData(fimSorteio);
+    }
 
     const cronometro = document.getElementById('cronometro');
     const vencedorDiv = document.getElementById('vencedor');
