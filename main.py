@@ -31,6 +31,7 @@ from typing import List
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request, UploadFile, File, Form
+from google.cloud.firestore_v1.base_document import DocumentSnapshot
 
 
 
@@ -597,6 +598,7 @@ def listar_comprovativos():
         d["id"] = doc.id
         lista.append(d)
     return lista
+    
 
 @app.post("/enviar-comprovativo")
 async def enviar_comprovativo(
@@ -642,7 +644,7 @@ async def enviar_comprovativo(
         if nome_conf:
             conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
 
-        # ✅ Verificar se o nome original do comprovativo já foi usado (no campo 'comprovativo_path')
+        # Verificar se o nome original do comprovativo já foi usado
         comprovativo_duplicado = list(
             rifas_ref.where("comprovativo_path", "==", comprovativo.filename).stream()
         )
@@ -695,8 +697,8 @@ async def enviar_comprovativo(
                 "produto_id": produto_id,
                 "bilhete": bilhete,
                 "data_envio": datetime.utcnow().isoformat(),
-                "comprovativo_path": comprovativo.filename,  
-                "comprovativo_salvo": filename                
+                "comprovativo_path": comprovativo.filename,
+                "comprovativo_salvo": filename
             })
 
         # Obter dados do produto
@@ -708,6 +710,10 @@ async def enviar_comprovativo(
         data_fim_sorteio = produto_data.get("data_sorteio")
         nome_produto = produto_data.get("nome", "Produto")
         imagem_produto = produto_data.get("imagem", "")
+
+        # 🔁 Converter Timestamp Firestore para ISO, se necessário
+        if hasattr(data_fim_sorteio, 'isoformat'):
+            data_fim_sorteio = data_fim_sorteio.isoformat()
 
         if not data_fim_sorteio:
             return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
@@ -723,6 +729,7 @@ async def enviar_comprovativo(
 
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
+
 
 @app.post("/comprar-bilhete")
 async def comprar_bilhete(
