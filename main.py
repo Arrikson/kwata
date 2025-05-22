@@ -403,7 +403,7 @@ async def enviar_comprovativo(
         rifas_ref = db.collection("rifas-compradas")
         conflitos = []
 
-        # Verificar conflitos: bilhetes, BI e nome
+        # Verificar conflitos: bilhetes, BI, nome e comprovativo
         for bilhete in bilhetes:
             query = list(
                 rifas_ref.where("produto_id", "==", produto_id)
@@ -431,7 +431,6 @@ async def enviar_comprovativo(
         if nome_conf:
             conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
 
-        # Verificar se o nome original do comprovativo já foi usado
         comprovativo_duplicado = list(
             rifas_ref.where("comprovativo_path", "==", comprovativo.filename).stream()
         )
@@ -458,22 +457,19 @@ async def enviar_comprovativo(
             erro_msg += "</ul></div>"
             return HTMLResponse(content=erro_msg, status_code=400)
 
-        # Caminho da pasta de destino
+        # Salvar comprovativo
         pasta = os.path.join("static", "static", "comprovativos")
         os.makedirs(pasta, exist_ok=True)
 
-        # Validar extensão
         file_ext = comprovativo.filename.split(".")[-1].lower()
         if file_ext not in ["pdf", "jpg", "jpeg", "png"]:
             return HTMLResponse(content="<h2>Erro:</h2><p>Formato de arquivo não suportado.</p>", status_code=400)
 
-        # Gerar nome único para salvar o arquivo
         filename = f"{uuid4()}.{file_ext}"
         file_path = os.path.join(pasta, filename)
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
-        # Salvar cada bilhete individualmente
         for bilhete in bilhetes:
             rifas_ref.add({
                 "nome": nome,
@@ -484,8 +480,8 @@ async def enviar_comprovativo(
                 "produto_id": produto_id,
                 "bilhete": bilhete,
                 "data_envio": datetime.utcnow().isoformat(),
-                "comprovativo_path": comprovativo.filename,  
-                "comprovativo_salvo": filename                
+                "comprovativo_path": comprovativo.filename,
+                "comprovativo_salvo": filename
             })
 
         # Obter dados do produto
@@ -498,7 +494,7 @@ async def enviar_comprovativo(
         nome_produto = produto_data.get("nome", "Produto")
         imagem_produto = produto_data.get("imagem", "")
 
-        # Converter data_fim_sorteio para ISO 8601 com Z no final (UTC)
+        vencedor_nome = None
         try:
             if data_fim_sorteio_raw:
                 if "T" not in data_fim_sorteio_raw:
@@ -507,16 +503,27 @@ async def enviar_comprovativo(
                 data_fim_sorteio = data_fim_sorteio_dt.isoformat() + "Z"
             else:
                 raise ValueError("Data ausente")
+
+            agora = datetime.utcnow()
+            if data_fim_sorteio_dt <= agora:
+                # Buscar todos os nomes que compraram bilhetes para este produto
+                bilhetes_vendidos = list(
+                    rifas_ref.where("produto_id", "==", produto_id).stream()
+                )
+                nomes = list({doc.to_dict().get("nome") for doc in bilhetes_vendidos if doc.to_dict().get("nome")})
+                if nomes:
+                    vencedor_nome = random.choice(nomes)
+
         except Exception:
             data_fim_sorteio = datetime.utcnow().isoformat() + "Z"
 
-        # Renderizar página de sorteio com data formatada
-        return templates.TemplateResponse("sorte.html", {
+        return templates.TemplateResponse("sorteio-data.html", {
             "request": request,
             "data_fim_sorteio": data_fim_sorteio,
             "produto_id": produto_id,
             "nome_produto": nome_produto,
-            "imagem_produto": imagem_produto
+            "imagem_produto": imagem_produto,
+            "vencedor": vencedor_nome
         })
 
     except Exception as e:
