@@ -18,22 +18,32 @@
       padding: 0;
     }
 
-    html, body {
-      font-family: 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      color: #fff;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background-image: url("/static/fun.jpg");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-    }
+   html, body {
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  color: #fff;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(circle at 10% 20%, #ff5733 10px, transparent 11px),
+              radial-gradient(circle at 80% 30%, #33c3ff 10px, transparent 11px),
+              radial-gradient(circle at 50% 80%, #b833ff 10px, transparent 11px),
+              radial-gradient(circle at 30% 60%, #33ff57 10px, transparent 11px),
+              radial-gradient(circle at 70% 50%, #ffc300 10px, transparent 11px),
+              radial-gradient(circle at 20% 90%, #ff33a6 10px, transparent 11px);
+  background-size: 120px 120px;
+  background-repeat: repeat;
+  background-attachment: fixed;
+  animation: moveBolas 40s linear infinite;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+@keyframes moveBolas {
+  0% { background-position: 0 0, 50px 50px, 100px 100px, 150px 150px, 200px 200px, 250px 250px; }
+  100% { background-position: 250px 250px, 200px 200px, 150px 150px, 100px 100px, 50px 50px, 0 0; }
+}
 
     h2 {
       text-align: center;
