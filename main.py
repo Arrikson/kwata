@@ -403,7 +403,7 @@ async def enviar_comprovativo(
         rifas_ref = db.collection("rifas-compradas")
         conflitos = []
 
-        # Verificar conflitos: bilhetes, BI, nome e comprovativo
+        # Verificar conflitos
         for bilhete in bilhetes:
             query = list(
                 rifas_ref.where("produto_id", "==", produto_id)
@@ -506,7 +506,6 @@ async def enviar_comprovativo(
 
             agora = datetime.utcnow()
             if data_fim_sorteio_dt <= agora:
-                # Buscar todos os nomes que compraram bilhetes para este produto
                 bilhetes_vendidos = list(
                     rifas_ref.where("produto_id", "==", produto_id).stream()
                 )
