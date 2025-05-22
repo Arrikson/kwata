@@ -387,53 +387,144 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         })
 
 
-@app.post("/pagamento-rifa.html")
-async def receber_pagamento_rifa(
+@app.post("/enviar-comprovativo")
+async def enviar_comprovativo(
     request: Request,
     nome: str = Form(...),
+    bi: str = Form(...),
     telefone: str = Form(...),
-    produto_id: str = Form(...),
     latitude: str = Form(...),
     longitude: str = Form(...),
-    bilhetes: list[str] = Form(...),
-    comprovativo: UploadFile = File(...)
+    produto_id: str = Form(...),
+    comprovativo: UploadFile = File(...),
+    bilhetes: list[str] = Form(...)
 ):
     try:
-        # 🔹 Ler e validar o PDF (tamanho)
-        conteudo = await comprovativo.read()
-        if len(conteudo) > 32 * 1024:
-            return templates.TemplateResponse("pagamento-rifa.html", {
-                "request": request,
-                "erro": "O comprovativo deve ter no máximo 32KB.",
-                "produto_id": produto_id
+        rifas_ref = db.collection("rifas-compradas")
+        conflitos = []
+
+        # Verificar conflitos: bilhetes, BI e nome
+        for bilhete in bilhetes:
+            query = list(
+                rifas_ref.where("produto_id", "==", produto_id)
+                         .where("bilhete", "==", bilhete)
+                         .stream()
+            )
+            if query:
+                conflitos.append(f"Bilhete {bilhete} já foi comprado.")
+
+        bi_conf = list(
+            rifas_ref.where("produto_id", "==", produto_id)
+                     .where("bi", "==", bi)
+                     .limit(1)
+                     .stream()
+        )
+        if bi_conf:
+            conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
+
+        nome_conf = list(
+            rifas_ref.where("produto_id", "==", produto_id)
+                     .where("nome", "==", nome)
+                     .limit(1)
+                     .stream()
+        )
+        if nome_conf:
+            conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
+
+        # ✅ Verificar se o nome original do comprovativo já foi usado
+        comprovativo_duplicado = list(
+            rifas_ref.where("comprovativo_path", "==", comprovativo.filename).stream()
+        )
+        if comprovativo_duplicado:
+            conflitos.append(f"O comprovativo '{comprovativo.filename}' já foi usado. Por favor, envie outro diferente.")
+
+        if conflitos:
+            erro_msg = """
+            <div style='
+                background-color: #fff5f5;
+                padding: 15px;
+                border-left: 6px solid #f87171;
+                border-radius: 8px;
+                color: #7f1d1d;
+                font-family: sans-serif;
+                max-width: 600px;
+                margin: 20px auto;
+            '>
+                <strong style='font-size: 1.1em;'>⚠️ Atenção:</strong>
+                <ul style='padding-left: 20px; margin-top: 10px;'>
+            """
+            for conflito in conflitos:
+                erro_msg += f"<li>{conflito}</li>"
+            erro_msg += "</ul></div>"
+            return HTMLResponse(content=erro_msg, status_code=400)
+
+        # Caminho da pasta de destino
+        pasta = os.path.join("static", "static", "comprovativos")
+        os.makedirs(pasta, exist_ok=True)
+
+        # Validar extensão
+        file_ext = comprovativo.filename.split(".")[-1].lower()
+        if file_ext not in ["pdf", "jpg", "jpeg", "png"]:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Formato de arquivo não suportado.</p>", status_code=400)
+
+        # Gerar nome único para salvar o arquivo
+        filename = f"{uuid4()}.{file_ext}"
+        file_path = os.path.join(pasta, filename)
+        with open(file_path, "wb") as f:
+            f.write(await comprovativo.read())
+
+        # Salvar cada bilhete individualmente
+        for bilhete in bilhetes:
+            rifas_ref.add({
+                "nome": nome,
+                "bi": bi,
+                "telefone": telefone,
+                "latitude": latitude,
+                "longitude": longitude,
+                "produto_id": produto_id,
+                "bilhete": bilhete,
+                "data_envio": datetime.utcnow().isoformat(),
+                "comprovativo_path": comprovativo.filename,
+                "comprovativo_salvo": filename
             })
 
-        nome_arquivo = f"{uuid.uuid4()}.pdf"
+        # Obter dados do produto
+        produto_doc = db.collection("produtos").document(produto_id).get()
+        if not produto_doc.exists:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
 
-        doc = {
-            "nome": nome,
-            "telefone": telefone,
-            "produto_id": produto_id,
-            "latitude": latitude,
-            "longitude": longitude,
-            "bilhete": [int(b) for b in bilhetes],
-            "comprovativo_nome": nome_arquivo,
-            "comprovativo_bytes": conteudo,
-            "data_envio": datetime.now().isoformat()
-        }
+        produto_data = produto_doc.to_dict()
+        data_fim_sorteio = produto_data.get("data_sorteio")
+        nome_produto = produto_data.get("nome", "Produto")
+        imagem_produto = produto_data.get("imagem", "")
 
-        db.collection("comprovativo-comprados").add(doc)
+        if not data_fim_sorteio:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
 
-        return RedirectResponse(url=f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
+        # ✅ Converter data_fim_sorteio para ISO 8601 string
+        if isinstance(data_fim_sorteio, Timestamp):
+            data_fim_sorteio = datetime.fromtimestamp(data_fim_sorteio.seconds).isoformat()
+        elif hasattr(data_fim_sorteio, "isoformat"):
+            data_fim_sorteio = data_fim_sorteio.isoformat()
+        elif isinstance(data_fim_sorteio, str):
+            try:
+                data_fim_sorteio = datetime.fromisoformat(data_fim_sorteio).isoformat()
+            except ValueError:
+                return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio inválida.</p>", status_code=500)
+        else:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Formato de data do sorteio não suportado.</p>", status_code=500)
 
-    except Exception as e:
-        print(f"❌ Erro ao processar pagamento: {e}")
-        return templates.TemplateResponse("pagamento-rifa.html", {
+        # Renderizar página de sucesso com cronômetro
+        return templates.TemplateResponse("sorte.html", {
             "request": request,
-            "erro": "Erro ao processar o pagamento. Verifique os dados e tente novamente.",
-            "produto_id": produto_id
+            "data_fim_sorteio": data_fim_sorteio,
+            "produto_id": produto_id,
+            "nome_produto": nome_produto,
+            "imagem_produto": imagem_produto
         })
 
+    except Exception as e:
+        return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
 
 def converter_valores_json(data):
     """
