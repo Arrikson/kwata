@@ -6,7 +6,7 @@
   <title>Kwata - Sorteios</title>
   <style>
     :root {
-      --verde: #00a300;
+      --verde: #4ead4f;
       --amarelo: #ffc40d;
       --vermelho: #e51400;
       --azul: #1ba1e2;
@@ -21,24 +21,50 @@
     html, body {
       font-family: 'Segoe UI', sans-serif;
       min-height: 100vh;
-      color: #000; /* Mudado para preto para melhor contraste com fundo branco */
+      color: #000;
       padding: 2rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #ffffff; /* Fundo branco */
+      background: #ffffff;
       position: relative;
       overflow-x: hidden;
     }
 
-    /* Removido o efeito de textura escura do fundo */
     body::before {
       display: none;
     }
 
+    header {
+      background-color: var(--verde);
+      padding: 0.5rem 1rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 1000px;
+      margin-bottom: 1.5rem;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+
+    header img {
+      height: 40px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      margin-left: 1rem;
+      color: white;
+    }
+
     h2 {
       text-align: center;
-      color: #333; /* Ajuste de cor para fundo claro */
+      color: #333;
       margin-bottom: 2rem;
       font-weight: normal;
       font-size: 2rem;
@@ -103,6 +129,15 @@
         grid-template-columns: repeat(2, 1fr); 
         gap: 10px;
       }
+
+      header img {
+        height: 60px;
+      }
+
+      header h1 {
+        font-size: 1.4rem;
+        margin-left: 0.5rem;
+      }
     }
 
     #preloader {
@@ -139,6 +174,15 @@
 
   <!-- Conteúdo principal -->
   <div id="main-content">
+
+    <!-- Cabeçalho -->
+    <header> 
+      <div class="logo-container">
+        <img src="/static/novologo.png" alt="Kwata Logo">
+        <h1>Kwata</h1>
+      </div>
+    </header>
+
     <h2>Kwata - Divirta-se</h2>
 
     <div class="grid">
@@ -160,4 +204,3 @@
 
 </body>
 </html>
-
