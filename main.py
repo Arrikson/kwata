@@ -990,6 +990,7 @@ async def atualizar_contadores(
     url = app.url_path_for("contadores") + f"?produto_id={produto_id}"
     return RedirectResponse(url, status_code=303)
 
+
 @app.get("/sorte/{produto_id}", response_class=HTMLResponse)
 async def exibir_sorteio(request: Request, produto_id: str):
     db = firestore.client()
@@ -1009,6 +1010,31 @@ async def exibir_sorteio(request: Request, produto_id: str):
         "data_fim_sorteio": produto.get("fim_sorteio", "2025-12-31T23:59:59")
     })
 
+
+@app.post("/sorte/{produto_id}")
+async def processar_sorteio(request: Request, produto_id: str):
+    form = await request.form()
+    acao = form.get("acao", "").lower()
+
+    db = firestore.client()
+    produto_ref = db.collection("produtos").document(produto_id)
+    doc = produto_ref.get()
+
+    if not doc.exists:
+        return HTMLResponse(content="Produto não encontrado", status_code=404)
+
+    if acao == "iniciar_sorteio":
+        # (Opcional) você pode salvar essa ação num log
+        db.collection("logs_sorteio").add({
+            "produto_id": produto_id,
+            "acao": "sorteio iniciado",
+            "timestamp": firestore.SERVER_TIMESTAMP
+        })
+
+        # Redireciona para a tela de sorteio ao vivo
+        return RedirectResponse(url=f"/sorte/{produto_id}", status_code=303)
+
+    return HTMLResponse("Ação inválida", status_code=400)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
