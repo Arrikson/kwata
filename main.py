@@ -511,7 +511,7 @@ async def enviar_comprovativo(
             data_fim_sorteio = datetime.utcnow().isoformat() + "Z"
 
         # Renderizar página de sorteio com data formatada
-        return templates.TemplateResponse("sorteio-data.html", {
+        return templates.TemplateResponse("sorte.html", {
             "request": request,
             "data_fim_sorteio": data_fim_sorteio,
             "produto_id": produto_id,
