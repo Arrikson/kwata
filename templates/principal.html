@@ -18,32 +18,28 @@
       padding: 0;
     }
 
-   html, body {
-  font-family: 'Segoe UI', sans-serif;
-  min-height: 100vh;
-  color: #fff;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: radial-gradient(circle at 10% 20%, #ff5733 10px, transparent 11px),
-              radial-gradient(circle at 80% 30%, #33c3ff 10px, transparent 11px),
-              radial-gradient(circle at 50% 80%, #b833ff 10px, transparent 11px),
-              radial-gradient(circle at 30% 60%, #33ff57 10px, transparent 11px),
-              radial-gradient(circle at 70% 50%, #ffc300 10px, transparent 11px),
-              radial-gradient(circle at 20% 90%, #ff33a6 10px, transparent 11px);
-  background-size: 120px 120px;
-  background-repeat: repeat;
-  background-attachment: fixed;
-  animation: moveBolas 40s linear infinite;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
+    html, body {
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      color: #fff;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      background-attachment: fixed;
+      position: relative;
+      overflow-x: hidden;
+    }
 
-@keyframes moveBolas {
-  0% { background-position: 0 0, 50px 50px, 100px 100px, 150px 150px, 200px 200px, 250px 250px; }
-  100% { background-position: 250px 250px, 200px 200px, 150px 150px, 100px 100px, 50px 50px, 0 0; }
-}
+    body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('https://www.transparenttextures.com/patterns/diagmonds.png');
+      opacity: 0.1;
+      z-index: 0;
+    }
 
     h2 {
       text-align: center;
@@ -51,6 +47,7 @@
       margin-bottom: 2rem;
       font-weight: normal;
       font-size: 2rem;
+      z-index: 1;
     }
 
     .grid {
@@ -60,6 +57,7 @@
       width: 100%;
       max-width: 500px;
       margin: 0 auto;
+      z-index: 1;
     }
 
     .tile {
@@ -76,6 +74,7 @@
       text-align: center;
       padding: 1.5rem;
       user-select: none;
+      z-index: 1;
     }
 
     .tile:hover {
@@ -117,7 +116,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: #4ead4f;
+      background-color: #000; /* Fundo escuro elegante */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -125,7 +124,7 @@
     }
 
     #preloader img {
-      max-width: 280px;
+      max-width: 260px;
       width: 80%;
       height: auto;
     }
@@ -138,7 +137,7 @@
 </head>
 <body>
 
-  <!-- Preloader com o logotipo -->
+  <!-- Preloader com fundo escuro -->
   <div id="preloader">
     <img src="/static/novologo.png" alt="Kwata Logo" />
   </div>
@@ -160,9 +159,10 @@
       setTimeout(function () {
         document.getElementById("preloader").style.display = "none";
         document.getElementById("main-content").style.display = "block";
-      }, 4000);
+      }, 2500); // tempo reduzido de 4s para 2.5s para melhor UX
     });
   </script>
 
 </body>
 </html>
+
