@@ -195,7 +195,7 @@
 
     async function buscarVencedor() {
       try {
-        const response = await fetch(`/sorteio-data?produto_id=${produtoId}`);
+        const response = await fetch(`/enviar-comprovativo?produto_id=${produtoId}`);
         const data = await response.json();
 
         if (data && data.nome && data.bilhete) {
