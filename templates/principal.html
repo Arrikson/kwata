@@ -21,29 +21,24 @@
     html, body {
       font-family: 'Segoe UI', sans-serif;
       min-height: 100vh;
-      color: #fff;
+      color: #000; /* Mudado para preto para melhor contraste com fundo branco */
       padding: 2rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      background-attachment: fixed;
+      background: #ffffff; /* Fundo branco */
       position: relative;
       overflow-x: hidden;
     }
 
+    /* Removido o efeito de textura escura do fundo */
     body::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: url('https://www.transparenttextures.com/patterns/diagmonds.png');
-      opacity: 0.1;
-      z-index: 0;
+      display: none;
     }
 
     h2 {
       text-align: center;
-      color: #ffffffcc;
+      color: #333; /* Ajuste de cor para fundo claro */
       margin-bottom: 2rem;
       font-weight: normal;
       font-size: 2rem;
@@ -88,34 +83,35 @@
     .azul { background-color: var(--azul); }
 
     @media (max-width: 600px) {
-  html, body {
-    padding: 1rem;
-  }
+      html, body {
+        padding: 1rem;
+      }
 
-  h2 {
-    font-size: 1.6rem;
-    margin-bottom: 1.5rem;
-  }
+      h2 {
+        font-size: 1.6rem;
+        margin-bottom: 1.5rem;
+      }
 
-  .tile {
-    height: 90px;
-    font-size: 0.9rem;
-    padding: 1rem;
-    border-radius: 10px;
-  }
+      .tile {
+        height: 90px;
+        font-size: 0.9rem;
+        padding: 1rem;
+        border-radius: 10px;
+      }
 
-  .grid {
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 10px;
-  }
-}
+      .grid {
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 10px;
+      }
+    }
+
     #preloader {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: #000; /* Fundo escuro elegante */
+      background-color: #000;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -136,7 +132,7 @@
 </head>
 <body>
 
-  <!-- Preloader com fundo escuro -->
+  <!-- Preloader -->
   <div id="preloader">
     <img src="/static/novologo.png" alt="Kwata Logo" />
   </div>
@@ -158,7 +154,7 @@
       setTimeout(function () {
         document.getElementById("preloader").style.display = "none";
         document.getElementById("main-content").style.display = "block";
-      }, 2500); // tempo reduzido de 4s para 2.5s para melhor UX
+      }, 2500);
     });
   </script>
 
