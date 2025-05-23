@@ -6,27 +6,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f8fafc;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 30px;
+            color: #1e293b;
         }
+
         h1 {
-            color: #1f2937;
+            text-align: center;
+            color: #10b981; /* Verde */
+            margin-bottom: 30px;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             background-color: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
+
         th {
-            background-color: #3b82f6;
-            color: white;
+            background-color: #facc15; /* Amarelo */
+            color: #1f2937;
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fefce8; /* Amarelo suave */
+        }
+
+        tr:hover {
+            background-color: #fef2f2; /* Vermelho fraco */
+        }
+
+        .mensagem {
+            background-color: #fef3c7;
+            padding: 20px;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            text-align: center;
+            color: #92400e;
+            font-size: 16px;
+            margin-top: 30px;
         }
     </style>
 </head>
@@ -54,7 +86,9 @@
         </tbody>
     </table>
     {% else %}
-        <p>Nenhum produto com data futura de sorteio foi encontrado.</p>
+        <div class="mensagem">
+            Nenhum produto com data futura de sorteio foi encontrado.
+        </div>
     {% endif %}
 
 </body>
