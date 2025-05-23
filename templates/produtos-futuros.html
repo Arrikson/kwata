@@ -1,131 +1,126 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Produtos Futuros</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #fefee0;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Produtos em Sorteio</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #fefee0;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
 
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-        header img {
-            width: 120px;
-        }
+    header img {
+      width: 120px;
+    }
 
-        h1 {
-            color: #2b7a0b;
-            font-size: 24px;
-        }
+    h1 {
+      color: #2b7a0b;
+      font-size: 24px;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
 
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
-        }
+    .card {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
 
-        th {
-            background-color: #d5f4a1;
-            color: #2b7a0b;
-        }
+    .card img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
 
-        button {
-            background-color: #ffcc00;
-            color: #000;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+    .card h3 {
+      color: #2b7a0b;
+      margin: 5px 0;
+    }
 
-        button:hover {
-            background-color: #ffdb4d;
-        }
+    .card p {
+      margin: 2px 0;
+      font-size: 14px;
+    }
 
-        @media (max-width: 600px) {
-            table, thead, tbody, th, td, tr {
-                display: block;
-                text-align: left;
-            }
+    button {
+      background-color: #ffcc00;
+      color: #000;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 20px auto;
+      display: block;
+    }
 
-            th, td {
-                padding: 8px;
-                font-size: 14px;
-            }
+    button:hover {
+      background-color: #ffdb4d;
+    }
 
-            th {
-                background-color: #c0f28a;
-            }
-        }
-    </style>
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <img src="/static/novologo.png" alt="Logo">
-        <h1>Lista de Compras Futuras</h1>
-        <p id="dataHora"></p>
-    </header>
+  <header>
+    <img src="/static/novologo.png" alt="Logo">
+    <h1>Produtos em Sorteio</h1>
+    <p id="dataHora"></p>
+  </header>
 
-    <main>
-        <table id="tabela-produtos">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Bilhete</th>
-                    <th>B.I.</th>
-                    <th>Data</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in produtos %}
-                <tr>
-                    <td>{{ item.nome }}</td>
-                    <td>{{ item.bilhete }}</td>
-                    <td>{{ item.bi }}</td>
-                    <td>{{ item.data }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div style="text-align:center;">
-            <button onclick="gerarPDF()">📄 Baixar PDF</button>
-        </div>
-    </main>
+  <main>
+    <div class="grid">
+      {% for produto in produtos %}
+      <div class="card">
+        <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
+        <h3>{{ produto.nome }}</h3>
+        <p><strong>Preço:</strong> {{ produto.preco }} Kz</p>
+        <p><strong>Total de Bilhetes:</strong> {{ produto.total_bilhetes }}</p>
+        <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos }}</p>
+      </div>
+      {% endfor %}
+    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
-    <script>
-        // Exibe a data e hora atual
-        const agora = new Date();
-        document.getElementById("dataHora").innerText = "Gerado em: " + agora.toLocaleString();
+    <button onclick="gerarPDF()">📄 Baixar PDF</button>
+  </main>
 
-        function gerarPDF() {
-            const elemento = document.body;
-            const opt = {
-                margin: 0.5,
-                filename: 'compras-futuras.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(elemento).save();
-        }
-    </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+  <script>
+    document.getElementById("dataHora").innerText = "Gerado em: " + new Date().toLocaleString();
+
+    function gerarPDF() {
+      const elemento = document.body;
+      const opt = {
+        margin: 0.5,
+        filename: 'produtos-sorteio.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(elemento).save();
+    }
+  </script>
 </body>
 </html>
