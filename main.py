@@ -1163,13 +1163,7 @@ async def produtos_futuros(request: Request):
             "request": request,
             "erro": "Erro ao carregar os dados."
         })
-
-
-# Configurar locale para interpretar datas em português
-try:
-    locale.setlocale(locale.LC_TIME, 'pt_PT.UTF-8')
-except locale.Error:
-    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')  # Fallback
+        
 
 @app.get("/sorte", response_class=HTMLResponse)
 @app.post("/sorte", response_class=HTMLResponse)
