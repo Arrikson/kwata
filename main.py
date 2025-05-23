@@ -1076,6 +1076,53 @@ async def sorteios_ao_vivo(request: Request):
         traceback.print_exc()
         return HTMLResponse(content=f"<h2>Erro ao carregar sorteios:</h2><pre>{str(e)}</pre>", status_code=500)
 
+
+@app.get("/tabela-futuros", response_class=HTMLResponse)
+async def exibir_tabela_futuros(request: Request):
+    try:
+        docs = db.collection("produtos").stream()
+        produtos_futuros = []
+
+        agora = datetime.now()
+
+        for doc in docs:
+            dados = doc.to_dict()
+            data_sorteio_str = dados.get("data_sorteio")
+
+            if data_sorteio_str:
+                try:
+                    data_sorteio = datetime.fromisoformat(data_sorteio_str)
+                    if data_sorteio > agora:
+                        produtos_futuros.append({
+                            "nome": dados.get("nome", "Sem nome"),
+                            "preco_bilhete": float(dados.get("preco_bilhete", 0.0)),
+                            "data_sorteio": data_sorteio.strftime("%Y-%m-%d %H:%M")
+                        })
+                except Exception as e:
+                    print(f"Erro ao analisar data: {e}")
+                    continue
+
+        return templates.TemplateResponse("tabela-futuros.html", {
+            "request": request,
+            "produtos": produtos_futuros
+        })
+
+    except Exception as e:
+        print(f"Erro ao buscar produtos futuros: {e}")
+        return templates.TemplateResponse("tabela-futuros.html", {
+            "request": request,
+            "produtos": [],
+            "erro": "Erro ao carregar os produtos."
+        })
+
+
+@app.post("/tabela-futuros", response_class=HTMLResponse)
+async def processar_post_futuros(request: Request):
+    # Pronto para processar filtros ou ações via formulário POST
+    return await exibir_tabela_futuros(request)
+
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
