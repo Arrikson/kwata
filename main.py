@@ -1082,7 +1082,6 @@ async def exibir_tabela_futuros(request: Request):
     try:
         docs = db.collection("produtos").stream()
         produtos_futuros = []
-
         agora = datetime.now()
 
         for doc in docs:
@@ -1093,11 +1092,22 @@ async def exibir_tabela_futuros(request: Request):
                 try:
                     data_sorteio = datetime.fromisoformat(data_sorteio_str)
                     if data_sorteio > agora:
-                        produtos_futuros.append({
+                        produto_futuro = {
                             "nome": dados.get("nome", "Sem nome"),
                             "preco_bilhete": float(dados.get("preco_bilhete", 0.0)),
                             "data_sorteio": data_sorteio.strftime("%Y-%m-%d %H:%M")
+                        }
+
+                        produtos_futuros.append(produto_futuro)
+
+                        # Cria/Atualiza na coleção "produtos-futuros"
+                        db.collection("produtos-futuros").document(doc.id).set({
+                            "nome": produto_futuro["nome"],
+                            "preco_bilhete": produto_futuro["preco_bilhete"],
+                            "data_sorteio": data_sorteio.isoformat(),
+                            "atualizado_em": datetime.now().isoformat()
                         })
+
                 except Exception as e:
                     print(f"Erro ao analisar data: {e}")
                     continue
@@ -1118,9 +1128,7 @@ async def exibir_tabela_futuros(request: Request):
 
 @app.post("/tabela-futuros", response_class=HTMLResponse)
 async def processar_post_futuros(request: Request):
-    # Pronto para processar filtros ou ações via formulário POST
     return await exibir_tabela_futuros(request)
-
 
 
 if __name__ == "__main__":
