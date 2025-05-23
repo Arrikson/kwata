@@ -7,6 +7,7 @@ import random
 import sys
 import traceback
 import io
+import pytz
 import hashlib
 from datetime import datetime, timezone
 from typing import Optional
@@ -1163,6 +1164,25 @@ async def produtos_futuros(request: Request):
             "request": request,
             "erro": "Erro ao carregar os dados."
         })
+
+@app.get("/sorte/{produto_id}", response_class=HTMLResponse)
+async def exibir_sorteio(request: Request, produto_id: str):
+    try:
+        # 🔧 Exemplo simulado de busca em banco (substituir por lógica real)
+        nome_produto = "Smartphone Galaxy Z Flip"
+        imagem_produto = "/static/galaxy-flip.jpg"
+        data_fim_sorteio = datetime(2025, 6, 1, 15, 30, 0, tzinfo=pytz.UTC)  # Data do sorteio em UTC
+
+        return templates.TemplateResponse("sorte.html", {
+            "request": request,
+            "produto_id": produto_id,
+            "nome_produto": nome_produto,
+            "imagem_produto": imagem_produto,
+            "data_fim_sorteio": data_fim_sorteio.isoformat()  # formato ISO 8601
+        })
+
+    except Exception as e:
+        return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
