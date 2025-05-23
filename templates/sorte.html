@@ -133,7 +133,6 @@
 
     <p>Produto: <strong>{{ nome_produto }}</strong></p>
     <p>Data do fim do sorteio: <span id="sorteio-fim">Carregando...</span></p>
-
     <div id="cronometro" class="timer">Carregando...</div>
 
     <div id="vencedor" class="winner">
@@ -149,7 +148,6 @@
     const nomeProduto = "{{ nome_produto }}";
     let fimSorteioStr = "{{ data_fim_sorteio }}";
 
-    // ✅ Corrigir formato da data para ISO UTC se necessário
     if (fimSorteioStr && !fimSorteioStr.includes('T')) {
       fimSorteioStr = fimSorteioStr.replace(" ", "T");
     }
@@ -159,7 +157,7 @@
 
     let fimSorteio = new Date(fimSorteioStr);
     if (isNaN(fimSorteio.getTime())) {
-      fimSorteio = new Date();  // fallback em caso de erro
+      fimSorteio = new Date();
     }
 
     document.getElementById('sorteio-fim').textContent = formatarData(fimSorteio);
