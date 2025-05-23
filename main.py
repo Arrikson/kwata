@@ -1173,25 +1173,52 @@ async def sorte(request: Request, produto_id: str = Form(None)):
         if not produto_id:
             produto_id = request.query_params.get("produto_id")
 
+        # Se ainda não tiver produto_id, buscar automaticamente o primeiro produto com data_sorteio futura
         if not produto_id:
-            return HTMLResponse(content="<h2>Erro:</h2><p>ID do produto não fornecido.</p>", status_code=400)
+            agora = datetime.utcnow()
+            produtos_ref = db.collection("produtos")
+            produtos = produtos_ref.stream()
 
-        produto_doc = db.collection("produtos").document(produto_id).get()
-        if not produto_doc.exists:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
+            produto_futuro = None
+            for doc in produtos:
+                data = doc.to_dict()
+                data_sorteio_str = data.get("data_sorteio")
 
-        produto_data = produto_doc.to_dict()
+                if not data_sorteio_str:
+                    continue
+
+                try:
+                    try:
+                        data_sorteio_dt = datetime.strptime(data_sorteio_str, "%d de %b. de %Y")
+                    except ValueError:
+                        data_sorteio_dt = datetime.strptime(data_sorteio_str, "%d de %b de %Y")
+
+                    if data_sorteio_dt > agora:
+                        produto_futuro = doc
+                        break
+                except Exception:
+                    continue
+
+            if not produto_futuro:
+                return HTMLResponse(content="<h2>Erro:</h2><p>Nenhum produto com data de sorteio futura foi encontrado.</p>", status_code=404)
+
+            produto_id = produto_futuro.id
+            produto_data = produto_futuro.to_dict()
+        else:
+            produto_doc = db.collection("produtos").document(produto_id).get()
+            if not produto_doc.exists:
+                return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
+            produto_data = produto_doc.to_dict()
+
         nome_produto = produto_data.get("nome", "Produto")
         imagem_produto = produto_data.get("imagem", "")
         data_sorteio_raw = produto_data.get("data_sorteio")
 
-        # Converter data
         if data_sorteio_raw:
             try:
                 data_fim_sorteio_dt = datetime.strptime(data_sorteio_raw, "%d de %b. de %Y")
             except ValueError:
                 data_fim_sorteio_dt = datetime.strptime(data_sorteio_raw, "%d de %b de %Y")
-
             data_fim_sorteio = data_fim_sorteio_dt.isoformat() + "Z"
         else:
             data_fim_sorteio = datetime.utcnow().isoformat() + "Z"
@@ -1202,7 +1229,7 @@ async def sorte(request: Request, produto_id: str = Form(None)):
             "data_fim_sorteio": data_fim_sorteio,
             "nome_produto": nome_produto,
             "imagem_produto": imagem_produto,
-            "vencedor": None  # aqui você pode processar vencedor se quiser
+            "vencedor": None
         })
 
     except Exception as e:
