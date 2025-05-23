@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Produtos com Sorteio Futuro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+            padding: 20px;
+        }
+        h1 {
+            color: #1f2937;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Produtos com Sorteio no Futuro</h1>
+
+    {% if produtos %}
+    <table>
+        <thead>
+            <tr>
+                <th>Nome do Produto</th>
+                <th>Preço do Bilhete (Kz)</th>
+                <th>Data do Sorteio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produto in produtos %}
+            <tr>
+                <td>{{ produto.nome }}</td>
+                <td>{{ "%.2f"|format(produto.preco_bilhete) }}</td>
+                <td>{{ produto.data_sorteio }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>Nenhum produto com data futura de sorteio foi encontrado.</p>
+    {% endif %}
+
+</body>
+</html>
