@@ -359,7 +359,6 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         dados_produto = doc.to_dict()
         nome_produto = dados_produto.get("nome", "Produto")
         preco_bilhete = float(dados_produto.get("preco_bilhete", 0.00))
-        data_sorteio = dados_produto.get("data_sorteio")
 
         rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
         if rifas_restantes_doc.exists:
@@ -388,20 +387,6 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
 
         bilhetes_indisponiveis = list(set(int(b) for b in bilhetes_indisponiveis if str(b).isdigit()))
 
-        # ✅ Verifica se data_sorteio é futura e cria a coleção de compras
-        if data_sorteio:
-            data_sorteio_dt = datetime.fromisoformat(str(data_sorteio))
-            if data_sorteio_dt > datetime.now():
-                compras_ref = db.collection(f"compras-{produto_id}")
-                exemplo_compra = {
-                    "nome_comprador": "Exemplo",       # será substituído com dados reais no POST
-                    "numero_bilhete": 1,
-                    "numero_bi": "000000000LA000",
-                    "data_compra": datetime.now().isoformat()
-                }
-                compras_ref.document("exemplo").set(exemplo_compra, merge=True)
-                print(f"📦 Coleção 'compras-{produto_id}' preparada no Firebase.")
-
         contexto = {
             "request": request,
             "produto_id": produto_id,
@@ -414,6 +399,24 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
 
         if sucesso == "1":
             contexto["sucesso"] = "Pagamento enviado com sucesso! Seus bilhetes foram reservados."
+
+        # ➕ NOVO CÓDIGO AQUI: cria a tabela "compras-futuras" se a data de sorteio for futura
+        data_sorteio_str = dados_produto.get("data_sorteio")
+        if data_sorteio_str:
+            try:
+                data_sorteio = datetime.fromisoformat(data_sorteio_str)
+                agora = datetime.now()
+                if data_sorteio > agora:
+                    nova_compra = {
+                        "produto_id": produto_id,
+                        "nome_comprador": "NOME_EXEMPLO",         # Substituir por dado real
+                        "numero_bilhete": 999,                    # Substituir por bilhete real
+                        "bi_comprador": "000000000LA000",         # Substituir por BI real
+                        "data_compra": agora.isoformat()
+                    }
+                    db.collection("compras-futuras").add(nova_compra)
+            except Exception as erro_data:
+                print(f"⚠️ Erro ao processar data de sorteio: {erro_data}")
 
         return templates.TemplateResponse("pagamento-rifa.html", contexto)
 
