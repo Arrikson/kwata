@@ -1003,6 +1003,8 @@ async def atualizar_contadores(
     url = app.url_path_for("contadores") + f"?produto_id={produto_id}"
     return RedirectResponse(url, status_code=303)
     
+from your_template_module import templates  # ajuste se necessário
+from your_firestore_module import db        # ajuste se necessário
 
 @app.get("/sorteios-ao-vivo", response_class=HTMLResponse)
 async def sorteios_ao_vivo(request: Request):
@@ -1012,32 +1014,38 @@ async def sorteios_ao_vivo(request: Request):
         docs = produtos_ref.stream()
 
         for doc in docs:
-            data = doc.to_dict()
-            produto_id = doc.id
-            nome = data.get("nome", "Produto")
-            imagem = data.get("imagem", "")
-            preco = data.get("preco_bilhete", 0.0)
-            data_sorteio = data.get("data_sorteio", "")
+            try:
+                data = doc.to_dict()
+                produto_id = doc.id
+                nome = data.get("nome", "Produto")
+                imagem = data.get("imagem", "")
+                preco = data.get("preco_bilhete", 0.0)
+                data_sorteio = data.get("data_sorteio", "")
 
-            # Garantir que data_sorteio esteja em formato ISO e com timezone
-            if hasattr(data_sorteio, 'isoformat'):
-                data_sorteio = data_sorteio.isoformat()
+                # Se vier como objeto Timestamp do Firestore
+                if hasattr(data_sorteio, 'isoformat'):
+                    data_sorteio = data_sorteio.isoformat()
 
-            if data_sorteio:
-                # Converter a string ISO para datetime com timezone UTC
-                sorteio_dt = datetime.fromisoformat(data_sorteio)
-                if sorteio_dt.tzinfo is None:
-                    sorteio_dt = sorteio_dt.replace(tzinfo=timezone.utc)
+                if data_sorteio:
+                    sorteio_dt = datetime.fromisoformat(data_sorteio)
 
-                agora = datetime.now(timezone.utc)
-                if sorteio_dt > agora:
-                    sorteios.append({
-                        "produto_id": produto_id,
-                        "nome": nome,
-                        "imagem": imagem,
-                        "preco": preco,
-                        "data_sorteio": data_sorteio
-                    })
+                    if sorteio_dt.tzinfo is None:
+                        sorteio_dt = sorteio_dt.replace(tzinfo=timezone.utc)
+
+                    agora = datetime.now(timezone.utc)
+
+                    if sorteio_dt > agora:
+                        sorteios.append({
+                            "produto_id": produto_id,
+                            "nome": nome,
+                            "imagem": imagem,
+                            "preco": preco,
+                            "data_sorteio": data_sorteio
+                        })
+
+            except Exception as doc_err:
+                print(f"[ERRO NO PRODUTO: {doc.id}]")
+                traceback.print_exc()  # Mostra o erro do produto com detalhes
 
         return templates.TemplateResponse("sorteios-ao-vivo.html", {
             "request": request,
@@ -1045,8 +1053,9 @@ async def sorteios_ao_vivo(request: Request):
         })
 
     except Exception as e:
+        print("[ERRO GERAL NO ENDPOINT /sorteios-ao-vivo]")
+        traceback.print_exc()  # Mostra erro completo no terminal
         return HTMLResponse(content=f"<h2>Erro ao carregar sorteios:</h2><pre>{str(e)}</pre>", status_code=500)
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
