@@ -1003,8 +1003,6 @@ async def atualizar_contadores(
     url = app.url_path_for("contadores") + f"?produto_id={produto_id}"
     return RedirectResponse(url, status_code=303)
     
-from your_template_module import templates  # ajuste se necessário
-from your_firestore_module import db        # ajuste se necessário
 
 @app.get("/sorteios-ao-vivo", response_class=HTMLResponse)
 async def sorteios_ao_vivo(request: Request):
@@ -1022,7 +1020,6 @@ async def sorteios_ao_vivo(request: Request):
                 preco = data.get("preco_bilhete", 0.0)
                 data_sorteio = data.get("data_sorteio", "")
 
-                # Se vier como objeto Timestamp do Firestore
                 if hasattr(data_sorteio, 'isoformat'):
                     data_sorteio = data_sorteio.isoformat()
 
@@ -1045,7 +1042,7 @@ async def sorteios_ao_vivo(request: Request):
 
             except Exception as doc_err:
                 print(f"[ERRO NO PRODUTO: {doc.id}]")
-                traceback.print_exc()  # Mostra o erro do produto com detalhes
+                traceback.print_exc()
 
         return templates.TemplateResponse("sorteios-ao-vivo.html", {
             "request": request,
@@ -1054,7 +1051,7 @@ async def sorteios_ao_vivo(request: Request):
 
     except Exception as e:
         print("[ERRO GERAL NO ENDPOINT /sorteios-ao-vivo]")
-        traceback.print_exc()  # Mostra erro completo no terminal
+        traceback.print_exc()
         return HTMLResponse(content=f"<h2>Erro ao carregar sorteios:</h2><pre>{str(e)}</pre>", status_code=500)
 
 if __name__ == "__main__":
