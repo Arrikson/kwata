@@ -428,6 +428,73 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         })
 
 
+@app.post("/pagamento-rifa.html")
+async def registrar_pagamento(
+    request: Request,
+    produto_id: str = Form(...),
+    nome_comprador: str = Form(...),
+    bi_comprador: str = Form(...),
+    numero_bilhete: int = Form(...),
+    latitude: str = Form(default=None),
+    longitude: str = Form(default=None)
+):
+    try:
+        doc_ref = db.collection("produtos").document(produto_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "Produto não encontrado. Tente novamente."
+            })
+
+        dados_produto = doc.to_dict()
+        data_sorteio_str = dados_produto.get("data_sorteio")
+
+        if data_sorteio_str:
+            try:
+                data_sorteio = datetime.fromisoformat(data_sorteio_str)
+                agora = datetime.now()
+
+                if data_sorteio > agora:
+                    nova_compra = {
+                        "produto_id": produto_id,
+                        "nome_comprador": nome_comprador,
+                        "bi_comprador": bi_comprador,
+                        "numero_bilhete": numero_bilhete,
+                        "data_compra": agora.isoformat(),
+                        "latitude": latitude,
+                        "longitude": longitude
+                    }
+                    db.collection("compras-futuras").add(nova_compra)
+                    return RedirectResponse(f"/pagamento-rifa.html?produto_id={produto_id}&sucesso=1", status_code=303)
+                else:
+                    return templates.TemplateResponse("pagamento-rifa.html", {
+                        "request": request,
+                        "erro": "O sorteio já aconteceu ou está acontecendo agora."
+                    })
+
+            except Exception as e:
+                print(f"Erro ao converter data: {e}")
+                return templates.TemplateResponse("pagamento-rifa.html", {
+                    "request": request,
+                    "erro": "Data de sorteio inválida."
+                })
+
+        else:
+            return templates.TemplateResponse("pagamento-rifa.html", {
+                "request": request,
+                "erro": "Produto sem data de sorteio definida."
+            })
+
+    except Exception as e:
+        print(f"❌ Erro ao registrar pagamento: {e}")
+        return templates.TemplateResponse("pagamento-rifa.html", {
+            "request": request,
+            "erro": "Erro ao registrar a compra. Tente novamente."
+        })
+
+
 @app.post("/enviar-comprovativo")
 async def enviar_comprovativo(
     request: Request,
