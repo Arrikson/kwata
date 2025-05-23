@@ -33,8 +33,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request, UploadFile, File, Form
 from google.cloud.firestore_v1.base_document import DocumentSnapshot
-from your_template_module import templates  # ajuste para o módulo real onde está o 'templates'
-from your_firestore_module import db        # ajuste para seu módulo de conexão com Firestore
+
 
 
 
