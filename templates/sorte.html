@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sorteio ao Vivo</title>
+  <title>Sorteio ao Vivo - {{ nome_produto }}</title>
   <style>
     :root {
       --verde: #3a9d23;
@@ -127,7 +127,7 @@
     <h1>Sorteio ao Vivo</h1>
 
     {% if imagem_produto %}
-    <img src="{{ imagem_produto }}" alt="Produto" class="produto-img" />
+      <img src="{{ imagem_produto }}" alt="Produto" class="produto-img" />
     {% endif %}
 
     <p>Produto: <strong>{{ nome_produto }}</strong></p>
