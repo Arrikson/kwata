@@ -8,7 +8,6 @@ import sys
 import traceback
 import io
 import hashlib
-import locale
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
