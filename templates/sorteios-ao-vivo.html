@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Sorteios ao Vivo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
         function iniciarCronometro(id, fimISO) {
-            const fimDate = new Date(fimISO); // ISO 8601 deve conter fuso horário
-
+            const fimDate = new Date(fimISO);
             const cron = document.getElementById("cronometro-" + id);
 
             const intervalo = setInterval(() => {
@@ -30,9 +30,47 @@
     </script>
     <style>
         body {
-            font-family: sans-serif;
-            background: #f9fafb;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .top-header {
+            background-color: #ffffff;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .ao-vivo-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: red;
+            animation: piscar 1s infinite;
+        }
+
+        @keyframes piscar {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        .top-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .container {
+            padding: 30px 20px;
+            max-width: 800px;
+            margin: auto;
         }
 
         .card {
@@ -40,10 +78,7 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+            margin-bottom: 25px;
         }
 
         .card img {
@@ -54,6 +89,8 @@
 
         .card h2 {
             margin-top: 15px;
+            font-size: 1.4rem;
+            color: #111827;
         }
 
         .card .preco {
@@ -71,28 +108,51 @@
             cursor: pointer;
             text-decoration: none;
             display: inline-block;
-            margin-top: 10px;
+            margin-top: 12px;
+            font-weight: 500;
         }
 
         .botao-comprar:hover {
-            background: #1d4ed8;
+            background: #1e40af;
+        }
+
+        .tempo {
+            font-weight: bold;
+            color: #dc2626;
+        }
+
+        @media (max-width: 600px) {
+            .top-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .card h2 {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
 <body>
 
-    <h1 style="text-align:center; margin-bottom: 30px;">🎉 Sorteios ao Vivo</h1>
-
-    {% for s in sorteios %}
-    <div class="card">
-        <img src="{{ s.imagem }}" alt="{{ s.nome }}">
-        <h2>{{ s.nome }}</h2>
-        <div class="preco">Bilhete: {{ "%.2f"|format(s.preco) }} Kz</div>
-        <p><strong>Termina em:</strong> <span id="cronometro-{{ s.produto_id }}">Carregando...</span></p>
-        <a class="botao-comprar" href="/pagamento-rifa.html?produto_id={{ s.produto_id }}">Comprar Bilhete</a>
-        <script>iniciarCronometro("{{ s.produto_id }}", "{{ s.data_sorteio.isoformat() }}");</script>
+    <div class="top-header">
+        <div class="ao-vivo-icon"></div>
+        <h1>Sorteios Ao Vivo</h1>
     </div>
-    {% endfor %}
+
+    <div class="container">
+        {% for s in sorteios %}
+        <div class="card">
+            <img src="{{ s.imagem }}" alt="{{ s.nome }}">
+            <h2>{{ s.nome }}</h2>
+            <div class="preco">Bilhete: {{ "%.2f"|format(s.preco) }} Kz</div>
+            <p><strong>Termina em:</strong> <span id="cronometro-{{ s.produto_id }}" class="tempo">Carregando...</span></p>
+            <a class="botao-comprar" href="/pagamento-rifa.html?produto_id={{ s.produto_id }}">Comprar Bilhete</a>
+            <script>
+                iniciarCronometro("{{ s.produto_id }}", "{{ s.data_sorteio }}");
+            </script>
+        </div>
+        {% endfor %}
+    </div>
 
 </body>
 </html>
