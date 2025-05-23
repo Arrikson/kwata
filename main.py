@@ -1001,9 +1001,6 @@ async def atualizar_contadores(
     url = app.url_path_for("contadores") + f"?produto_id={produto_id}"
     return RedirectResponse(url, status_code=303)
 
-from datetime import datetime, timezone
-from app import app, templates, db  # ajuste conforme sua estrutura real
-
 @app.get("/sorteios-ao-vivo", response_class=HTMLResponse)
 async def sorteios_ao_vivo(request: Request):
     try:
