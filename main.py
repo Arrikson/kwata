@@ -7,7 +7,6 @@ import random
 import sys
 import traceback
 import io
-import pytz
 import hashlib
 from datetime import datetime, timezone
 from typing import Optional
