@@ -322,6 +322,7 @@ async def adicionar_produto(
             db.collection("produtos-futuros").document(produto_id).set({
                 "nome": nome,
                 "preco_bilhete": round(preco_bilhete, 2),
+                "quantidade_bilhetes": quantidade_calculada,
                 "data_sorteio": data_sorteio_dt.isoformat(),
                 "atualizado_em": agora.isoformat()
             })
