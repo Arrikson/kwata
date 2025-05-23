@@ -359,6 +359,7 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
         dados_produto = doc.to_dict()
         nome_produto = dados_produto.get("nome", "Produto")
         preco_bilhete = float(dados_produto.get("preco_bilhete", 0.00))
+        data_sorteio = dados_produto.get("data_sorteio")
 
         rifas_restantes_doc = db.collection("rifas-restantes").document(produto_id).get()
         if rifas_restantes_doc.exists:
@@ -386,6 +387,20 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
                 bilhetes_indisponiveis.append(int(bilhete))
 
         bilhetes_indisponiveis = list(set(int(b) for b in bilhetes_indisponiveis if str(b).isdigit()))
+
+        # ✅ Verifica se data_sorteio é futura e cria a coleção de compras
+        if data_sorteio:
+            data_sorteio_dt = datetime.fromisoformat(str(data_sorteio))
+            if data_sorteio_dt > datetime.now():
+                compras_ref = db.collection(f"compras-{produto_id}")
+                exemplo_compra = {
+                    "nome_comprador": "Exemplo",       # será substituído com dados reais no POST
+                    "numero_bilhete": 1,
+                    "numero_bi": "000000000LA000",
+                    "data_compra": datetime.now().isoformat()
+                }
+                compras_ref.document("exemplo").set(exemplo_compra, merge=True)
+                print(f"📦 Coleção 'compras-{produto_id}' preparada no Firebase.")
 
         contexto = {
             "request": request,
