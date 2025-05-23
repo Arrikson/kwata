@@ -253,7 +253,8 @@ def index(request: Request):
 
     return templates.TemplateResponse("produtos_disponiveis.html", {"request": request, "produtos": produtos})
     
-@app.get("/admin", response_class=HTMLResponse)
+
+@app.get("/admin", response_class=HTMLResponse) 
 async def admin_form(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
@@ -267,16 +268,14 @@ async def adicionar_produto(
     lucro_desejado: float = Form(...),
     preco_bilhete: float = Form(None),
     quantidade_bilhetes: int = Form(None),
-    data_sorteio: str = Form(...)  # ⬅️ Nome atualizado
+    data_sorteio: str = Form(...)
 ):
     try:
         print("🔧 ROTA /admin ACIONADA")
         print("📅 data_sorteio recebido:", data_sorteio)
 
-        # ✅ Converter diretamente para datetime (Firestore aceita datetime)
         data_sorteio_dt = datetime.fromisoformat(data_sorteio)
 
-        # Salva a imagem no servidor
         conteudo_imagem = await imagem.read()
         ext = os.path.splitext(imagem.filename)[-1]
         nome_arquivo = f"{uuid4().hex}{ext}"
@@ -308,18 +307,28 @@ async def adicionar_produto(
             "preco_bilhete": round(preco_bilhete, 2),
             "quantidade_bilhetes": quantidade_calculada,
             "bilhetes_vendidos": 0,
-            "data_sorteio": data_sorteio_dt  # ⬅️ Nome atualizado
+            "data_sorteio": data_sorteio_dt
         }
 
         print("📝 Produto a ser salvo:", produto)
 
-        # Salva produto e pega ID gerado
         doc_ref = db.collection('produtos').add(produto)[1]
         produto_id = doc_ref.id
         print(f"✅ Produto salvo no Firestore com ID: {produto_id}")
 
-        # Chama a função para atualizar rifas restantes
-        atualizar_rifas_restantes(produto_id)
+        # ✅ Cria/atualiza na coleção "produtos-futuros" se a data for futura
+        agora = datetime.now()
+        if data_sorteio_dt > agora:
+            db.collection("produtos-futuros").document(produto_id).set({
+                "nome": nome,
+                "preco_bilhete": round(preco_bilhete, 2),
+                "data_sorteio": data_sorteio_dt.isoformat(),
+                "atualizado_em": agora.isoformat()
+            })
+            print("📁 Produto também salvo na coleção 'produtos-futuros'.")
+
+        # ⚠️ Chame a função de atualizar rifas se existir
+        # atualizar_rifas_restantes(produto_id)
 
         return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
