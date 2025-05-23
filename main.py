@@ -5,6 +5,9 @@ import uvicorn
 import uuid
 import random
 import sys
+import traceback
+import io
+import hashlib
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
@@ -15,11 +18,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
 from datetime import datetime
-import traceback  
-import hashlib
 from fastapi import Form
 from typing import List
-import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from io import BytesIO
@@ -33,6 +33,8 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request, UploadFile, File, Form
 from google.cloud.firestore_v1.base_document import DocumentSnapshot
+from your_template_module import templates  # ajuste para o módulo real onde está o 'templates'
+from your_firestore_module import db        # ajuste para seu módulo de conexão com Firestore
 
 
 
@@ -1001,6 +1003,7 @@ async def atualizar_contadores(
     # Redireciona para GET com query produto_id para mostrar atualizados
     url = app.url_path_for("contadores") + f"?produto_id={produto_id}"
     return RedirectResponse(url, status_code=303)
+    
 
 @app.get("/sorteios-ao-vivo", response_class=HTMLResponse)
 async def sorteios_ao_vivo(request: Request):
@@ -1017,27 +1020,25 @@ async def sorteios_ao_vivo(request: Request):
             preco = data.get("preco_bilhete", 0.0)
             data_sorteio = data.get("data_sorteio", "")
 
-            # Garante que data_sorteio seja datetime com fuso horário (aware)
-            if isinstance(data_sorteio, str):
-                try:
-                    data_sorteio = datetime.fromisoformat(data_sorteio)
-                except ValueError:
-                    continue  # ignora se estiver mal formatado
+            # Garantir que data_sorteio esteja em formato ISO e com timezone
+            if hasattr(data_sorteio, 'isoformat'):
+                data_sorteio = data_sorteio.isoformat()
 
-            if isinstance(data_sorteio, datetime) and data_sorteio.tzinfo is None:
-                # Se for naive, assume que é UTC
-                data_sorteio = data_sorteio.replace(tzinfo=timezone.utc)
+            if data_sorteio:
+                # Converter a string ISO para datetime com timezone UTC
+                sorteio_dt = datetime.fromisoformat(data_sorteio)
+                if sorteio_dt.tzinfo is None:
+                    sorteio_dt = sorteio_dt.replace(tzinfo=timezone.utc)
 
-            agora = datetime.now(timezone.utc)
-
-            if data_sorteio and data_sorteio > agora:
-                sorteios.append({
-                    "produto_id": produto_id,
-                    "nome": nome,
-                    "imagem": imagem,
-                    "preco": preco,
-                    "data_sorteio": data_sorteio.isoformat()  # Envia como ISO formatado com timezone
-                })
+                agora = datetime.now(timezone.utc)
+                if sorteio_dt > agora:
+                    sorteios.append({
+                        "produto_id": produto_id,
+                        "nome": nome,
+                        "imagem": imagem,
+                        "preco": preco,
+                        "data_sorteio": data_sorteio
+                    })
 
         return templates.TemplateResponse("sorteios-ao-vivo.html", {
             "request": request,
@@ -1045,10 +1046,7 @@ async def sorteios_ao_vivo(request: Request):
         })
 
     except Exception as e:
-        return HTMLResponse(
-            content=f"<h2>Erro ao carregar sorteios:</h2><pre>{str(e)}</pre>",
-            status_code=500
-        )
+        return HTMLResponse(content=f"<h2>Erro ao carregar sorteios:</h2><pre>{str(e)}</pre>", status_code=500)
 
 
 if __name__ == "__main__":
