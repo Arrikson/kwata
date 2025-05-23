@@ -154,5 +154,16 @@
         {% endfor %}
     </div>
 
+    <div class="container">
+        <h2>Vencedores Recentes</h2>
+        {% for vencedor in vencedores %}
+            <div class="card">
+                <h2>{{ vencedor.nome_produto }}</h2>
+                <p><strong>Vencedor:</strong> {{ vencedor.nome_vencedor }}</p>
+                <p><strong>Bilhete:</strong> {{ vencedor.bilhete_vencedor }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
 </body>
 </html>
