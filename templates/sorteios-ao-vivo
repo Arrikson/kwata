@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <title>Sorteios ao Vivo</title>
     <script>
-        function iniciarCronometro(id, fim) {
-            const fimDate = new Date(fim).getTime();
+        function iniciarCronometro(id, fimISO) {
+            const fimDate = new Date(fimISO); // ISO 8601 deve conter fuso horário
+
             const cron = document.getElementById("cronometro-" + id);
 
             const intervalo = setInterval(() => {
-                const agora = new Date().getTime();
+                const agora = new Date();
                 const distancia = fimDate - agora;
 
                 if (distancia < 0) {
@@ -89,7 +90,7 @@
         <div class="preco">Bilhete: {{ "%.2f"|format(s.preco) }} Kz</div>
         <p><strong>Termina em:</strong> <span id="cronometro-{{ s.produto_id }}">Carregando...</span></p>
         <a class="botao-comprar" href="/pagamento-rifa.html?produto_id={{ s.produto_id }}">Comprar Bilhete</a>
-        <script>iniciarCronometro("{{ s.produto_id }}", "{{ s.data_sorteio }}");</script>
+        <script>iniciarCronometro("{{ s.produto_id }}", "{{ s.data_sorteio.isoformat() }}");</script>
     </div>
     {% endfor %}
 
