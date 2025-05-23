@@ -8,6 +8,7 @@ import sys
 import traceback
 import io
 import hashlib
+import locale
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
@@ -1164,59 +1165,55 @@ async def produtos_futuros(request: Request):
             "erro": "Erro ao carregar os dados."
         })
 
-@app.get("/sorte/{produto_id}", response_class=HTMLResponse)
-async def exibir_sorteio(request: Request, produto_id: str):
+
+# Configurar locale para interpretar datas em português
+try:
+    locale.setlocale(locale.LC_TIME, 'pt_PT.UTF-8')
+except locale.Error:
+    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')  # Fallback
+
+@app.get("/sorte", response_class=HTMLResponse)
+@app.post("/sorte", response_class=HTMLResponse)
+async def sorte(request: Request, produto_id: str = Form(None)):
     try:
-        # 🔧 Exemplo simulado de busca em banco (substituir por lógica real)
-        nome_produto = "Smartphone Galaxy Z Flip"
-        imagem_produto = "/static/galaxy-flip.jpg"
-        data_fim_sorteio = datetime(2025, 6, 1, 15, 30, 0, tzinfo=pytz.UTC)  # Data do sorteio em UTC
+        # Permitir também produto_id via query string
+        if not produto_id:
+            produto_id = request.query_params.get("produto_id")
+
+        if not produto_id:
+            return HTMLResponse(content="<h2>Erro:</h2><p>ID do produto não fornecido.</p>", status_code=400)
+
+        produto_doc = db.collection("produtos").document(produto_id).get()
+        if not produto_doc.exists:
+            return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
+
+        produto_data = produto_doc.to_dict()
+        nome_produto = produto_data.get("nome", "Produto")
+        imagem_produto = produto_data.get("imagem", "")
+        data_sorteio_raw = produto_data.get("data_sorteio")
+
+        # Converter data
+        if data_sorteio_raw:
+            try:
+                data_fim_sorteio_dt = datetime.strptime(data_sorteio_raw, "%d de %b. de %Y")
+            except ValueError:
+                data_fim_sorteio_dt = datetime.strptime(data_sorteio_raw, "%d de %b de %Y")
+
+            data_fim_sorteio = data_fim_sorteio_dt.isoformat() + "Z"
+        else:
+            data_fim_sorteio = datetime.utcnow().isoformat() + "Z"
 
         return templates.TemplateResponse("sorte.html", {
             "request": request,
             "produto_id": produto_id,
+            "data_fim_sorteio": data_fim_sorteio,
             "nome_produto": nome_produto,
             "imagem_produto": imagem_produto,
-            "data_fim_sorteio": data_fim_sorteio.isoformat()  # formato ISO 8601
+            "vencedor": None  # aqui você pode processar vencedor se quiser
         })
 
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
-
-@app.post("/sorte/{produto_id}")
-async def comprar_bilhete(
-    request: Request,
-    produto_id: str,
-    nome: str = Form(...),
-    numero_bi: str = Form(...),
-    latitude: float = Form(...),
-    longitude: float = Form(...),
-    comprovativo: UploadFile = File(...)
-):
-    try:
-        # Validar tipo e tamanho do comprovativo (máx 32 KB)
-        if comprovativo.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
-            return HTMLResponse(content="Tipo de arquivo não suportado. Envie JPEG, PNG ou PDF.", status_code=400)
-        
-        if comprovativo.size > 32 * 1024:
-            return HTMLResponse(content="O comprovativo deve ter no máximo 32 KB.", status_code=400)
-
-        # Simular salvamento local (substituir com Firebase se desejar)
-        filename = f"{uuid4()}_{comprovativo.filename}"
-        caminho_arquivo = os.path.join("comprovativos", filename)
-        os.makedirs("comprovativos", exist_ok=True)
-        with open(caminho_arquivo, "wb") as f:
-            f.write(await comprovativo.read())
-
-        # Aqui pode salvar no banco de dados (ex: Firestore)
-        # salvar_compra(nome, numero_bi, latitude, longitude, produto_id, caminho_arquivo)
-
-        # Redirecionar após compra para uma página de confirmação
-        return RedirectResponse(url=f"/confirmacao/{produto_id}", status_code=302)
-
-    except Exception as e:
-        return HTMLResponse(content=f"<h2>Erro ao processar compra:</h2><pre>{str(e)}</pre>", status_code=500)
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
