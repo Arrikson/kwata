@@ -596,10 +596,6 @@ async def enviar_comprovativo(
         registros_ref = db.collection("registros")
         registros_ref.add({
             "nome_do_comprador": nome,
-            "bi": bi,
-            "telefone": telefone,
-            "latitude": latitude,
-            "longitude": longitude,
             "produto_id": produto_id,
             "bilhetes": bilhetes,
             "data_envio": datetime.utcnow().isoformat()
@@ -697,43 +693,6 @@ async def atualizar_data_sorteio(produto_id: str = Form(...), data_sorteio: str 
     except Exception as e:
         print(f"❌ Erro ao atualizar data do sorteio: {e}")
         return HTMLResponse("Erro ao atualizar data do sorteio.", status_code=500)
-
-@app.get("/gerar-produto-refletidos")
-async def gerar_arquivo_produtos():
-    try:
-        produtos_ref = db.collection("produtos").stream()
-
-        lista_produtos = []
-        for doc in produtos_ref:
-            produto = doc.to_dict()
-            produto["id"] = doc.id
-            produto = converter_valores_json(produto)
-            lista_produtos.append(produto)
-
-        pasta_static = Path("static")
-        pasta_static.mkdir(exist_ok=True)
-
-        caminho_arquivo = pasta_static / "produto-refletidos.json"
-
-        with open(caminho_arquivo, "w", encoding="utf-8") as f:
-            json.dump(lista_produtos, f, ensure_ascii=False, indent=4)
-
-        # Retornar conteúdo dos produtos e info
-        return JSONResponse({
-            "mensagem": "Arquivo produto-refletidos.json gerado com sucesso na pasta /static.",
-            "quantidade": len(lista_produtos),
-            "url": "/static/produto-refletidos.json",
-            "produtos": lista_produtos  # adiciona produtos no json de resposta
-        })
-
-    except Exception as e:
-        erro_completo = traceback.format_exc()
-        print("❌ Erro ao gerar arquivo de produtos:", erro_completo)
-        return JSONResponse(
-            {"erro": "Não foi possível gerar o arquivo de produtos.", "detalhes": str(e)},
-            status_code=500
-        )
-
 
 @app.get("/produtos")
 async def listar_produtos():
