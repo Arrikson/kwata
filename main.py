@@ -1171,60 +1171,24 @@ async def sorteios_ao_vivo(request: Request):
         traceback.print_exc()
         return HTMLResponse(content=f"<h2>Erro ao carregar sorteios:</h2><pre>{str(e)}</pre>", status_code=500)
 
-
-@app.get("/tabela-futuros", response_class=HTMLResponse)
-async def exibir_tabela_futuros(request: Request):
+@app.get("/produtos-futuros", response_class=HTMLResponse)
+async def produtos_futuros(request: Request):
     try:
-        docs = db.collection("produtos").stream()
-        produtos_futuros = []
-        agora = datetime.now()
+        produtos_ref = db.collection("produtos-futuros")
+        produtos = [doc.to_dict() for doc in produtos_ref.stream()]
 
-        for doc in docs:
-            dados = doc.to_dict()
-            data_sorteio_str = dados.get("data_sorteio")
-
-            if data_sorteio_str:
-                try:
-                    data_sorteio = datetime.fromisoformat(data_sorteio_str)
-                    if data_sorteio > agora:
-                        produto_futuro = {
-                            "nome": dados.get("nome", "Sem nome"),
-                            "preco_bilhete": float(dados.get("preco_bilhete", 0.0)),
-                            "data_sorteio": data_sorteio.strftime("%Y-%m-%d %H:%M")
-                        }
-
-                        produtos_futuros.append(produto_futuro)
-
-                        # Cria/Atualiza na coleção "produtos-futuros"
-                        db.collection("produtos-futuros").document(doc.id).set({
-                            "nome": produto_futuro["nome"],
-                            "preco_bilhete": produto_futuro["preco_bilhete"],
-                            "data_sorteio": data_sorteio.isoformat(),
-                            "atualizado_em": datetime.now().isoformat()
-                        })
-
-                except Exception as e:
-                    print(f"Erro ao analisar data: {e}")
-                    continue
-
-        return templates.TemplateResponse("tabela-futuros.html", {
+        return templates.TemplateResponse("produtos-futuros.html", {
             "request": request,
-            "produtos": produtos_futuros
+            "produtos": produtos,
+            "data_atual": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         })
 
     except Exception as e:
-        print(f"Erro ao buscar produtos futuros: {e}")
-        return templates.TemplateResponse("tabela-futuros.html", {
+        print(f"Erro ao carregar produtos-futuros: {e}")
+        return templates.TemplateResponse("produtos-futuros.html", {
             "request": request,
-            "produtos": [],
-            "erro": "Erro ao carregar os produtos."
+            "erro": "Erro ao carregar os dados."
         })
-
-
-@app.post("/tabela-futuros", response_class=HTMLResponse)
-async def processar_post_futuros(request: Request):
-    return await exibir_tabela_futuros(request)
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
