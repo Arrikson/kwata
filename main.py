@@ -1012,39 +1012,59 @@ async def sorteios_ao_vivo(request: Request):
         docs = produtos_ref.stream()
 
         for doc in docs:
-            try:
-                data = doc.to_dict()
-                produto_id = doc.id
-                nome = data.get("nome", "Produto")
-                imagem = data.get("imagem", "")
-                preco = data.get("preco_bilhete", 0.0)
-                data_sorteio_str = data.get("data_sorteio", "")
+            data = doc.to_dict()
+            produto_id = doc.id
+            nome = data.get("nome", "Produto")
+            imagem = data.get("imagem", "")
+            preco = data.get("preco_bilhete", 0.0)
+            data_sorteio_str = data.get("data_sorteio", "")
+            vencedor = None
+            bilhete_vencedor = None
 
-                if data_sorteio_str:
-                    try:
-                        # Convertendo a string ISO para objeto datetime
-                        sorteio_dt = datetime.fromisoformat(data_sorteio_str)
+            if data_sorteio_str:
+                try:
+                    sorteio_dt = datetime.fromisoformat(data_sorteio_str)
+                    if sorteio_dt.tzinfo is None:
+                        sorteio_dt = sorteio_dt.replace(tzinfo=timezone.utc)
 
-                        if sorteio_dt.tzinfo is None:
-                            sorteio_dt = sorteio_dt.replace(tzinfo=timezone.utc)
+                    agora = datetime.now(timezone.utc)
 
-                        agora = datetime.now(timezone.utc)
+                    if sorteio_dt > agora:
+                        # Sorteio ainda ativo
+                        sorteios.append({
+                            "produto_id": produto_id,
+                            "nome": nome,
+                            "imagem": imagem,
+                            "preco": preco,
+                            "data_sorteio": data_sorteio_str,
+                        })
+                    else:
+                        # Sorteio encerrado - registrar vencedor se ainda não registrado
+                        vencedor_ref = db.collection("vencedores").document(produto_id)
+                        vencedor_doc = vencedor_ref.get()
+                        if not vencedor_doc.exists:
+                            # Buscar o bilhete vencedor (assumindo que há uma coleção 'bilhetes')
+                            bilhetes_ref = db.collection("produtos").document(produto_id).collection("bilhetes")
+                            bilhetes = list(bilhetes_ref.stream())
+                            if bilhetes:
+                                import random
+                                vencedor_bilhete = random.choice(bilhetes)
+                                vencedor_data = vencedor_bilhete.to_dict()
+                                vencedor = vencedor_data.get("nome_comprador", "Desconhecido")
+                                bilhete_vencedor = vencedor_bilhete.id
 
-                        if sorteio_dt > agora:
-                            sorteios.append({
-                                "produto_id": produto_id,
-                                "nome": nome,
-                                "imagem": imagem,
-                                "preco": preco,
-                                "data_sorteio": data_sorteio_str  # já é string ISO
-                            })
-                    except Exception as e:
-                        print(f"[ERRO AO PARSEAR DATA: {data_sorteio_str}]")
-                        traceback.print_exc()
+                                # Salvar em 'vencedores'
+                                vencedor_ref.set({
+                                    "produto_id": produto_id,
+                                    "nome_produto": nome,
+                                    "nome_vencedor": vencedor,
+                                    "bilhete_vencedor": bilhete_vencedor,
+                                    "data_sorteio": data_sorteio_str
+                                })
 
-            except Exception as doc_err:
-                print(f"[ERRO NO PRODUTO: {doc.id}]")
-                traceback.print_exc()
+                except Exception as e:
+                    print(f"[ERRO AO PARSEAR DATA: {data_sorteio_str}]")
+                    traceback.print_exc()
 
         return templates.TemplateResponse("sorteios-ao-vivo.html", {
             "request": request,
