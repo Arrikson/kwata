@@ -1018,27 +1018,29 @@ async def sorteios_ao_vivo(request: Request):
                 nome = data.get("nome", "Produto")
                 imagem = data.get("imagem", "")
                 preco = data.get("preco_bilhete", 0.0)
-                data_sorteio = data.get("data_sorteio", "")
+                data_sorteio_str = data.get("data_sorteio", "")
 
-                if hasattr(data_sorteio, 'isoformat'):
-                    data_sorteio = data_sorteio.isoformat()
+                if data_sorteio_str:
+                    try:
+                        # Convertendo a string ISO para objeto datetime
+                        sorteio_dt = datetime.fromisoformat(data_sorteio_str)
 
-                if data_sorteio:
-                    sorteio_dt = datetime.fromisoformat(data_sorteio)
+                        if sorteio_dt.tzinfo is None:
+                            sorteio_dt = sorteio_dt.replace(tzinfo=timezone.utc)
 
-                    if sorteio_dt.tzinfo is None:
-                        sorteio_dt = sorteio_dt.replace(tzinfo=timezone.utc)
+                        agora = datetime.now(timezone.utc)
 
-                    agora = datetime.now(timezone.utc)
-
-                    if sorteio_dt > agora:
-                        sorteios.append({
-                            "produto_id": produto_id,
-                            "nome": nome,
-                            "imagem": imagem,
-                            "preco": preco,
-                            "data_sorteio": data_sorteio
-                        })
+                        if sorteio_dt > agora:
+                            sorteios.append({
+                                "produto_id": produto_id,
+                                "nome": nome,
+                                "imagem": imagem,
+                                "preco": preco,
+                                "data_sorteio": data_sorteio_str  # já é string ISO
+                            })
+                    except Exception as e:
+                        print(f"[ERRO AO PARSEAR DATA: {data_sorteio_str}]")
+                        traceback.print_exc()
 
             except Exception as doc_err:
                 print(f"[ERRO NO PRODUTO: {doc.id}]")
