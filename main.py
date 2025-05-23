@@ -1002,6 +1002,43 @@ async def atualizar_contadores(
     return RedirectResponse(url, status_code=303)
 
 
+@app.get("/sorteios-ao-vivo", response_class=HTMLResponse)
+async def sorteios_ao_vivo(request: Request):
+    try:
+        sorteios = []
+        produtos_ref = db.collection("produtos")
+        docs = produtos_ref.stream()
+
+        for doc in docs:
+            data = doc.to_dict()
+            produto_id = doc.id
+            nome = data.get("nome", "Produto")
+            imagem = data.get("imagem", "")
+            preco = data.get("preco_bilhete", 0.0)
+            data_sorteio = data.get("data_sorteio", "")
+
+            if hasattr(data_sorteio, 'isoformat'):
+                data_sorteio = data_sorteio.isoformat()
+
+            # Só mostra produtos com data futura
+            if data_sorteio and datetime.fromisoformat(data_sorteio) > datetime.utcnow():
+                sorteios.append({
+                    "produto_id": produto_id,
+                    "nome": nome,
+                    "imagem": imagem,
+                    "preco": preco,
+                    "data_sorteio": data_sorteio
+                })
+
+        return templates.TemplateResponse("sorteios-ao-vivo.html", {
+            "request": request,
+            "sorteios": sorteios
+        })
+
+    except Exception as e:
+        return HTMLResponse(content=f"<h2>Erro ao carregar sorteios:</h2><pre>{str(e)}</pre>", status_code=500)
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
