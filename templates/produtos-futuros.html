@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos Futuros</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #fefee0;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header img {
+            width: 120px;
+        }
+
+        h1 {
+            color: #2b7a0b;
+            font-size: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #d5f4a1;
+            color: #2b7a0b;
+        }
+
+        button {
+            background-color: #ffcc00;
+            color: #000;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #ffdb4d;
+        }
+
+        @media (max-width: 600px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
+                text-align: left;
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            th {
+                background-color: #c0f28a;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="/static/novologo.png" alt="Logo">
+        <h1>Lista de Compras Futuras</h1>
+        <p id="dataHora"></p>
+    </header>
+
+    <main>
+        <table id="tabela-produtos">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Bilhete</th>
+                    <th>B.I.</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in produtos %}
+                <tr>
+                    <td>{{ item.nome }}</td>
+                    <td>{{ item.bilhete }}</td>
+                    <td>{{ item.bi }}</td>
+                    <td>{{ item.data }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="text-align:center;">
+            <button onclick="gerarPDF()">📄 Baixar PDF</button>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+    <script>
+        // Exibe a data e hora atual
+        const agora = new Date();
+        document.getElementById("dataHora").innerText = "Gerado em: " + agora.toLocaleString();
+
+        function gerarPDF() {
+            const elemento = document.body;
+            const opt = {
+                margin: 0.5,
+                filename: 'compras-futuras.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(elemento).save();
+        }
+    </script>
+</body>
+</html>
