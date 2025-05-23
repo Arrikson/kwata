@@ -409,9 +409,9 @@ async def pagamento_rifa(request: Request, produto_id: str = Query(default=None)
                 if data_sorteio > agora:
                     nova_compra = {
                         "produto_id": produto_id,
-                        "nome_comprador": "NOME_EXEMPLO",         # Substituir por dado real
-                        "numero_bilhete": 999,                    # Substituir por bilhete real
-                        "bi_comprador": "000000000LA000",         # Substituir por BI real
+                        "nome_comprador": "nome_comprador",         
+                        "numero_bilhete": 999,                    
+                        "bi_comprador": "000000000LA000",         
                         "data_compra": agora.isoformat()
                     }
                     db.collection("compras-futuras").add(nova_compra)
@@ -592,6 +592,19 @@ async def enviar_comprovativo(
                 "comprovativo_salvo": filename
             })
 
+        # Criar registro na coleção "registros"
+        registros_ref = db.collection("registros")
+        registros_ref.add({
+            "nome_do_comprador": nome,
+            "bi": bi,
+            "telefone": telefone,
+            "latitude": latitude,
+            "longitude": longitude,
+            "produto_id": produto_id,
+            "bilhetes": bilhetes,
+            "data_envio": datetime.utcnow().isoformat()
+        })
+
         # Obter dados do produto
         produto_doc = db.collection("produtos").document(produto_id).get()
         if not produto_doc.exists:
@@ -614,10 +627,12 @@ async def enviar_comprovativo(
 
             agora = datetime.utcnow()
             if data_fim_sorteio_dt <= agora:
-                bilhetes_vendidos = list(
-                    rifas_ref.where("produto_id", "==", produto_id).stream()
+                registros_filtrados = list(
+                    db.collection("registros")
+                      .where("produto_id", "==", produto_id)
+                      .stream()
                 )
-                nomes = list({doc.to_dict().get("nome") for doc in bilhetes_vendidos if doc.to_dict().get("nome")})
+                nomes = list({doc.to_dict().get("nome_do_comprador") for doc in registros_filtrados if doc.to_dict().get("nome_do_comprador")})
                 if nomes:
                     vencedor_nome = random.choice(nomes)
 
