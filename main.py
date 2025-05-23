@@ -1183,6 +1183,41 @@ async def exibir_sorteio(request: Request, produto_id: str):
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
 
+@app.post("/sorte/{produto_id}")
+async def comprar_bilhete(
+    request: Request,
+    produto_id: str,
+    nome: str = Form(...),
+    numero_bi: str = Form(...),
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    comprovativo: UploadFile = File(...)
+):
+    try:
+        # Validar tipo e tamanho do comprovativo (máx 32 KB)
+        if comprovativo.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
+            return HTMLResponse(content="Tipo de arquivo não suportado. Envie JPEG, PNG ou PDF.", status_code=400)
+        
+        if comprovativo.size > 32 * 1024:
+            return HTMLResponse(content="O comprovativo deve ter no máximo 32 KB.", status_code=400)
+
+        # Simular salvamento local (substituir com Firebase se desejar)
+        filename = f"{uuid4()}_{comprovativo.filename}"
+        caminho_arquivo = os.path.join("comprovativos", filename)
+        os.makedirs("comprovativos", exist_ok=True)
+        with open(caminho_arquivo, "wb") as f:
+            f.write(await comprovativo.read())
+
+        # Aqui pode salvar no banco de dados (ex: Firestore)
+        # salvar_compra(nome, numero_bi, latitude, longitude, produto_id, caminho_arquivo)
+
+        # Redirecionar após compra para uma página de confirmação
+        return RedirectResponse(url=f"/confirmacao/{produto_id}", status_code=302)
+
+    except Exception as e:
+        return HTMLResponse(content=f"<h2>Erro ao processar compra:</h2><pre>{str(e)}</pre>", status_code=500)
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
