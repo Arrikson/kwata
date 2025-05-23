@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Sorteios ao Vivo</title>
+    <script>
+        function iniciarCronometro(id, fim) {
+            const fimDate = new Date(fim).getTime();
+            const cron = document.getElementById("cronometro-" + id);
+
+            const intervalo = setInterval(() => {
+                const agora = new Date().getTime();
+                const distancia = fimDate - agora;
+
+                if (distancia < 0) {
+                    clearInterval(intervalo);
+                    cron.innerHTML = "Encerrado";
+                    return;
+                }
+
+                const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
+                const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+                const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+
+                cron.innerHTML = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+            }, 1000);
+        }
+    </script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f9fafb;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .card img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .card h2 {
+            margin-top: 15px;
+        }
+
+        .card .preco {
+            font-size: 1.2em;
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .botao-comprar {
+            background: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .botao-comprar:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align:center; margin-bottom: 30px;">🎉 Sorteios ao Vivo</h1>
+
+    {% for s in sorteios %}
+    <div class="card">
+        <img src="{{ s.imagem }}" alt="{{ s.nome }}">
+        <h2>{{ s.nome }}</h2>
+        <div class="preco">Bilhete: {{ "%.2f"|format(s.preco) }} Kz</div>
+        <p><strong>Termina em:</strong> <span id="cronometro-{{ s.produto_id }}">Carregando...</span></p>
+        <a class="botao-comprar" href="/pagamento-rifa.html?produto_id={{ s.produto_id }}">Comprar Bilhete</a>
+        <script>iniciarCronometro("{{ s.produto_id }}", "{{ s.data_sorteio }}");</script>
+    </div>
+    {% endfor %}
+
+</body>
+</html>
