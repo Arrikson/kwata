@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Produtos em Sorteio</title>
+  <title>Produtos com Sorteios Futuros</title>
   <link rel="stylesheet" href="/static/style.css" />
   <style>
     body {
@@ -60,6 +60,13 @@
       font-size: 14px;
     }
 
+    .erro {
+      color: red;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 20px;
+    }
+
     button {
       background-color: #ffcc00;
       color: #000;
@@ -68,7 +75,7 @@
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      margin: 20px auto;
+      margin: 30px auto;
       display: block;
     }
 
@@ -86,35 +93,44 @@
 <body>
   <header>
     <img src="/static/novologo.png" alt="Logo">
-    <h1>Produtos em Sorteio</h1>
-    <p id="dataHora"></p>
+    <h1>Produtos com Sorteios Futuros</h1>
+    <p id="dataHora">Gerado em: {{ data_atual }}</p>
   </header>
 
   <main>
-    <div class="grid">
-      {% for produto in produtos %}
-      <div class="card">
-        <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
-        <h3>{{ produto.nome }}</h3>
-        <p><strong>Preço:</strong> {{ produto.preco }} Kz</p>
-        <p><strong>Total de Bilhetes:</strong> {{ produto.total_bilhetes }}</p>
-        <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos }}</p>
+    {% if erro %}
+      <p class="erro">{{ erro }}</p>
+    {% elif produtos|length == 0 %}
+      <p class="erro">Nenhum produto com data de sorteio futura foi encontrado.</p>
+    {% else %}
+      <div class="grid">
+        {% for produto in produtos %}
+          <div class="card">
+            {% if produto.imagem %}
+              <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
+            {% endif %}
+            <h3>{{ produto.nome }}</h3>
+            <p><strong>Descrição:</strong> {{ produto.descricao or 'Sem descrição' }}</p>
+            <p><strong>Data do Sorteio:</strong> {{ produto.data_sorteio or 'Não informada' }}</p>
+            <p><strong>Preço:</strong> {{ produto.preco or 'N/A' }} Kz</p>
+            <p><strong>Total de Bilhetes:</strong> {{ produto.total_bilhetes or 'N/A' }}</p>
+            <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos or 'N/A' }}</p>
+            <p><strong>ID do Produto:</strong> {{ produto.id or 'N/A' }}</p>
+          </div>
+        {% endfor %}
       </div>
-      {% endfor %}
-    </div>
+    {% endif %}
 
     <button onclick="gerarPDF()">📄 Baixar PDF</button>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
   <script>
-    document.getElementById("dataHora").innerText = "Gerado em: " + new Date().toLocaleString();
-
     function gerarPDF() {
       const elemento = document.body;
       const opt = {
         margin: 0.5,
-        filename: 'produtos-sorteio.pdf',
+        filename: 'produtos-sorteio-futuros.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
