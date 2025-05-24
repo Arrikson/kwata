@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -115,7 +115,13 @@
             <p><strong>Preço do Bilhete:</strong> {{ produto.preco_bilhete or 'N/A' }} Kz</p>
             <p><strong>Total de Bilhetes:</strong> {{ produto.quantidade_bilhetes or 'N/A' }}</p>
             <p><strong>Bilhetes Numerados:</strong> {{ produto.bilhetes_numerados | join(", ") }}</p>
-            <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos or 'N/A' }}</p>
+            <p><strong>Bilhetes Vendidos:</strong> 
+              {% if produto.bilhetes_vendidos %}
+                {{ produto.bilhetes_vendidos | join(", ") }}
+              {% else %}
+                Nenhum
+              {% endif %}
+            </p>
           </div>
         {% endfor %}
       </div>
