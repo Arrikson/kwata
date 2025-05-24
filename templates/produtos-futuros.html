@@ -127,6 +127,51 @@
       </div>
     {% endif %}
 
+    <h2 style="text-align: center; margin-top: 40px;">📋 Lista de Bilhetes Comprados</h2> 
+
+    {% if rifas %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+          <thead>
+            <tr style="background-color: #f0f0f0;">
+              <th style="padding: 8px; border: 1px solid #ccc;">Nome</th>
+              <th style="padding: 8px; border: 1px solid #ccc;">BI</th>
+              <th style="padding: 8px; border: 1px solid #ccc;">Telefone</th>
+              <th style="padding: 8px; border: 1px solid #ccc;">Produto ID</th>
+              <th style="padding: 8px; border: 1px solid #ccc;">Bilhete</th>
+              <th style="padding: 8px; border: 1px solid #ccc;">Data de Envio</th>
+              <th style="padding: 8px; border: 1px solid #ccc;">Latitude</th>
+              <th style="padding: 8px; border: 1px solid #ccc;">Longitude</th>
+              <th style="padding: 8px; border: 1px solid #ccc;">Comprovativo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rifa in rifas %}
+              <tr>
+                <td style="padding: 8px; border: 1px solid #ccc;">{{ rifa.nome }}</td>
+                <td style="padding: 8px; border: 1px solid #ccc;">{{ rifa.bi }}</td>
+                <td style="padding: 8px; border: 1px solid #ccc;">{{ rifa.telefone }}</td>
+                <td style="padding: 8px; border: 1px solid #ccc;">{{ rifa.produto_id }}</td>
+                <td style="padding: 8px; border: 1px solid #ccc;">{{ rifa.bilhete }}</td>
+                <td style="padding: 8px; border: 1px solid #ccc;">{{ rifa.data_envio }}</td>
+                <td style="padding: 8px; border: 1px solid #ccc;">{{ rifa.latitude }}</td>
+                <td style="padding: 8px; border: 1px solid #ccc;">{{ rifa.longitude }}</td>
+                <td style="padding: 8px; border: 1px solid #ccc;">
+                  {% if rifa.comprovativo_path %}
+                    <a href="{{ rifa.comprovativo_path }}" target="_blank">Ver</a>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="erro">Nenhum bilhete comprado encontrado.</p>
+    {% endif %}
+
     <button onclick="gerarPDF()">📄 Baixar PDF</button>
   </main>
 
