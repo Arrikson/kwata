@@ -1264,6 +1264,33 @@ async def sorte(request: Request, produto_id: str = Form(None)):
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
 
+
+@app.get("/bilhetes-comprados")
+async def bilhetes_comprados(request: Request):
+    rifas_ref = db.collection("rifas-compradas")
+    docs = rifas_ref.stream()
+
+    rifas = []
+    for doc in docs:
+        data = doc.to_dict()
+        rifas.append({
+            "nome": data.get("nome", ""),
+            "bi": data.get("bi", ""),
+            "telefone": data.get("telefone", ""),
+            "produto_id": data.get("produto_id", ""),
+            "bilhete": data.get("bilhete", ""),
+            "data_envio": data.get("data_envio", ""),
+            "latitude": data.get("latitude", ""),
+            "longitude": data.get("longitude", ""),
+            "comprovativo_salvo": data.get("comprovativo_salvo", ""),
+            "comprovativo_path": data.get("comprovativo_path", "")
+        })
+
+    return templates.TemplateResponse("produtos-futuros.html", {
+        "request": request,
+        "rifas": rifas
+    })
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
