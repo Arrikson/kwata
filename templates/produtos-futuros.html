@@ -116,7 +116,6 @@
             <p><strong>Total de Bilhetes:</strong> {{ produto.quantidade_bilhetes or 'N/A' }}</p>
             <p><strong>Bilhetes Numerados:</strong> {{ produto.bilhetes_numerados | join(", ") }}</p>
             <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos or 'N/A' }}</p>
-            <p><strong>ID do Produto:</strong> {{ produto.id or 'N/A' }}</p>
           </div>
         {% endfor %}
       </div>
