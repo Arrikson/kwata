@@ -1153,11 +1153,11 @@ async def produtos_futuros(request: Request):
         produtos_ref = db.collection("produtos-futuros")
         rifas_compradas_ref = db.collection("rifas-compradas")
 
-        # Corrigido para usar 'produto_id'
+        # Aqui estamos construindo um dicionário onde a chave é o ID do produto (produto_id)
         bilhetes_vendidos_por_produto = defaultdict(list)
         for doc in rifas_compradas_ref.stream():
             rifa = doc.to_dict()
-            produto_id = rifa.get("produto_id")  # <--- aqui o campo corrigido
+            produto_id = rifa.get("produto_id")  # Campo correto que guarda o ID do produto
             bilhete = rifa.get("bilhete")
             if produto_id and bilhete:
                 bilhetes_vendidos_por_produto[produto_id].append(str(bilhete))
@@ -1165,7 +1165,7 @@ async def produtos_futuros(request: Request):
         produtos = []
         for doc in produtos_ref.stream():
             produto = doc.to_dict()
-            id_produto = produto.get("id")
+            id_produto = produto.get("id")  # Esse campo deve coincidir com 'produto_id' da rifa
 
             try:
                 quantidade = int(produto.get("quantidade_bilhetes", 0))
@@ -1174,6 +1174,7 @@ async def produtos_futuros(request: Request):
                 produto["bilhetes_numerados"] = []
                 print(f"Erro ao processar bilhetes para produto {produto.get('nome')}: {e}")
 
+            # Aqui buscamos os bilhetes vendidos para o ID correto
             produto["bilhetes_vendidos"] = bilhetes_vendidos_por_produto.get(id_produto, [])
 
             produtos.append(produto)
