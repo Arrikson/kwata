@@ -1152,7 +1152,6 @@ async def produtos_futuros(request: Request):
         produtos_ref = db.collection("produtos-futuros")
         rifas_compradas_ref = db.collection("rifas-compradas")
 
-        # Buscar todos os bilhetes comprados e agrupá-los por ID do produto
         bilhetes_vendidos_por_produto = defaultdict(list)
         for doc in rifas_compradas_ref.stream():
             rifa = doc.to_dict()
@@ -1166,7 +1165,6 @@ async def produtos_futuros(request: Request):
             produto = doc.to_dict()
             id_produto = produto.get("id")
 
-            # Adiciona campo 'bilhetes_numerados' com a lista ["1", "2", ..., "N"]
             try:
                 quantidade = int(produto.get("quantidade_bilhetes", 0))
                 produto["bilhetes_numerados"] = [str(i) for i in range(1, quantidade + 1)]
@@ -1174,7 +1172,6 @@ async def produtos_futuros(request: Request):
                 produto["bilhetes_numerados"] = []
                 print(f"Erro ao processar bilhetes para produto {produto.get('nome')}: {e}")
 
-            # Adiciona os bilhetes vendidos vindos da coleção rifas-compradas
             produto["bilhetes_vendidos"] = bilhetes_vendidos_por_produto.get(id_produto, [])
 
             produtos.append(produto)
@@ -1186,7 +1183,8 @@ async def produtos_futuros(request: Request):
         })
 
     except Exception as e:
-        print(f"Erro ao carregar produtos-futuros: {e}")
+        print("Erro ao carregar produtos-futuros:")
+        traceback.print_exc()
         return templates.TemplateResponse("produtos-futuros.html", {
             "request": request,
             "erro": "Erro ao carregar os dados."
