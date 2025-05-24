@@ -1150,10 +1150,21 @@ async def sorteios_ao_vivo(request: Request):
 async def produtos_futuros(request: Request):
     try:
         produtos_ref = db.collection("produtos-futuros")
-        produtos = []
+        rifas_compradas_ref = db.collection("rifas-compradas")
 
+        # Buscar todos os bilhetes comprados e agrupá-los por ID do produto
+        bilhetes_vendidos_por_produto = defaultdict(list)
+        for doc in rifas_compradas_ref.stream():
+            rifa = doc.to_dict()
+            id_produto = rifa.get("id_produto")
+            bilhete = rifa.get("bilhete")
+            if id_produto and bilhete:
+                bilhetes_vendidos_por_produto[id_produto].append(str(bilhete))
+
+        produtos = []
         for doc in produtos_ref.stream():
             produto = doc.to_dict()
+            id_produto = produto.get("id")
 
             # Adiciona campo 'bilhetes_numerados' com a lista ["1", "2", ..., "N"]
             try:
@@ -1162,6 +1173,9 @@ async def produtos_futuros(request: Request):
             except Exception as e:
                 produto["bilhetes_numerados"] = []
                 print(f"Erro ao processar bilhetes para produto {produto.get('nome')}: {e}")
+
+            # Adiciona os bilhetes vendidos vindos da coleção rifas-compradas
+            produto["bilhetes_vendidos"] = bilhetes_vendidos_por_produto.get(id_produto, [])
 
             produtos.append(produto)
 
