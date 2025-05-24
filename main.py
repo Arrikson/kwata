@@ -1145,11 +1145,25 @@ async def sorteios_ao_vivo(request: Request):
         traceback.print_exc()
         return HTMLResponse(content=f"<h2>Erro ao carregar sorteios:</h2><pre>{str(e)}</pre>", status_code=500)
 
+
 @app.get("/produtos-futuros", response_class=HTMLResponse)
 async def produtos_futuros(request: Request):
     try:
         produtos_ref = db.collection("produtos-futuros")
-        produtos = [doc.to_dict() for doc in produtos_ref.stream()]
+        produtos = []
+
+        for doc in produtos_ref.stream():
+            produto = doc.to_dict()
+
+            # Adiciona campo 'bilhetes_numerados' com a lista ["1", "2", ..., "N"]
+            try:
+                quantidade = int(produto.get("quantidade_bilhetes", 0))
+                produto["bilhetes_numerados"] = [str(i) for i in range(1, quantidade + 1)]
+            except Exception as e:
+                produto["bilhetes_numerados"] = []
+                print(f"Erro ao processar bilhetes para produto {produto.get('nome')}: {e}")
+
+            produtos.append(produto)
 
         return templates.TemplateResponse("produtos-futuros.html", {
             "request": request,
@@ -1163,7 +1177,7 @@ async def produtos_futuros(request: Request):
             "request": request,
             "erro": "Erro ao carregar os dados."
         })
-        
+
 
 @app.get("/sorte", response_class=HTMLResponse)
 @app.post("/sorte", response_class=HTMLResponse)
