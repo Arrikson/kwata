@@ -1153,13 +1153,14 @@ async def produtos_futuros(request: Request):
         produtos_ref = db.collection("produtos-futuros")
         rifas_compradas_ref = db.collection("rifas-compradas")
 
+        # Corrigido para usar 'produto_id'
         bilhetes_vendidos_por_produto = defaultdict(list)
         for doc in rifas_compradas_ref.stream():
             rifa = doc.to_dict()
-            id_produto = rifa.get("id_produto")
+            produto_id = rifa.get("produto_id")  # <--- aqui o campo corrigido
             bilhete = rifa.get("bilhete")
-            if id_produto and bilhete:
-                bilhetes_vendidos_por_produto[id_produto].append(str(bilhete))
+            if produto_id and bilhete:
+                bilhetes_vendidos_por_produto[produto_id].append(str(bilhete))
 
         produtos = []
         for doc in produtos_ref.stream():
