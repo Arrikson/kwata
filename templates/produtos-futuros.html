@@ -112,8 +112,9 @@
             <h3>{{ produto.nome }}</h3>
             <p><strong>Descrição:</strong> {{ produto.descricao or 'Sem descrição' }}</p>
             <p><strong>Data do Sorteio:</strong> {{ produto.data_sorteio or 'Não informada' }}</p>
-            <p><strong>Preço:</strong> {{ produto.preco or 'N/A' }} Kz</p>
-            <p><strong>Total de Bilhetes:</strong> {{ produto.total_bilhetes or 'N/A' }}</p>
+            <p><strong>Preço do Bilhete:</strong> {{ produto.preco_bilhete or 'N/A' }} Kz</p>
+            <p><strong>Total de Bilhetes:</strong> {{ produto.quantidade_bilhetes or 'N/A' }}</p>
+            <p><strong>Bilhetes Numerados:</strong> {{ produto.bilhetes_numerados | join(", ") }}</p>
             <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos or 'N/A' }}</p>
             <p><strong>ID do Produto:</strong> {{ produto.id or 'N/A' }}</p>
           </div>
@@ -140,3 +141,4 @@
   </script>
 </body>
 </html>
+
