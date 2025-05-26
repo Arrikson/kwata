@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kwata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+  :root {
+    --verde: #4ead4f;
+    --laranja: #FFA500;
+    --vermelho-claro: #FF6F61;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #fefee0;
+    color: #333;
+  }
+
+  header {
+    background-color: var(--verde);
+    padding: 1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100vw;
+  }
+
+  .logo-container {
+    display: flex;
+    align-items: center;
+  }
+
+  header img {
+    height: 50px;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    margin-left: 1rem;
+    color: white;
+  }
+
+  .carousel-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 1000px;
+    margin: 2rem auto;
+    perspective: 1000px;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.5s ease;
+    will-change: transform;
+    gap: 2rem;
+    padding: 2rem 0;
+  }
+
+  .product-card {
+    flex: 0 0 60%;
+    transform-origin: center center;
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+
+  .product-card.active {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .product-card-inner {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    text-align: center;
+    border-top: 6px solid var(--laranja);
+  }
+
+  .product-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .product-info {
+    margin-top: 1rem;
+  }
+
+  .carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2rem;
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    z-index: 1;
+    border-radius: 50%;
+  }
+
+  .carousel-button.left {
+    left: 10px;
+  }
+
+  .carousel-button.right {
+    right: 10px;
+  }
+
+  .contador {
+    font-weight: bold;
+    color: var(--laranja);
+    margin-top: 10px;
+  }
+
+  .info-extra {
+    margin-top: 1rem;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  .info-extra strong {
+    color: var(--verde);
+  }
+
+  @media (max-width: 600px) {
+    .product-card {
+      flex: 0 0 85%;
+    }
+
+    header img {
+      height: 40px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      margin-left: 0.5rem;
+    }
+
+    .carousel-track {
+      gap: 1rem;
+      padding: 1rem 0;
+    }
+
+    .product-card-inner {
+      padding: 1rem;
+    }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo-container">
+      <img src="/static/novologo.png" alt="Kwata Logo">
+      <h1>Kwata</h1>
+    </div>
+  </header>
+
+  <div class="carousel-container">
+    <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
+    <div class="carousel-track" id="carousel-track">
+      {% for compra in compras %}
+      <div class="product-card{% if loop.first %} active{% endif %}">
+        <div class="product-card-inner">
+          <img src="{{ compra.produto.imagem }}" alt="{{ compra.produto.nome }}">
+          <div class="product-info">
+            <h3>{{ compra.produto.nome }}</h3>
+            <p>{{ compra.produto.descricao }}</p>
+            <p><strong>Preço:</strong> {{ compra.produto.preco_bilhete }} Kz</p>
+            <p class="contador" id="contador-{{ compra.produto.id }}">Sorteio em breve...</p>
+
+            <div class="info-extra">
+              <p><strong>Nome completo:</strong> {{ compra.nome_completo }}</p>
+              <p><strong>Seu Nº do bilhete:</strong> {{ compra.numero_bilhete }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
+  </div>
+
+  <script>
+    let currentIndex = 0;
+
+    function moverCarrossel(direction) {
+      const cards = document.querySelectorAll('.product-card');
+      currentIndex += direction;
+
+      if (currentIndex < 0) currentIndex = cards.length - 1;
+      if (currentIndex >= cards.length) currentIndex = 0;
+
+      const track = document.getElementById('carousel-track');
+      const offset = -currentIndex * (cards[0].offsetWidth + 32);
+      track.style.transform = `translateX(${offset}px)`;
+
+      cards.forEach((card, index) => {
+        if (index === currentIndex) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      });
+    }
+
+    function formatarTempo(ms) {
+      const totalSegundos = Math.floor(ms / 1000);
+      const dias = Math.floor(totalSegundos / 86400);
+      const horas = Math.floor((totalSegundos % 86400) / 3600);
+      const minutos = Math.floor((totalSegundos % 3600) / 60);
+      const segundos = totalSegundos % 60;
+      return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+    }
+
+    {% for compra in compras %}
+    const dataLimite{{ loop.index }} = new Date("{{ compra.produto.data_limite_iso }}");
+    const contadorEl{{ loop.index }} = document.getElementById("contador-{{ compra.produto.id }}");
+
+    setInterval(() => {
+      const agora = new Date();
+      const diff = dataLimite{{ loop.index }} - agora;
+      if (diff > 0) {
+        contadorEl{{ loop.index }}.textContent = "Sorteio em: " + formatarTempo(diff);
+      } else {
+        contadorEl{{ loop.index }}.textContent = "Sorteio encerrado!";
+      }
+    }, 1000);
+    {% endfor %}
+  </script>
+</body>
+</html>
