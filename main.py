@@ -495,7 +495,6 @@ async def registrar_pagamento(
             "erro": "Erro ao registrar a compra. Tente novamente."
         })
 
-
 @app.post("/enviar-comprovativo")
 async def enviar_comprovativo(
     request: Request,
@@ -512,7 +511,6 @@ async def enviar_comprovativo(
         rifas_ref = db.collection("rifas-compradas")
         conflitos = []
 
-        # Verificar conflitos
         for bilhete in bilhetes:
             query = list(
                 rifas_ref.where("produto_id", "==", produto_id)
@@ -579,11 +577,9 @@ async def enviar_comprovativo(
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
-        # Referência à nova coleção "Dados"
         dados_ref = db.collection("Dados")
 
         for bilhete in bilhetes:
-            # Salvar na coleção rifas-compradas
             rifas_ref.add({
                 "nome": nome,
                 "bi": bi,
@@ -596,8 +592,6 @@ async def enviar_comprovativo(
                 "comprovativo_path": comprovativo.filename,
                 "comprovativo_salvo": filename
             })
-
-            # Salvar na coleção "Dados"
             dados_ref.add({
                 "produto_id": produto_id,
                 "nome": nome,
@@ -605,7 +599,6 @@ async def enviar_comprovativo(
                 "data_registro": datetime.utcnow().isoformat()
             })
 
-        # Criar registro na coleção "registros"
         registros_ref = db.collection("registros")
         registros_ref.add({
             "nome_do_comprador": nome,
@@ -614,7 +607,6 @@ async def enviar_comprovativo(
             "data_envio": datetime.utcnow().isoformat()
         })
 
-        # Obter dados do produto
         produto_doc = db.collection("produtos").document(produto_id).get()
         if not produto_doc.exists:
             return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
@@ -625,6 +617,7 @@ async def enviar_comprovativo(
         imagem_produto = produto_data.get("imagem", "")
 
         vencedor_nome = None
+        sorteio_finalizado = False
         try:
             if data_fim_sorteio_raw:
                 if "T" not in data_fim_sorteio_raw:
@@ -635,6 +628,7 @@ async def enviar_comprovativo(
 
             agora = datetime.utcnow()
             if data_fim_sorteio_dt <= agora:
+                sorteio_finalizado = True
                 registros_filtrados = list(
                     db.collection("registros")
                       .where("produto_id", "==", produto_id)
@@ -644,7 +638,6 @@ async def enviar_comprovativo(
                 if nomes:
                     vencedor_nome = random.choice(nomes)
 
-            # Formatar a data no estilo "24 de mai. de 2025"
             meses = {
                 1: "jan.", 2: "fev.", 3: "mar.", 4: "abr.", 5: "mai.", 6: "jun.",
                 7: "jul.", 8: "ago.", 9: "set.", 10: "out.", 11: "nov.", 12: "dez."
@@ -665,7 +658,8 @@ async def enviar_comprovativo(
             "produto_id": produto_id,
             "nome_produto": nome_produto,
             "imagem_produto": imagem_produto,
-            "vencedor": vencedor_nome
+            "vencedor": vencedor_nome,
+            "sorteio_finalizado": sorteio_finalizado
         })
 
     except Exception as e:
@@ -798,137 +792,6 @@ def listar_comprovativos():
         lista.append(d)
     return lista
     
-
-@app.post("/enviar-comprovativo")
-async def enviar_comprovativo(
-    request: Request,
-    nome: str = Form(...),
-    bi: str = Form(...),
-    telefone: str = Form(...),
-    latitude: str = Form(...),
-    longitude: str = Form(...),
-    produto_id: str = Form(...),
-    comprovativo: UploadFile = File(...),
-    bilhetes: list[str] = Form(...)
-):
-    try:
-        rifas_ref = db.collection("rifas-compradas")
-        conflitos = []
-
-        # Verificar conflitos: bilhetes, BI e nome
-        for bilhete in bilhetes:
-            query = list(
-                rifas_ref.where("produto_id", "==", produto_id)
-                         .where("bilhete", "==", bilhete)
-                         .stream()
-            )
-            if query:
-                conflitos.append(f"Bilhete {bilhete} já foi comprado.")
-
-        bi_conf = list(
-            rifas_ref.where("produto_id", "==", produto_id)
-                     .where("bi", "==", bi)
-                     .limit(1)
-                     .stream()
-        )
-        if bi_conf:
-            conflitos.append(f"Nº do B.I {bi} já realizou uma compra para este produto.")
-
-        nome_conf = list(
-            rifas_ref.where("produto_id", "==", produto_id)
-                     .where("nome", "==", nome)
-                     .limit(1)
-                     .stream()
-        )
-        if nome_conf:
-            conflitos.append(f"Nome {nome} já está registrado neste sorteio.")
-
-        # Verificar se o nome original do comprovativo já foi usado
-        comprovativo_duplicado = list(
-            rifas_ref.where("comprovativo_path", "==", comprovativo.filename).stream()
-        )
-        if comprovativo_duplicado:
-            conflitos.append(f"O comprovativo '{comprovativo.filename}' já foi usado. Por favor, envie outro diferente.")
-
-        if conflitos:
-            erro_msg = """
-            <div style='
-                background-color: #fff5f5;
-                padding: 15px;
-                border-left: 6px solid #f87171;
-                border-radius: 8px;
-                color: #7f1d1d;
-                font-family: sans-serif;
-                max-width: 600px;
-                margin: 20px auto;
-            '>
-                <strong style='font-size: 1.1em;'>⚠️ Atenção:</strong>
-                <ul style='padding-left: 20px; margin-top: 10px;'>
-            """
-            for conflito in conflitos:
-                erro_msg += f"<li>{conflito}</li>"
-            erro_msg += "</ul></div>"
-            return HTMLResponse(content=erro_msg, status_code=400)
-
-        # Caminho da pasta de destino
-        pasta = os.path.join("static", "static", "comprovativos")
-        os.makedirs(pasta, exist_ok=True)
-
-        # Validar extensão
-        file_ext = comprovativo.filename.split(".")[-1].lower()
-        if file_ext not in ["pdf", "jpg", "jpeg", "png"]:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Formato de arquivo não suportado.</p>", status_code=400)
-
-        # Gerar nome único para salvar o arquivo
-        filename = f"{uuid4()}.{file_ext}"
-        file_path = os.path.join(pasta, filename)
-        with open(file_path, "wb") as f:
-            f.write(await comprovativo.read())
-
-        # Salvar cada bilhete individualmente
-        for bilhete in bilhetes:
-            rifas_ref.add({
-                "nome": nome,
-                "bi": bi,
-                "telefone": telefone,
-                "latitude": latitude,
-                "longitude": longitude,
-                "produto_id": produto_id,
-                "bilhete": bilhete,
-                "data_envio": datetime.utcnow().isoformat(),
-                "comprovativo_path": comprovativo.filename,
-                "comprovativo_salvo": filename
-            })
-
-        # Obter dados do produto
-        produto_doc = db.collection("produtos").document(produto_id).get()
-        if not produto_doc.exists:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
-
-        produto_data = produto_doc.to_dict()
-        data_fim_sorteio = produto_data.get("data_sorteio")
-        nome_produto = produto_data.get("nome", "Produto")
-        imagem_produto = produto_data.get("imagem", "")
-
-        # 🔁 Converter Timestamp Firestore para ISO, se necessário
-        if hasattr(data_fim_sorteio, 'isoformat'):
-            data_fim_sorteio = data_fim_sorteio.isoformat()
-
-        if not data_fim_sorteio:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Data do sorteio não definida para este produto.</p>", status_code=500)
-
-        # Renderizar página de sucesso com cronômetro
-        return templates.TemplateResponse("sorte.html", {
-            "request": request,
-            "data_fim_sorteio": data_fim_sorteio,
-            "produto_id": produto_id,
-            "nome_produto": nome_produto,
-            "imagem_produto": imagem_produto
-        })
-
-    except Exception as e:
-        return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
-
 
 @app.post("/comprar-bilhete")
 async def comprar_bilhete(
