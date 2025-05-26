@@ -131,40 +131,64 @@
     {% endif %}
 
     <p>Produto: <strong>{{ nome_produto }}</strong></p>
-    <p>Data do fim do sorteio: <span id="sorteio-fim">{{ data_fim_sorteio }}</span></p>
-    <div id="cronometro" class="timer">Verificando...</div>
+    <p>Data do fim do sorteio: <span id="sorteio-fim">Carregando...</span></p>
+    <div id="cronometro" class="timer">Carregando...</div>
 
-    {% if vencedor %}
-    <div id="vencedor" class="winner">
+    <div id="vencedor" class="winner" style="display: none;">
       <p class="highlight">🎉 Vencedor Sorteado!</p>
       <p>Nome do vencedor:</p>
-      <span>{{ vencedor }}</span>
+      <span id="nome-vencedor">...</span>
     </div>
-    {% endif %}
   </div>
 
   <script>
-    const dataFim = new Date("{{ data_fim_sorteio }}").getTime();
+    const dataFim = new Date("{{ data_fim_sorteio }}");
+    const fimSpan = document.getElementById("sorteio-fim");
     const cronometro = document.getElementById("cronometro");
+    const vencedorDiv = document.getElementById("vencedor");
+    const nomeVencedor = document.getElementById("nome-vencedor");
 
-    function atualizarContagemRegressiva() {
-      const agora = new Date().getTime();
-      const distancia = dataFim - agora;
+    function atualizarCronometro() {
+      const agora = new Date();
+      const diferenca = dataFim - agora;
 
-      if (distancia <= 0) {
+      if (diferenca <= 0) {
         cronometro.textContent = "Sorteio finalizado!";
         cronometro.classList.add("sorteando");
-        clearInterval(intervalo);
-      } else {
-        const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
-        const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
-        cronometro.textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+        fimSpan.textContent = dataFim.toLocaleString("pt-PT");
+
+        // Buscar vencedor automaticamente
+        fetch("/vencedor/{{ id_sorteio }}")  // <-- ajuste a rota conforme tua API
+          .then(response => response.json())
+          .then(data => {
+            if (data.vencedor) {
+              nomeVencedor.textContent = data.vencedor;
+              vencedorDiv.style.display = "block";
+            } else {
+              nomeVencedor.textContent = "Nenhum vencedor encontrado.";
+              vencedorDiv.style.display = "block";
+            }
+          })
+          .catch(error => {
+            console.error("Erro ao buscar vencedor:", error);
+            nomeVencedor.textContent = "Erro ao carregar o vencedor.";
+            vencedorDiv.style.display = "block";
+          });
+
+        return;
       }
+
+      const horas = Math.floor(diferenca / (1000 * 60 * 60));
+      const minutos = Math.floor((diferenca % (1000 * 60 * 60)) / (1000 * 60));
+      const segundos = Math.floor((diferenca % (1000 * 60)) / 1000);
+
+      cronometro.textContent = `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
+      fimSpan.textContent = dataFim.toLocaleString("pt-PT");
+
+      setTimeout(atualizarCronometro, 1000);
     }
 
-    const intervalo = setInterval(atualizarContagemRegressiva, 1000);
-    atualizarContagemRegressiva(); // executa logo ao carregar
+    atualizarCronometro();
   </script>
 </body>
 </html>
