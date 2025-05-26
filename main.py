@@ -1080,102 +1080,41 @@ async def produtos_futuros(request: Request):
         })
 
 
-@app.get("/sorte", response_class=HTMLResponse)
-@app.post("/sorte", response_class=HTMLResponse)
-async def sorte(request: Request, produto_id: str = Form(None)):
+@app.get("/vencedor/{produto_id}")
+async def obter_vencedor(produto_id: str):
     try:
-        # Permitir também produto_id via query string
-        if not produto_id:
-            produto_id = request.query_params.get("produto_id")
+        produto_doc = db.collection("produtos").document(produto_id).get()
+        if not produto_doc.exists:
+            return {"erro": "Produto não encontrado."}
 
-        # Se ainda não tiver produto_id, buscar automaticamente o primeiro produto com data_sorteio futura
-        if not produto_id:
-            agora = datetime.utcnow()
-            produtos_ref = db.collection("produtos")
-            produtos = produtos_ref.stream()
-
-            produto_futuro = None
-            for doc in produtos:
-                data = doc.to_dict()
-                data_sorteio_str = data.get("data_sorteio")
-
-                if not data_sorteio_str:
-                    continue
-
-                try:
-                    try:
-                        data_sorteio_dt = datetime.strptime(data_sorteio_str, "%d de %b. de %Y")
-                    except ValueError:
-                        data_sorteio_dt = datetime.strptime(data_sorteio_str, "%d de %b de %Y")
-
-                    if data_sorteio_dt > agora:
-                        produto_futuro = doc
-                        break
-                except Exception:
-                    continue
-
-            if not produto_futuro:
-                return HTMLResponse(content="<h2>Erro:</h2><p>Nenhum produto com data de sorteio futura foi encontrado.</p>", status_code=404)
-
-            produto_id = produto_futuro.id
-            produto_data = produto_futuro.to_dict()
-        else:
-            produto_doc = db.collection("produtos").document(produto_id).get()
-            if not produto_doc.exists:
-                return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
-            produto_data = produto_doc.to_dict()
-
-        nome_produto = produto_data.get("nome", "Produto")
-        imagem_produto = produto_data.get("imagem", "")
+        produto_data = produto_doc.to_dict()
         data_sorteio_raw = produto_data.get("data_sorteio")
-
-        if data_sorteio_raw:
-            try:
-                data_fim_sorteio_dt = datetime.strptime(data_sorteio_raw, "%d de %b. de %Y")
-            except ValueError:
-                data_fim_sorteio_dt = datetime.strptime(data_sorteio_raw, "%d de %b de %Y")
-            data_fim_sorteio = data_fim_sorteio_dt.isoformat() + "Z"
+        
+        if isinstance(data_sorteio_raw, datetime):
+            data_sorteio_dt = data_sorteio_raw
+        elif isinstance(data_sorteio_raw, str):
+            if "T" not in data_sorteio_raw:
+                data_sorteio_raw = data_sorteio_raw.replace(" ", "T")
+            data_sorteio_dt = datetime.fromisoformat(data_sorteio_raw)
         else:
-            data_fim_sorteio = datetime.utcnow().isoformat() + "Z"
+            data_sorteio_dt = datetime(2025, 12, 31, 23, 59, 59)
 
-        return templates.TemplateResponse("sorte.html", {
-            "request": request,
-            "produto_id": produto_id,
-            "data_fim_sorteio": data_fim_sorteio,
-            "nome_produto": nome_produto,
-            "imagem_produto": imagem_produto,
-            "vencedor": None
-        })
+        agora = datetime.utcnow()
+        if data_sorteio_dt > agora:
+            return {"vencedor": None}  # Sorteio ainda não finalizado
 
+        # Buscar nomes válidos
+        docs = db.collection("Dados").where("produto_id", "==", produto_id).stream()
+        nomes = [doc.to_dict().get("nome") for doc in docs if doc.to_dict().get("nome")]
+
+        if not nomes:
+            return {"vencedor": None}
+
+        vencedor = random.choice(nomes)
+        return {"vencedor": vencedor}
+    
     except Exception as e:
-        return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
-
-
-@app.get("/bilhetes-comprados")
-async def bilhetes_comprados(request: Request):
-    rifas_ref = db.collection("rifas-compradas")
-    docs = rifas_ref.stream()
-
-    rifas = []
-    for doc in docs:
-        data = doc.to_dict()
-        rifas.append({
-            "nome": data.get("nome", ""),
-            "bi": data.get("bi", ""),
-            "telefone": data.get("telefone", ""),
-            "produto_id": data.get("produto_id", ""),
-            "bilhete": data.get("bilhete", ""),
-            "data_envio": data.get("data_envio", ""),
-            "latitude": data.get("latitude", ""),
-            "longitude": data.get("longitude", ""),
-            "comprovativo_salvo": data.get("comprovativo_salvo", ""),
-            "comprovativo_path": data.get("comprovativo_path", "")
-        })
-
-    return templates.TemplateResponse("produtos-futuros.html", {
-        "request": request,
-        "rifas": rifas
-    })
+        return {"erro": str(e)}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
