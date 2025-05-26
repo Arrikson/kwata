@@ -609,58 +609,68 @@ async def enviar_comprovativo(
         })
 
         # === NOVA LÓGICA DE BUSCA DE DADOS DO PRODUTO E SORTEIO ===
-        produto_doc = db.collection("produtos").document(produto_id).get()
-        if not produto_doc.exists:
-            return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
+        try:
+            produto_doc = db.collection("produtos").document(produto_id).get()
+            if not produto_doc.exists:
+                return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
 
-        produto_data = produto_doc.to_dict()
-        nome_produto = produto_data.get("nome", "Produto")
-        imagem_produto = produto_data.get("imagem", "/static/imagem_padrao.jpg")
+            produto_data = produto_doc.to_dict()
+            nome_produto = produto_data.get("nome", "Produto")
+            imagem_produto = produto_data.get("imagem", "/static/imagem_padrao.jpg")
 
-        data_sorteio_raw = produto_data.get("data_sorteio")
-        if isinstance(data_sorteio_raw, datetime):
-            data_sorteio_dt = data_sorteio_raw
-        elif isinstance(data_sorteio_raw, str):
-            try:
-                if "T" not in data_sorteio_raw:
-                    data_sorteio_raw = data_sorteio_raw.replace(" ", "T")
-                data_sorteio_dt = datetime.fromisoformat(data_sorteio_raw)
-            except ValueError:
+            data_sorteio_raw = produto_data.get("data_sorteio")
+            
+            # Conversão segura para datetime
+            if isinstance(data_sorteio_raw, datetime):
+                data_sorteio_dt = data_sorteio_raw
+            elif isinstance(data_sorteio_raw, str):
+                try:
+                    if "T" not in data_sorteio_raw:
+                        data_sorteio_raw = data_sorteio_raw.replace(" ", "T")
+                    data_sorteio_dt = datetime.fromisoformat(data_sorteio_raw)
+                except ValueError:
+                    data_sorteio_dt = datetime(2025, 12, 31, 23, 59, 59)
+            else:
                 data_sorteio_dt = datetime(2025, 12, 31, 23, 59, 59)
-        else:
-            data_sorteio_dt = datetime(2025, 12, 31, 23, 59, 59)
 
-        data_limite_iso = data_sorteio_dt.isoformat()
-        meses = {
-            1: "jan.", 2: "fev.", 3: "mar.", 4: "abr.", 5: "mai.", 6: "jun.",
-            7: "jul.", 8: "ago.", 9: "set.", 10: "out.", 11: "nov.", 12: "dez."
-        }
-        data_fim_sorteio = f"{data_sorteio_dt.day} de {meses[data_sorteio_dt.month]} de {data_sorteio_dt.year}"
+            # Remove fuso horário (se houver)
+            if data_sorteio_dt.tzinfo is not None:
+                data_sorteio_dt = data_sorteio_dt.replace(tzinfo=None)
 
-        agora = datetime.utcnow()
-        sorteio_finalizado = data_sorteio_dt <= agora
-        vencedor_nome = None
+            data_limite_iso = data_sorteio_dt.isoformat()
+            meses = {
+                1: "jan.", 2: "fev.", 3: "mar.", 4: "abr.", 5: "mai.", 6: "jun.",
+                7: "jul.", 8: "ago.", 9: "set.", 10: "out.", 11: "nov.", 12: "dez."
+            }
+            data_fim_sorteio = f"{data_sorteio_dt.day} de {meses[data_sorteio_dt.month]} de {data_sorteio_dt.year}"
 
-        if sorteio_finalizado:
-            try:
-                dados_filtrados = db.collection("Dados").where("produto_id", "==", produto_id).stream()
-                nomes_possiveis = [doc.to_dict().get("nome") for doc in dados_filtrados if doc.to_dict().get("nome")]
-                if nomes_possiveis:
-                    vencedor_nome = random.choice(nomes_possiveis)
-            except Exception as e:
-                print(f"Erro ao buscar vencedor: {e}")
-                vencedor_nome = None
+            agora = datetime.utcnow().replace(tzinfo=None)
+            sorteio_finalizado = data_sorteio_dt <= agora
+            vencedor_nome = None
 
-        return templates.TemplateResponse("sorte.html", {
-            "request": request,
-            "data_fim_sorteio": data_fim_sorteio,       # Exibição amigável
-            "data_limite_iso": data_limite_iso,         # Para cronômetro no HTML
-            "produto_id": produto_id,
-            "nome_produto": nome_produto,
-            "imagem_produto": imagem_produto,
-            "vencedor": vencedor_nome,
-            "sorteio_finalizado": sorteio_finalizado
-        })
+            if sorteio_finalizado:
+                try:
+                    dados_filtrados = db.collection("Dados").where("produto_id", "==", produto_id).stream()
+                    nomes_possiveis = [doc.to_dict().get("nome") for doc in dados_filtrados if doc.to_dict().get("nome")]
+                    if nomes_possiveis:
+                        vencedor_nome = random.choice(nomes_possiveis)
+                except Exception as e:
+                    print(f"Erro ao buscar vencedor: {e}")
+                    vencedor_nome = None
+
+            return templates.TemplateResponse("sorte.html", {
+                "request": request,
+                "data_fim_sorteio": data_fim_sorteio,
+                "data_limite_iso": data_limite_iso,
+                "produto_id": produto_id,
+                "nome_produto": nome_produto,
+                "imagem_produto": imagem_produto,
+                "vencedor": vencedor_nome,
+                "sorteio_finalizado": sorteio_finalizado
+            })
+
+        except Exception as e:
+            return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
 
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
