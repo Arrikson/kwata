@@ -1,0 +1,165 @@
+<!-- templates/perfil.html -->
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Kwata | Perfil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --verde: #4ead4f;
+      --amarelo: #ffcc00;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5ffe8;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    header {
+      width: 100%;
+      background-color: var(--verde);
+      padding: 1rem 2rem;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header img {
+      height: 50px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      margin-left: 1rem;
+    }
+
+    .form-container, .info-container {
+      margin-top: 2rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 2rem;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .form-container h2, .info-container h2 {
+      color: var(--verde);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      margin-top: 1.5rem;
+      width: 100%;
+      background-color: var(--amarelo);
+      color: #000;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .perfil-info p {
+      margin: 0.5rem 0;
+      font-size: 1.1rem;
+    }
+
+    .cronometro {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--verde);
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-container">
+    <img src="/static/novologo.png" alt="Kwata Logo">
+    <h1>Kwata</h1>
+  </div>
+</header>
+
+{% if not dados %}
+<div class="form-container">
+  <h2>Aceder ao seu perfil</h2>
+  <form method="post">
+    <label for="nome">Nome completo:</label>
+    <input type="text" id="nome" name="nome" required>
+
+    <label for="telefone">Nº de Telefone:</label>
+    <input type="text" id="telefone" name="telefone" required>
+
+    <label for="numero_bilhete">Nº do Bilhete:</label>
+    <input type="text" id="numero_bilhete" name="numero_bilhete" required>
+
+    <button type="submit">Ver Perfil</button>
+  </form>
+</div>
+{% else %}
+<div class="info-container">
+  <h2>Bem-vindo, {{ dados.nome_completo }}</h2>
+  <div class="perfil-info">
+    <p><strong>Telefone:</strong> {{ dados.telefone }}</p>
+    <p><strong>Nº do Bilhete:</strong> {{ dados.numero_bilhete }}</p>
+    <p><strong>Data do Sorteio:</strong> {{ dados.produto.data_limite }}</p>
+    <div class="cronometro" id="cronometro">Carregando...</div>
+  </div>
+</div>
+
+<script>
+  const fimSorteio = new Date("{{ dados.produto.data_limite_iso }}");
+  const el = document.getElementById("cronometro");
+
+  function atualizarCronometro() {
+    const agora = new Date();
+    const diff = fimSorteio - agora;
+
+    if (diff > 0) {
+      const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutos = Math.floor((diff / (1000 * 60)) % 60);
+      const segundos = Math.floor((diff / 1000) % 60);
+      el.textContent = `Sorteio em: ${dias}d ${horas}h ${minutos}m ${segundos}s`;
+    } else {
+      el.textContent = "Sorteio encerrado!";
+    }
+  }
+
+  setInterval(atualizarCronometro, 1000);
+  atualizarCronometro();
+</script>
+{% endif %}
+
+</body>
+</html>
