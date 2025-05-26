@@ -1,255 +1,194 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kwata</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sorteio ao Vivo - {{ nome_produto }}</title>
   <style>
-  :root {
-    --verde: #4ead4f;
-    --laranja: #FFA500;
-    --vermelho-claro: #FF6F61;
-  }
-
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background: #fefee0; /* ESTA LINHA DEFINE A COR DO FUNDO */
-    margin: 0;
-    padding: 0;
-    color: #333;
-  }
-
-  header {
-    background-color: var(--verde);
-    padding: 1rem;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100vw;
-  }
-
-  .logo-container {
-    display: flex;
-    align-items: center;
-  }
-
-  header img {
-    height: 50px;
-  }
-
-  header h1 {
-    font-size: 2rem;
-    margin-left: 1rem;
-    color: white;
-  }
-
-  .carousel-container {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    max-width: 1000px;
-    margin: 2rem auto;
-    perspective: 1000px;
-  }
-
-  .carousel-track {
-    display: flex;
-    transition: transform 0.5s ease;
-    will-change: transform;
-    gap: 2rem;
-    padding: 2rem 0;
-  }
-
-  .product-card {
-    flex: 0 0 60%;
-    transform-origin: center center;
-    transition: transform 0.5s ease, opacity 0.5s ease;
-    opacity: 0.5;
-    transform: scale(0.9);
-  }
-
-  .product-card.active {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  .product-card-inner {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    padding: 1.5rem;
-    text-align: center;
-    border-top: 6px solid var(--laranja);
-  }
-
-  .product-card img {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-  }
-
-  .product-info {
-    margin-top: 1rem;
-  }
-
-  .button {
-    background-color: var(--verde);
-    color: white;
-    padding: 1rem 2rem;
-    font-size: 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    border: none;
-    margin-top: 1rem;
-    transition: background 0.3s;
-  }
-
-  .button:hover {
-    background-color: #e55b50;
-  }
-
-  .carousel-button {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    background: rgba(0, 0, 0, 0.4);
-    color: white;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    z-index: 1;
-    border-radius: 50%;
-  }
-
-  .carousel-button.left {
-    left: 10px;
-  }
-
-  .carousel-button.right {
-    right: 10px;
-  }
-
-  .contador {
-    font-weight: bold;
-    color: var(--laranja);
-    margin-top: 10px;
-  }
-
-  @media (max-width: 600px) {
-    .product-card {
-      flex: 0 0 85%;
+    :root {
+      --verde: #3a9d23;
+      --amarelo: #f2c94c;
+      --vermelho: #e26a6a;
+      --cinza-escuro: #333;
+      --cinza-claro: #f7f7f7;
     }
 
-    header img {
-      height: 40px;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, var(--verde), var(--amarelo), var(--vermelho));
+      color: var(--cinza-escuro);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
     }
 
-    header h1 {
-      font-size: 1.4rem;
-      margin-left: 0.5rem;
+    .container {
+      background: var(--cinza-claro);
+      max-width: 480px;
+      width: 100%;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(58, 157, 35, 0.3);
+      user-select: none;
     }
 
-    .carousel-track {
-      gap: 1rem;
-      padding: 1rem 0;
+    .logo {
+      width: 100px;
+      margin-bottom: 25px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
     }
 
-    .product-card-inner {
-      padding: 1rem;
+    h1 {
+      color: var(--verde);
+      font-size: 2rem;
+      margin-bottom: 15px;
     }
 
-    .button {
-      padding: 0.8rem 1.5rem;
-      font-size: 14px;
+    p {
+      margin: 8px 0;
+      font-size: 1.1rem;
     }
-  }
-</style>
+
+    p strong {
+      color: var(--vermelho);
+    }
+
+    #sorteio-fim {
+      color: var(--amarelo);
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .timer {
+      font-family: monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--verde);
+      margin: 30px 0 20px;
+      user-select: text;
+      transition: color 0.3s ease;
+    }
+
+    .timer.sorteando {
+      color: var(--vermelho);
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% {opacity: 1;}
+      50% {opacity: 0.6;}
+    }
+
+    .winner {
+      display: block;
+      margin-top: 35px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      user-select: text;
+      color: var(--cinza-escuro);
+    }
+
+    .winner p {
+      margin: 10px 0;
+    }
+
+    .winner .highlight {
+      color: var(--vermelho);
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+    }
+
+    .winner span {
+      font-weight: 700;
+      color: var(--verde);
+      font-size: 1.2rem;
+    }
+
+    .produto-img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <div class="logo-container">
-      <img src="/static/novologo.png" alt="Kwata Logo">
-      <h1>Kwata</h1>
-    </div>
-  </header>
+  <div class="container">
+    <img src="/static/novologo.png" alt="Logo" class="logo" />
+    <h1>Sorteio ao Vivo</h1>
 
-  <div class="carousel-container">
-    <button class="carousel-button left" onclick="moverCarrossel(-1)">&#10094;</button>
-    <div class="carousel-track" id="carousel-track">
-      {% for produto in produtos %}
-      <div class="product-card{% if loop.first %} active{% endif %}">
-        <div class="product-card-inner">
-          <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
-          <div class="product-info">
-            <h3>{{ produto.nome }}</h3>
-            <p>{{ produto.descricao }}</p>
-            <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
-            <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
-            <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
+    {% if imagem_produto %}
+      <img src="{{ imagem_produto }}" alt="Produto" class="produto-img" />
+    {% endif %}
+
+    <p>Produto: <strong>{{ nome_produto }}</strong></p>
+    <p>Data do fim do sorteio: <span id="sorteio-fim">Carregando...</span></p>
+    <div id="cronometro" class="timer">Carregando...</div>
+
+    <div id="vencedor" class="winner" style="display: none;">
+      <p class="highlight">🎉 Vencedor Sorteado!</p>
+      <p>Nome do vencedor:</p>
+      <span id="nome-vencedor">...</span>
     </div>
-    <button class="carousel-button right" onclick="moverCarrossel(1)">&#10095;</button>
   </div>
 
   <script>
-    let currentIndex = 0;
+    const dataFim = new Date("{{ data_fim_sorteio }}");
+    const fimSpan = document.getElementById("sorteio-fim");
+    const cronometro = document.getElementById("cronometro");
+    const vencedorDiv = document.getElementById("vencedor");
+    const nomeVencedor = document.getElementById("nome-vencedor");
 
-    function moverCarrossel(direction) {
-      const cards = document.querySelectorAll('.product-card');
-      currentIndex += direction;
-
-      if (currentIndex < 0) currentIndex = cards.length - 1;
-      if (currentIndex >= cards.length) currentIndex = 0;
-
-      const track = document.getElementById('carousel-track');
-      const offset = -currentIndex * (cards[0].offsetWidth + 32); // 32 = gap
-      track.style.transform = `translateX(${offset}px)`;
-
-      cards.forEach((card, index) => {
-        if (index === currentIndex) {
-          card.classList.add('active');
-        } else {
-          card.classList.remove('active');
-        }
-      });
-    }
-
-    function formatarTempo(ms) {
-      const totalSegundos = Math.floor(ms / 1000);
-      const dias = Math.floor(totalSegundos / 86400);
-      const horas = Math.floor((totalSegundos % 86400) / 3600);
-      const minutos = Math.floor((totalSegundos % 3600) / 60);
-      const segundos = totalSegundos % 60;
-      return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
-    }
-
-    {% for produto in produtos %}
-    const dataLimite{{ loop.index }} = new Date("{{ produto.data_limite_iso }}");
-    const contadorEl{{ loop.index }} = document.getElementById("contador-{{ produto.id }}");
-
-    setInterval(() => {
+    function atualizarCronometro() {
       const agora = new Date();
-      const diff = dataLimite{{ loop.index }} - agora;
-      if (diff > 0) {
-        contadorEl{{ loop.index }}.textContent = "Sorteio em: " + formatarTempo(diff);
-      } else {
-        contadorEl{{ loop.index }}.textContent = "Sorteio encerrado!";
+      const diferenca = dataFim - agora;
+
+      if (diferenca <= 0) {
+        cronometro.textContent = "Sorteio finalizado!";
+        cronometro.classList.add("sorteando");
+        fimSpan.textContent = dataFim.toLocaleString("pt-PT");
+
+        // Buscar vencedor automaticamente
+        fetch("/vencedor/{{ id_sorteio }}")  // <-- ajuste a rota conforme tua API
+          .then(response => response.json())
+          .then(data => {
+            if (data.vencedor) {
+              nomeVencedor.textContent = data.vencedor;
+              vencedorDiv.style.display = "block";
+            } else {
+              nomeVencedor.textContent = "Nenhum vencedor encontrado.";
+              vencedorDiv.style.display = "block";
+            }
+          })
+          .catch(error => {
+            console.error("Erro ao buscar vencedor:", error);
+            nomeVencedor.textContent = "Erro ao carregar o vencedor.";
+            vencedorDiv.style.display = "block";
+          });
+
+        return;
       }
-    }, 1000);
-    {% endfor %}
+
+      const horas = Math.floor(diferenca / (1000 * 60 * 60));
+      const minutos = Math.floor((diferenca % (1000 * 60 * 60)) / (1000 * 60));
+      const segundos = Math.floor((diferenca % (1000 * 60)) / 1000);
+
+      cronometro.textContent = `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
+      fimSpan.textContent = dataFim.toLocaleString("pt-PT");
+
+      setTimeout(atualizarCronometro, 1000);
+    }
+
+    atualizarCronometro();
   </script>
 </body>
 </html>
