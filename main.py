@@ -608,7 +608,7 @@ async def enviar_comprovativo(
             "data_envio": datetime.utcnow().isoformat()
         })
 
-        # === NOVA LÓGICA DE BUSCA DE DADOS DO PRODUTO E SORTEIO ===
+        # === NOVA LÓGICA DE ENVIO PARA HTML ===
         try:
             produto_doc = db.collection("produtos").document(produto_id).get()
             if not produto_doc.exists:
@@ -616,11 +616,15 @@ async def enviar_comprovativo(
 
             produto_data = produto_doc.to_dict()
             nome_produto = produto_data.get("nome", "Produto")
+            descricao = produto_data.get("descricao", "")
+            preco_bilhete = produto_data.get("preco_bilhete", 0)
             imagem_produto = produto_data.get("imagem", "/static/imagem_padrao.jpg")
 
+            # Buscar os bilhetes disponíveis
+            rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
+            bilhetes_disponiveis = rifa_doc.to_dict().get("bilhetes_disponiveis", 0) if rifa_doc.exists else 0
+
             data_sorteio_raw = produto_data.get("data_sorteio")
-            
-            # Conversão segura para datetime
             if isinstance(data_sorteio_raw, datetime):
                 data_sorteio_dt = data_sorteio_raw
             elif isinstance(data_sorteio_raw, str):
@@ -633,7 +637,6 @@ async def enviar_comprovativo(
             else:
                 data_sorteio_dt = datetime(2025, 12, 31, 23, 59, 59)
 
-            # Remove fuso horário (se houver)
             if data_sorteio_dt.tzinfo is not None:
                 data_sorteio_dt = data_sorteio_dt.replace(tzinfo=None)
 
@@ -664,7 +667,10 @@ async def enviar_comprovativo(
                 "data_limite_iso": data_limite_iso,
                 "produto_id": produto_id,
                 "nome_produto": nome_produto,
+                "descricao": descricao,
+                "preco_bilhete": preco_bilhete,
                 "imagem_produto": imagem_produto,
+                "bilhetes_disponiveis": bilhetes_disponiveis,
                 "vencedor": vencedor_nome,
                 "sorteio_finalizado": sorteio_finalizado
             })
