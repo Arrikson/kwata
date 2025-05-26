@@ -147,27 +147,28 @@
     const cronometro = document.getElementById("cronometro");
     const vencedorDiv = document.getElementById("vencedor");
     const nomeVencedor = document.getElementById("nome-vencedor");
+    let sorteioFinalizado = false;
 
     function atualizarCronometro() {
       const agora = new Date();
       const diferenca = dataFim - agora;
 
-      if (diferenca <= 0) {
+      if (diferenca <= 0 && !sorteioFinalizado) {
+        sorteioFinalizado = true;
         cronometro.textContent = "Sorteio finalizado!";
         cronometro.classList.add("sorteando");
         fimSpan.textContent = dataFim.toLocaleString("pt-PT");
 
         // Buscar vencedor automaticamente
-        fetch("/vencedor/{{ id_sorteio }}")  // <-- ajuste a rota conforme tua API
+        fetch(`/vencedor/{{ id_sorteio }}`)
           .then(response => response.json())
           .then(data => {
             if (data.vencedor) {
               nomeVencedor.textContent = data.vencedor;
-              vencedorDiv.style.display = "block";
             } else {
               nomeVencedor.textContent = "Nenhum vencedor encontrado.";
-              vencedorDiv.style.display = "block";
             }
+            vencedorDiv.style.display = "block";
           })
           .catch(error => {
             console.error("Erro ao buscar vencedor:", error);
@@ -178,18 +179,18 @@
         return;
       }
 
-      const horas = Math.floor(diferenca / (1000 * 60 * 60));
-      const minutos = Math.floor((diferenca % (1000 * 60 * 60)) / (1000 * 60));
-      const segundos = Math.floor((diferenca % (1000 * 60)) / 1000);
+      if (diferenca > 0) {
+        const horas = Math.floor(diferenca / (1000 * 60 * 60));
+        const minutos = Math.floor((diferenca % (1000 * 60 * 60)) / (1000 * 60));
+        const segundos = Math.floor((diferenca % (1000 * 60)) / 1000);
 
-      cronometro.textContent = `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
-      fimSpan.textContent = dataFim.toLocaleString("pt-PT");
-
-      setTimeout(atualizarCronometro, 1000);
+        cronometro.textContent = `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
+        fimSpan.textContent = dataFim.toLocaleString("pt-PT");
+        setTimeout(atualizarCronometro, 1000);
+      }
     }
 
     atualizarCronometro();
   </script>
 </body>
 </html>
-
