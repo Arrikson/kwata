@@ -144,14 +144,27 @@
   </div>
 
   <script>
-    // Função que mostra mensagem padrão
-    function iniciarContadorFinalizado() {
-      const cronometro = document.getElementById("cronometro");
-      cronometro.textContent = "Sorteio finalizado!";
-      cronometro.classList.add("sorteando");
+    const dataFim = new Date("{{ data_fim_sorteio }}").getTime();
+    const cronometro = document.getElementById("cronometro");
+
+    function atualizarContagemRegressiva() {
+      const agora = new Date().getTime();
+      const distancia = dataFim - agora;
+
+      if (distancia <= 0) {
+        cronometro.textContent = "Sorteio finalizado!";
+        cronometro.classList.add("sorteando");
+        clearInterval(intervalo);
+      } else {
+        const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+        const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+        cronometro.textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+      }
     }
 
-    iniciarContadorFinalizado();
+    const intervalo = setInterval(atualizarContagemRegressiva, 1000);
+    atualizarContagemRegressiva(); // executa logo ao carregar
   </script>
 </body>
 </html>
