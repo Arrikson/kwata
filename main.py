@@ -625,40 +625,39 @@ async def enviar_comprovativo(
         imagem_produto = produto_data.get("imagem", "")
 
         vencedor_nome = None
-      try:
-    if data_fim_sorteio_raw:
-        if "T" not in data_fim_sorteio_raw:
-            data_fim_sorteio_raw = data_fim_sorteio_raw.replace(" ", "T")
-        data_fim_sorteio_dt = datetime.fromisoformat(data_fim_sorteio_raw)
-    else:
-        raise ValueError("Data ausente")
+        try:
+            if data_fim_sorteio_raw:
+                if "T" not in data_fim_sorteio_raw:
+                    data_fim_sorteio_raw = data_fim_sorteio_raw.replace(" ", "T")
+                data_fim_sorteio_dt = datetime.fromisoformat(data_fim_sorteio_raw)
+            else:
+                raise ValueError("Data ausente")
 
-    agora = datetime.utcnow()
-    if data_fim_sorteio_dt <= agora:
-        registros_filtrados = list(
-            db.collection("registros")
-              .where("produto_id", "==", produto_id)
-              .stream()
-        )
-        nomes = list({doc.to_dict().get("nome_do_comprador") for doc in registros_filtrados if doc.to_dict().get("nome_do_comprador")})
-        if nomes:
-            vencedor_nome = random.choice(nomes)
+            agora = datetime.utcnow()
+            if data_fim_sorteio_dt <= agora:
+                registros_filtrados = list(
+                    db.collection("registros")
+                      .where("produto_id", "==", produto_id)
+                      .stream()
+                )
+                nomes = list({doc.to_dict().get("nome_do_comprador") for doc in registros_filtrados if doc.to_dict().get("nome_do_comprador")})
+                if nomes:
+                    vencedor_nome = random.choice(nomes)
 
-    # Formatar a data no estilo "24 de mai. de 2025"
-    meses = {
-        1: "jan.", 2: "fev.", 3: "mar.", 4: "abr.", 5: "mai.", 6: "jun.",
-        7: "jul.", 8: "ago.", 9: "set.", 10: "out.", 11: "nov.", 12: "dez."
-    }
-    data_fim_sorteio = f"{data_fim_sorteio_dt.day} de {meses[data_fim_sorteio_dt.month]} de {data_fim_sorteio_dt.year}"
+            # Formatar a data no estilo "24 de mai. de 2025"
+            meses = {
+                1: "jan.", 2: "fev.", 3: "mar.", 4: "abr.", 5: "mai.", 6: "jun.",
+                7: "jul.", 8: "ago.", 9: "set.", 10: "out.", 11: "nov.", 12: "dez."
+            }
+            data_fim_sorteio = f"{data_fim_sorteio_dt.day} de {meses[data_fim_sorteio_dt.month]} de {data_fim_sorteio_dt.year}"
 
-except Exception:
-    # Se ocorrer erro na leitura da data original, usar a data atual formatada também
-    agora = datetime.utcnow()
-    meses = {
-        1: "jan.", 2: "fev.", 3: "mar.", 4: "abr.", 5: "mai.", 6: "jun.",
-        7: "jul.", 8: "ago.", 9: "set.", 10: "out.", 11: "nov.", 12: "dez."
-    }
-    data_fim_sorteio = f"{agora.day} de {meses[agora.month]} de {agora.year}"
+        except Exception:
+            agora = datetime.utcnow()
+            meses = {
+                1: "jan.", 2: "fev.", 3: "mar.", 4: "abr.", 5: "mai.", 6: "jun.",
+                7: "jul.", 8: "ago.", 9: "set.", 10: "out.", 11: "nov.", 12: "dez."
+            }
+            data_fim_sorteio = f"{agora.day} de {meses[agora.month]} de {agora.year}"
 
         return templates.TemplateResponse("sorte.html", {
             "request": request,
