@@ -22,13 +22,14 @@
 
     html, body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: var(--cinza);
+      background: #fefee0; /* fundo solicitado */
       color: var(--preto);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
+      padding: 0;
     }
 
     #preloader {
@@ -51,18 +52,18 @@
       display: none;
       width: 100%;
       max-width: 1200px;
-      padding: 1.5rem;
+      padding: 1.5rem 1rem;
     }
 
     header {
       background-color: var(--verde);
       width: 100%;
-      border-radius: 12px;
-      padding: 1rem 2rem;
+      padding: 1rem;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       margin-bottom: 2rem;
+      border-radius: 0;
     }
 
     .logo-container {
@@ -116,7 +117,7 @@
     .vermelho { border-color: var(--vermelho); color: var(--vermelho); }
     .azul { border-color: var(--azul); color: var(--azul); }
 
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
       .titulo-principal {
         font-size: 2rem;
       }
@@ -128,6 +129,18 @@
       .tile {
         padding: 1.2rem 1rem;
         font-size: 1rem;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, 1fr); /* sempre 2 blocos por linha no celular */
+        gap: 1rem;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .tile {
+        font-size: 0.9rem;
+        padding: 1rem;
       }
     }
   </style>
@@ -148,11 +161,11 @@
       </div>
     </header>
 
-    <div class="titulo-principal"></div>
+    <div class="titulo-principal">Bem-vindo ao Kwata</div>
 
     <div class="grid">
       <div class="tile verde" onclick="window.location.href='/produtos_disponiveis'">Participar de Sorteio</div>
-      <div class="tile amarelo" onclick="window.location.href='/sorteios-ao-vivo'">sorteios ao vivo</div>
+      <div class="tile amarelo" onclick="window.location.href='/sorteios-ao-vivo'">Sorteios ao Vivo</div>
       <div class="tile azul" onclick="window.location.href='/sobre'">Sobre o Kwata</div>
       <div class="tile vermelho" onclick="window.location.href='/ganhadores'">Últimos Ganhadores</div>
     </div>
@@ -169,3 +182,4 @@
 
 </body>
 </html>
+
