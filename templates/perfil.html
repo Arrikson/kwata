@@ -5,6 +5,7 @@
   <title>Kwata | Perfil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --verde: #4ead4f;
@@ -96,6 +97,11 @@
       text-align: center;
     }
 
+    .pdf-btn {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
     @media screen and (max-width: 480px) {
       body {
         padding: 1rem 0.5rem;
@@ -135,19 +141,21 @@
   </form>
 </div>
 {% else %}
-<div class="container">
-  <h2>Bem-vindo, {{ dados.nome }}</h2>
+<div class="container" id="bilhete-pdf">
+  <h2>Meu Bilhete</h2>
+  <div style="text-align:center;margin-bottom:1rem;">
+    <img src="/static/novologo.png" alt="Logo Kwata" height="40">
+  </div>
   <div class="perfil-info">
+    <p><strong>Nome:</strong> {{ dados.nome }}</p>
     <p><strong>Telefone:</strong> {{ dados.telefone }}</p>
     <p><strong>Bilhete Nº:</strong> {{ dados.bilhete }}</p>
-    <p><strong>Produto ID:</strong> {{ dados.produto_id }}</p>
-    <p><strong>Comprovativo Original:</strong> {{ dados.comprovativo_path }}</p>
-    <p><strong>Comprovativo Salvo:</strong> {{ dados.comprovativo_salvo }}</p>
-    <p><strong>Latitude:</strong> {{ dados.latitude }}</p>
-    <p><strong>Longitude:</strong> {{ dados.longitude }}</p>
     <p><strong>Data de Envio:</strong> {{ dados.data_envio }}</p>
     <p><strong>Data do Sorteio:</strong> {{ dados.produto.data_limite }}</p>
-    <div class="cronometro" id="cronometro">Carregando...</div>
+  </div>
+  <div class="cronometro" id="cronometro">Carregando...</div>
+  <div class="pdf-btn">
+    <button id="btn-pdf">Bilhete em PDF</button>
   </div>
 </div>
 
@@ -172,6 +180,19 @@
 
   setInterval(atualizarCronometro, 1000);
   atualizarCronometro();
+
+  // PDF geração
+  document.getElementById('btn-pdf').addEventListener('click', () => {
+    const bilhete = document.getElementById('bilhete-pdf');
+    const opt = {
+      margin:       0.5,
+      filename:     'meu-bilhete.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'a5', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(bilhete).save();
+  });
 </script>
 {% endif %}
 
