@@ -1,4 +1,3 @@
-<!-- templates/perfil.html -->
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -25,29 +24,25 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem;
+      padding: 1rem;
     }
 
     header {
       width: 100%;
       background-color: var(--verde);
-      padding: 1rem 2rem;
-      color: white;
+      padding: 1rem;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
+      gap: 1rem;
+      color: white;
     }
 
     header img {
-      height: 50px;
+      height: 45px;
     }
 
-    header h1 {
-      font-size: 2rem;
-      margin-left: 1rem;
-    }
-
-    .form-container, .info-container {
+    .container {
       margin-top: 2rem;
       background: white;
       border-radius: 12px;
@@ -57,7 +52,7 @@
       max-width: 500px;
     }
 
-    .form-container h2, .info-container h2 {
+    h2 {
       color: var(--verde);
       margin-bottom: 1rem;
       text-align: center;
@@ -90,28 +85,41 @@
 
     .perfil-info p {
       margin: 0.5rem 0;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     .cronometro {
+      margin-top: 1rem;
       font-size: 1.2rem;
       font-weight: bold;
       color: var(--verde);
-      margin-top: 1rem;
+      text-align: center;
+    }
+
+    @media screen and (max-width: 480px) {
+      body {
+        padding: 1rem 0.5rem;
+      }
+
+      .container {
+        padding: 1.2rem;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="logo-container">
-    <img src="/static/novologo.png" alt="Kwata Logo">
-    <h1>Kwata</h1>
-  </div>
+  <img src="/static/novologo.png" alt="Kwata Logo">
+  <h1>Kwata</h1>
 </header>
 
 {% if not dados %}
-<div class="form-container">
+<div class="container">
   <h2>Aceder ao seu perfil</h2>
   <form method="post">
     <label for="nome">Nome completo:</label>
@@ -127,11 +135,17 @@
   </form>
 </div>
 {% else %}
-<div class="info-container">
-  <h2>Bem-vindo, {{ dados.nome_completo }}</h2>
+<div class="container">
+  <h2>Bem-vindo, {{ dados.nome }}</h2>
   <div class="perfil-info">
     <p><strong>Telefone:</strong> {{ dados.telefone }}</p>
-    <p><strong>Nº do Bilhete:</strong> {{ dados.numero_bilhete }}</p>
+    <p><strong>Bilhete Nº:</strong> {{ dados.bilhete }}</p>
+    <p><strong>Produto ID:</strong> {{ dados.produto_id }}</p>
+    <p><strong>Comprovativo Original:</strong> {{ dados.comprovativo_path }}</p>
+    <p><strong>Comprovativo Salvo:</strong> {{ dados.comprovativo_salvo }}</p>
+    <p><strong>Latitude:</strong> {{ dados.latitude }}</p>
+    <p><strong>Longitude:</strong> {{ dados.longitude }}</p>
+    <p><strong>Data de Envio:</strong> {{ dados.data_envio }}</p>
     <p><strong>Data do Sorteio:</strong> {{ dados.produto.data_limite }}</p>
     <div class="cronometro" id="cronometro">Carregando...</div>
   </div>
@@ -163,3 +177,4 @@
 
 </body>
 </html>
+
