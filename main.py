@@ -1133,41 +1133,6 @@ async def obter_vencedor(produto_id: str):
         return {"erro": str(e)}
 
 
-@app.get("/meu_bilhete", response_class=HTMLResponse)
-async def mostrar_bilhetes(request: Request, email: str = None):
-    """
-    Pega as compras do usuário filtrando pelo email (se fornecido)
-    e mostra o template meu_bilhete.html com esses dados.
-    """
-    colecao = db.collection("rifas-comprada")
-    if email:
-        query = colecao.where("email_usuario", "==", email)
-        docs = query.stream()
-    else:
-        docs = colecao.stream()
-
-    compras = []
-    for doc in docs:
-        dados = doc.to_dict()
-        compras.append(dados)
-
-    return templates.TemplateResponse("meu_bilhete.html", {"request": request, "compras": compras})
-
-@app.post("/meu_bilhete", response_class=HTMLResponse)
-async def filtrar_bilhetes(request: Request, email: str = Form(...)):
-    """
-    Recebe o email via POST, busca as compras desse email e mostra o template.
-    """
-    colecao = db.collection("rifas-comprada")
-    query = colecao.where("email_usuario", "==", email)
-    docs = query.stream()
-
-    compras = []
-    for doc in docs:
-        dados = doc.to_dict()
-        compras.append(dados)
-
-    return templates.TemplateResponse("meu_bilhete.html", {"request": request, "compras": compras})
 
 
 if __name__ == "__main__":
