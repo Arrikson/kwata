@@ -131,8 +131,8 @@
     {% endif %}
 
     <p>Produto: <strong>{{ nome_produto }}</strong></p>
-    <p>Data do fim do sorteio: <span id="sorteio-fim">Carregando...</span></p>
-    <div id="cronometro" class="timer">Carregando...</div>
+    <p>Data do fim do sorteio: <span id="sorteio-fim">{{ data_fim_sorteio }}</span></p>
+    <div id="cronometro" class="timer">Verificando...</div>
 
     {% if vencedor %}
     <div id="vencedor" class="winner">
@@ -144,32 +144,14 @@
   </div>
 
   <script>
-    const dataFim = new Date("{{ data_fim_sorteio }}");
-    const fimSpan = document.getElementById("sorteio-fim");
-    const cronometro = document.getElementById("cronometro");
-
-    function atualizarCronometro() {
-      const agora = new Date();
-      const diferenca = dataFim - agora;
-
-      if (diferenca <= 0) {
-        cronometro.textContent = "Sorteio finalizado!";
-        cronometro.classList.add("sorteando");
-        fimSpan.textContent = dataFim.toLocaleString("pt-PT");
-        return;
-      }
-
-      const horas = Math.floor(diferenca / (1000 * 60 * 60));
-      const minutos = Math.floor((diferenca % (1000 * 60 * 60)) / (1000 * 60));
-      const segundos = Math.floor((diferenca % (1000 * 60)) / 1000);
-
-      cronometro.textContent = `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`;
-      fimSpan.textContent = dataFim.toLocaleString("pt-PT");
-
-      setTimeout(atualizarCronometro, 1000);
+    // Função que mostra mensagem padrão
+    function iniciarContadorFinalizado() {
+      const cronometro = document.getElementById("cronometro");
+      cronometro.textContent = "Sorteio finalizado!";
+      cronometro.classList.add("sorteando");
     }
 
-    atualizarCronometro();
+    iniciarContadorFinalizado();
   </script>
 </body>
 </html>
