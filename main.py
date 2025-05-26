@@ -579,7 +579,11 @@ async def enviar_comprovativo(
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
+        # Referência à nova coleção "Dados"
+        dados_ref = db.collection("Dados")
+
         for bilhete in bilhetes:
+            # Salvar na coleção rifas-compradas
             rifas_ref.add({
                 "nome": nome,
                 "bi": bi,
@@ -591,6 +595,14 @@ async def enviar_comprovativo(
                 "data_envio": datetime.utcnow().isoformat(),
                 "comprovativo_path": comprovativo.filename,
                 "comprovativo_salvo": filename
+            })
+
+            # Salvar na coleção "Dados"
+            dados_ref.add({
+                "produto_id": produto_id,
+                "nome": nome,
+                "bilhete": bilhete,
+                "data_registro": datetime.utcnow().isoformat()
             })
 
         # Criar registro na coleção "registros"
