@@ -1133,7 +1133,44 @@ async def obter_vencedor(produto_id: str):
         return {"erro": str(e)}
 
 
+@app.get("/perfil", response_class=HTMLResponse)
+async def perfil_form(request: Request):
+    return templates.TemplateResponse("perfil.html", {"request": request, "dados": None})
 
+@app.post("/perfil", response_class=HTMLResponse)
+async def perfil_resultado(
+    request: Request,
+    nome: str = Form(...),
+    telefone: str = Form(...),
+    numero_bilhete: str = Form(...)
+):
+    compras_ref = db.collection("rifas-compradas")
+    query = compras_ref.where("nome_completo", "==", nome)\
+                       .where("telefone", "==", telefone)\
+                       .where("numero_bilhete", "==", numero_bilhete)\
+                       .stream()
+
+    compra = None
+    for doc in query:
+        compra = doc.to_dict()
+        break
+
+    if compra:
+        # Data formatada e ISO para o cronômetro
+        data_limite_str = compra["produto"]["data_limite"]
+        data_limite_obj = datetime.strptime(data_limite_str, "%d/%m/%Y %H:%M")
+        data_limite_iso = data_limite_obj.isoformat()
+
+        compra["produto"]["data_limite_iso"] = data_limite_iso
+        return templates.TemplateResponse("perfil.html", {
+            "request": request,
+            "dados": compra
+        })
+
+    return templates.TemplateResponse("perfil.html", {
+        "request": request,
+        "dados": None
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
