@@ -6,35 +6,147 @@
   <title>Kwata</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --verde: #4ead4f;
-      --laranja: #FFA500;
-      --vermelho-claro: #FF6F61;
-    }
+  :root {
+    --verde: #4ead4f;
+    --laranja: #FFA500;
+    --vermelho-claro: #FF6F61;
+  }
 
-    * {
-      box-sizing: border-box;
-    }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-    body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f4f4f9;
-      margin: 0;
-      padding: 0;
-    }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #fefee0; /* ESTA LINHA DEFINE A COR DO FUNDO */
+    margin: 0;
+    padding: 0;
+    color: #333;
+  }
 
-    header {
-      background-color: var(--verde);
-      padding: 0.5rem 1rem;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+  header {
+    background-color: var(--verde);
+    padding: 1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100vw;
+  }
 
-    .logo-container {
-      display: flex;
-      align-items: center;
+  .logo-container {
+    display: flex;
+    align-items: center;
+  }
+
+  header img {
+    height: 50px;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    margin-left: 1rem;
+    color: white;
+  }
+
+  .carousel-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 1000px;
+    margin: 2rem auto;
+    perspective: 1000px;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.5s ease;
+    will-change: transform;
+    gap: 2rem;
+    padding: 2rem 0;
+  }
+
+  .product-card {
+    flex: 0 0 60%;
+    transform-origin: center center;
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+
+  .product-card.active {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .product-card-inner {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    text-align: center;
+    border-top: 6px solid var(--laranja);
+  }
+
+  .product-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .product-info {
+    margin-top: 1rem;
+  }
+
+  .button {
+    background-color: var(--verde);
+    color: white;
+    padding: 1rem 2rem;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    margin-top: 1rem;
+    transition: background 0.3s;
+  }
+
+  .button:hover {
+    background-color: #e55b50;
+  }
+
+  .carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2rem;
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    z-index: 1;
+    border-radius: 50%;
+  }
+
+  .carousel-button.left {
+    left: 10px;
+  }
+
+  .carousel-button.right {
+    right: 10px;
+  }
+
+  .contador {
+    font-weight: bold;
+    color: var(--laranja);
+    margin-top: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .product-card {
+      flex: 0 0 85%;
     }
 
     header img {
@@ -42,119 +154,25 @@
     }
 
     header h1 {
-      font-size: 2rem;
-      margin-left: 1rem;
-      color: white;
-    }
-
-    .carousel-container {
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      max-width: 1000px;
-      margin: 2rem auto;
-      perspective: 1000px;
+      font-size: 1.4rem;
+      margin-left: 0.5rem;
     }
 
     .carousel-track {
-      display: flex;
-      transition: transform 0.5s ease;
-      will-change: transform;
-      gap: 2rem;
-      padding: 2rem 0;
-    }
-
-    .product-card {
-      flex: 0 0 60%;
-      transform-origin: center center;
-      transition: transform 0.5s ease, opacity 0.5s ease;
-      opacity: 0.5;
-      transform: scale(0.9);
-    }
-
-    .product-card.active {
-      transform: scale(1);
-      opacity: 1;
+      gap: 1rem;
+      padding: 1rem 0;
     }
 
     .product-card-inner {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      padding: 1.5rem;
-      text-align: center;
-      border-top: 6px solid var(--laranja);
-    }
-
-    .product-card img {
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-    }
-
-    .product-info {
-      margin-top: 1rem;
+      padding: 1rem;
     }
 
     .button {
-      background-color: var(--verde);
-      color: white;
-      padding: 1rem 2rem;
-      font-size: 16px;
-      border-radius: 5px;
-      cursor: pointer;
-      border: none;
-      margin-top: 1rem;
-      transition: background 0.3s;
+      padding: 0.8rem 1.5rem;
+      font-size: 14px;
     }
-
-    .button:hover {
-      background-color: #e55b50;
-    }
-
-    .carousel-button {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 2rem;
-      background: rgba(0, 0, 0, 0.4);
-      color: white;
-      border: none;
-      cursor: pointer;
-      padding: 0.5rem 1rem;
-      z-index: 1;
-      border-radius: 50%;
-    }
-
-    .carousel-button.left {
-      left: 10px;
-    }
-
-    .carousel-button.right {
-      right: 10px;
-    }
-
-    .contador {
-      font-weight: bold;
-      color: var(--laranja);
-      margin-top: 10px;
-    }
-
-    @media (max-width: 600px) {
-      .product-card {
-        flex: 0 0 80%;
-      }
-
-      header img {
-        height: 60px;
-      }
-
-      header h1 {
-        font-size: 1.4rem;
-        margin-left: 0.5rem;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
   <header>
