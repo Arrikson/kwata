@@ -1131,7 +1131,7 @@ async def obter_vencedor(produto_id: str):
     
     except Exception as e:
         return {"erro": str(e)}
-
+        
 
 @app.get("/perfil", response_class=HTMLResponse)
 async def perfil_form(request: Request):
@@ -1145,9 +1145,9 @@ async def perfil_resultado(
     numero_bilhete: str = Form(...)
 ):
     compras_ref = db.collection("rifas-compradas")
-    query = compras_ref.where("nome_completo", "==", nome)\
+    query = compras_ref.where("nome", "==", nome)\
                        .where("telefone", "==", telefone)\
-                       .where("numero_bilhete", "==", numero_bilhete)\
+                       .where("bilhete", "==", numero_bilhete)\
                        .stream()
 
     compra = None
@@ -1156,12 +1156,14 @@ async def perfil_resultado(
         break
 
     if compra:
-        # Data formatada e ISO para o cronômetro
-        data_limite_str = compra["produto"]["data_limite"]
-        data_limite_obj = datetime.strptime(data_limite_str, "%d/%m/%Y %H:%M")
+        # Garantir data para o cronômetro
+        data_limite_str = "2025-06-01 18:00"  # Defina corretamente
+        data_limite_obj = datetime.strptime(data_limite_str, "%Y-%m-%d %H:%M")
         data_limite_iso = data_limite_obj.isoformat()
-
-        compra["produto"]["data_limite_iso"] = data_limite_iso
+        compra["produto"] = {
+            "data_limite": data_limite_str,
+            "data_limite_iso": data_limite_iso
+        }
         return templates.TemplateResponse("perfil.html", {
             "request": request,
             "dados": compra
