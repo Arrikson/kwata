@@ -195,17 +195,19 @@ if __name__ == "__main__":
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-
 @app.get("/principal", response_class=HTMLResponse)
 async def exibir_principal(request: Request):
     produtos_ref = db.collection("produtos")
     docs = produtos_ref.stream()
-    imagens = [doc.to_dict().get("imagem") for doc in docs if doc.to_dict().get("imagem")]
+    imagens = [
+        doc.to_dict().get("imagem")
+        for doc in docs
+        if doc.to_dict().get("imagem")  # Garante que a chave existe
+    ]
     return templates.TemplateResponse("principal.html", {
         "request": request,
         "imagens": imagens
     })
-
 
 @app.post("/principal", response_class=HTMLResponse)
 async def processar_principal(request: Request):
