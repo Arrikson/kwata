@@ -230,17 +230,14 @@
     <!-- ícones aqui -->
   </footer>
 
+  <!-- Script atualizado com imagens do Firebase -->
   <script>
-    const imagens = [
-      '/static/uploads/produto1.jpg',
-      '/static/uploads/produto2.jpg',
-      '/static/uploads/produto3.jpg',
-      '/static/uploads/produto4.jpg'
-    ];
+    const imagens = {{ imagens | tojson }};
     let indexAtual = 0;
     const imgElemento = document.getElementById('vitrine-img');
 
     function trocarImagem() {
+      if (imagens.length === 0) return;
       indexAtual = (indexAtual + 1) % imagens.length;
       imgElemento.style.opacity = 0;
       setTimeout(() => {
@@ -249,12 +246,14 @@
       }, 300);
     }
 
-    setInterval(trocarImagem, 4000); // Troca a cada 4 segundos
+    setInterval(trocarImagem, 4000);
 
-    // Preloader
     window.addEventListener('load', () => {
       document.getElementById('preloader').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
+      if (imagens.length > 0) {
+        document.getElementById('vitrine-img').src = imagens[0];
+      }
     });
   </script>
 </body>
