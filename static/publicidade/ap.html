@@ -1,0 +1,44 @@
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# Inicializar Firebase
+if not firebase_admin._apps:
+    cred = credentials.Certificate("caminho/para/seu/arquivo-firebase.json")
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
+
+# Função reutilizável para pegar imagens da vitrine
+def obter_imagens_vitrine():
+    produtos_ref = db.collection("produtos")
+    docs = produtos_ref.stream()
+    return [doc.to_dict().get("imagem") for doc in docs if doc.to_dict().get("imagem")]
+
+
+@app.get("/principal", response_class=HTMLResponse)
+async def exibir_principal(request: Request):
+    imagens = obter_imagens_vitrine()
+    return templates.TemplateResponse("principal.html", {
+        "request": request,
+        "imagens": imagens
+    })
+
+
+@app.post("/principal", response_class=HTMLResponse)
+async def processar_principal(request: Request):
+    form_data = await request.form()
+    imagens = obter_imagens_vitrine()
+    return templates.TemplateResponse("principal.html", {
+        "request": request,
+        "imagens": imagens,
+        "mensagem": "Formulário recebido!"
+    })
+
+
+#
