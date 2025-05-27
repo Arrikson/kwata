@@ -222,11 +222,10 @@
     </div>
 
     <div class="vitrine" id="carousel">
-      <img src="static/uploads/produto1.jpg" class="active" alt="Produto 1">
-      <img src="static/uploads/produto1.jpg" alt="Produto 2">
-      <img src="static/uploads/produto1.jpg" alt="Produto 3">
-    </div>
-
+  {% for imagem in imagens %}
+    <img src="{{ imagem }}" class="{% if loop.first %}active{% endif %}" alt="Produto {{ loop.index }}">
+  {% endfor %}
+    </div> 
     <div class="grid">
       <div class="tile verde" onclick="window.location.href='/produtos_disponiveis'">Participar de Sorteio</div>
       <div class="tile amarelo" onclick="window.location.href='/sorteios-ao-vivo'">Sorteios ao Vivo</div>
