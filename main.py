@@ -225,6 +225,10 @@ async def sorteio(request: Request):
 async def sobre_nos(request: Request):
     return templates.TemplateResponse("sobre.html", {"request": request})
 
+@app.get("/inscritos", response_class=HTMLResponse)
+async def exibir_inscritos(request: Request):
+    return templates.TemplateResponse("inscritos.html", {"request": request})
+
 @app.get("/listar-inscritos")
 async def listar_inscritos():
     docs = db.collection("rifas-compradas").stream()
