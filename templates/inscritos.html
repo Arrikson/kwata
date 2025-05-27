@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Inscritos da Rifa</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fefae0;
+      color: #333;
+      padding: 20px;
+    }
+    h1 {
+      color: #2e7d32;
+    }
+    .inscrito, .comentario {
+      border: 2px solid #fbc02d;
+      background-color: #fffde7;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    .comentario {
+      background-color: #e8f5e9;
+    }
+    input, textarea {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #c0ca33;
+    }
+    button {
+      background-color: #43a047;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2e7d32;
+    }
+    .btn-small {
+      font-size: 0.8em;
+      margin-left: 10px;
+      background-color: #fbc02d;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lista de Inscritos</h1>
+  <div id="inscritos"></div>
+
+  <h2>Deixe seu comentário</h2>
+  <form id="comentarioForm">
+    <input type="text" id="nome" placeholder="Seu nome" required>
+    <input type="text" id="telefone" placeholder="Seu número de telefone" required>
+    <textarea id="comentario" placeholder="Escreva seu comentário..." required></textarea>
+    <button type="submit">Comentar</button>
+  </form>
+
+  <h2>Comentários</h2>
+  <div id="comentarios"></div>
+
+  <script>
+    async function carregarInscritos() {
+      const res = await fetch('/listar-inscritos');
+      const data = await res.json();
+      const div = document.getElementById('inscritos');
+      data.forEach(inscrito => {
+        const el = document.createElement('div');
+        el.className = 'inscrito';
+        el.innerHTML = `<strong>${inscrito.nome}</strong> - ${new Date(inscrito.data_envio).toLocaleDateString()}`;
+        div.appendChild(el);
+      });
+    }
+
+    async function carregarComentarios() {
+      const res = await fetch('/listar-comentarios');
+      const data = await res.json();
+      const div = document.getElementById('comentarios');
+      div.innerHTML = '';
+      data.forEach(com => {
+        if (!com.oculto) {
+          const el = document.createElement('div');
+          el.className = 'comentario';
+          el.innerHTML = `
+            <strong>${com.nome}</strong>: ${com.comentario}
+            <button class="btn-small" onclick="ocultarComentario('${com.id}')">Ocultar</button>
+            <button class="btn-small" onclick="apagarComentario('${com.id}')">Apagar</button>
+          `;
+          div.appendChild(el);
+        }
+      });
+    }
+
+    document.getElementById('comentarioForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value;
+      const telefone = document.getElementById('telefone').value;
+      const comentario = document.getElementById('comentario').value;
+
+      const res = await fetch('/comentar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, telefone, comentario })
+      });
+
+      const result = await res.json();
+      alert(result.message);
+      if (res.ok) {
+        document.getElementById('comentarioForm').reset();
+        carregarComentarios();
+      }
+    });
+
+    async function ocultarComentario(id) {
+      await fetch(`/ocultar-comentario/${id}`, { method: 'POST' });
+      carregarComentarios();
+    }
+
+    async function apagarComentario(id) {
+      await fetch(`/apagar-comentario/${id}`, { method: 'DELETE' });
+      carregarComentarios();
+    }
+
+    carregarInscritos();
+    carregarComentarios();
+  </script>
+</body>
+</html>
