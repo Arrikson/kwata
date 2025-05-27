@@ -56,16 +56,12 @@
       background-color: var(--verde);
       width: 100%;
       padding: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
+      position: relative;
     }
 
     .logo-container {
       display: flex;
       align-items: center;
-      width: 100%;
     }
 
     header img {
@@ -78,10 +74,10 @@
       margin-left: 0.8rem;
     }
 
-    .separator {
-      width: 100%;
-      height: 10px;
-      background-color: white;
+    .user-icon-container {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
     }
 
     .user-icon {
@@ -89,6 +85,13 @@
       fill: white;
       width: 32px;
       height: 32px;
+    }
+
+    .separator {
+      width: 100%;
+      height: 4px;
+      background-color: white;
+      margin-bottom: 0.4rem;
     }
 
     .grid {
@@ -221,15 +224,14 @@
       <img src="/static/novologo.png" alt="Kwata Logo">
       <h1>Kwata</h1>
     </div>
-    <div class="separator"></div>
-    <div onclick="window.location.href='perfil.html'">
-      <a href="/perfil">
-        <svg class="user-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-        </svg>
-      </a>
+    <div class="user-icon-container" onclick="window.location.href='/perfil'">
+      <svg class="user-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+      </svg>
     </div>
   </header>
+
+  <div class="separator"></div>
 
   <!-- Faixa tipo ticker -->
   <div class="ticker-wrapper">
@@ -240,7 +242,7 @@
 
   <!-- Vitrine dinâmica -->
   <div class="carousel" id="carousel">
-    <!-- Imagens adicionadas dinamicamente por JS -->
+    <!-- JS irá inserir imagens da rota aqui -->
   </div>
 
   <!-- Seções de Navegação -->
@@ -260,49 +262,40 @@
     <path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6zm7 1.5L18.5 9H13V3.5zM8 13h8v2H8v-2zm0 4h8v2H8v-2zm0-8h8v2H8V9z"/>
   </svg>
   <svg onclick="window.location.href='https://wa.me/244930645395'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M20.52 3.48A11.77 11.77 0 0 0 12 0A11.94 11.94 0 0 0 .99 12a11.73 11.73 0 0 0 1.64 6L0 24l6.32-2.1a11.82 11.82 0 0 0 5.68 1.45h.01A11.91 11.91 0 0 0 20.52 3.48z"/>
+    <path d="..."/>
   </svg>
 </footer>
 
 <script>
-  // Oculta preloader
-  window.addEventListener("load", function () {
-    document.getElementById("preloader").style.display = "none";
-    document.getElementById("main-content").style.display = "block";
-  });
+// Exemplo de como carregar imagens dinamicamente:
+const carousel = document.getElementById('carousel');
+const imageUrls = [
+  '/static/imagem1.jpg',
+  '/static/imagem2.jpg',
+  '/static/imagem3.jpg'
+];
+let current = 0;
 
-  // Controle de velocidade da vitrine (milissegundos)
-  const slideInterval = 4000;
+function showImage(index) {
+  carousel.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = imageUrls[index];
+  img.style.display = 'block';
+  carousel.appendChild(img);
+}
 
-  // Lista de imagens - deve corresponder aos arquivos existentes em /static/uploads
-  const images = [
-    "/static/uploads/produto1.jpg",
-    "/static/uploads/produto2.jpg",
-    "/static/uploads/produto3.jpg"
-  ];
+function nextImage() {
+  current = (current + 1) % imageUrls.length;
+  showImage(current);
+}
 
-  const carousel = document.getElementById("carousel");
+setInterval(nextImage, 4000);
+showImage(current);
 
-  images.forEach((src, index) => {
-    const img = document.createElement("img");
-    img.src = src;
-    img.alt = "Produto " + (index + 1);
-    carousel.appendChild(img);
-  });
-
-  let currentIndex = 0;
-  const imgElements = carousel.querySelectorAll("img");
-  function showSlide(index) {
-    imgElements.forEach((img, i) => {
-      img.style.display = i === index ? "block" : "none";
-    });
-  }
-
-  showSlide(currentIndex);
-  setInterval(() => {
-    currentIndex = (currentIndex + 1) % images.length;
-    showSlide(currentIndex);
-  }, slideInterval);
+window.addEventListener("load", () => {
+  document.getElementById("preloader").style.display = "none";
+  document.getElementById("main-content").style.display = "block";
+});
 </script>
 
 </body>
