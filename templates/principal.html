@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
@@ -56,12 +56,15 @@
       background-color: var(--verde);
       width: 100%;
       padding: 1rem;
+    }
+
+    .logo-container {
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
-    .logo-container {
+    .left-group {
       display: flex;
       align-items: center;
     }
@@ -76,14 +79,8 @@
       margin-left: 0.8rem;
     }
 
-    .user-icon-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
     .user-icon {
+      cursor: pointer;
       fill: white;
       width: 32px;
       height: 32px;
@@ -155,19 +152,17 @@
       width: 100%;
       overflow-x: auto;
       display: flex;
-      align-items: center;
       gap: 1rem;
       padding: 1rem;
       scroll-snap-type: x mandatory;
     }
 
     .carousel img {
-      height: 280px;
       flex: 0 0 auto;
+      height: 280px;
+      border-radius: 8px;
       scroll-snap-align: center;
-      border-radius: 10px;
       object-fit: contain;
-      background: white;
     }
 
     footer {
@@ -213,7 +208,7 @@
       }
 
       .carousel img {
-        height: 160px;
+        height: 180px;
       }
     }
   </style>
@@ -227,11 +222,11 @@
 <div id="main-content">
   <header>
     <div class="logo-container">
-      <img src="/static/novologo.png" alt="Kwata Logo">
-      <h1>Kwata</h1>
-    </div>
-    <div class="user-icon-container" onclick="window.location.href='/perfil'">
-      <svg class="user-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <div class="left-group">
+        <img src="/static/novologo.png" alt="Kwata Logo">
+        <h1>Kwata</h1>
+      </div>
+      <svg class="user-icon" onclick="window.location.href='/perfil'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
         <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
       </svg>
     </div>
@@ -246,7 +241,7 @@
   </div>
 
   <div class="carousel" id="carousel">
-    <!-- Imagens carregadas dinamicamente -->
+    <!-- Imagens da pasta serão carregadas aqui -->
   </div>
 
   <div class="grid">
@@ -270,28 +265,30 @@
 </footer>
 
 <script>
-  window.addEventListener('load', () => {
-    document.getElementById('preloader').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-
-    // Carregar imagens da pasta /static/uploads
-    fetch('/static/uploads')
-      .then(res => res.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const files = [...doc.querySelectorAll('a')].map(a => a.getAttribute('href'))
-                          .filter(href => /\.(jpe?g|png|gif|webp)$/i.test(href));
-
-        const carousel = document.getElementById('carousel');
-        files.forEach(file => {
-          const img = document.createElement('img');
-          img.src = `/static/uploads/${file}`;
-          carousel.appendChild(img);
-        });
-      });
+  window.addEventListener("load", () => {
+    document.getElementById("preloader").style.display = "none";
+    document.getElementById("main-content").style.display = "block";
   });
+
+  // Carrega as imagens do carrossel automaticamente
+  fetch('/static/uploads/')
+    .then(res => res.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const files = Array.from(doc.querySelectorAll('a'))
+        .map(a => a.getAttribute('href'))
+        .filter(href => href.match(/\.(jpe?g|png|gif)$/i));
+
+      const carousel = document.getElementById('carousel');
+      files.forEach(src => {
+        const img = document.createElement('img');
+        img.src = '/static/uploads/' + src;
+        carousel.appendChild(img);
+      });
+    });
 </script>
+
 </body>
 </html>
 
