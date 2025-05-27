@@ -34,6 +34,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Request, UploadFile, File, Form
 from google.cloud.firestore_v1.base_document import DocumentSnapshot
+from pydantic import BaseModel
 
 
 
@@ -88,8 +89,8 @@ class Comprovativo(BaseModel):
     latitude: str
     longitude: str
     bilhetes: List[int]
-    comprovativoURL: str  # URL do Firebase
-    timestamp: str = ""   # opcional
+    comprovativoURL: str 
+    timestamp: str = ""   
 
 def atualizar_rifas_restantes(produto_id: str):
     try:
@@ -234,6 +235,13 @@ async def listar_inscritos():
     docs = db.collection("rifas-compradas").stream()
     inscritos = [{"nome": doc.to_dict().get("nome"), "data_envio": doc.to_dict().get("data_envio")} for doc in docs]
     return inscritos
+
+
+# ✅ Classe que define os dados esperados no comentário
+class ComentarioRequest(BaseModel):
+    nome: str
+    telefone: str
+    comentario: str
 
 @app.get("/listar-comentarios")
 async def listar_comentarios():
