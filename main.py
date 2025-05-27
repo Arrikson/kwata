@@ -225,9 +225,51 @@ async def sorteio(request: Request):
 async def sobre_nos(request: Request):
     return templates.TemplateResponse("sobre.html", {"request": request})
 
-@app.get("/ganhadores", response_class=HTMLResponse)
-async def ganhadores(request: Request):
-    return templates.TemplateResponse("ganhadores.html", {"request": request})
+@app.get("/listar-inscritos")
+async def listar_inscritos():
+    docs = db.collection("rifas-compradas").stream()
+    inscritos = [{"nome": doc.to_dict().get("nome"), "data_envio": doc.to_dict().get("data_envio")} for doc in docs]
+    return inscritos
+
+@app.get("/listar-comentarios")
+async def listar_comentarios():
+    docs = db.collection("comentarios").stream()
+    comentarios = []
+    for doc in docs:
+        data = doc.to_dict()
+        data['id'] = doc.id
+        comentarios.append(data)
+    return comentarios
+
+@app.post("/comentar")
+async def comentar(dados: ComentarioRequest):
+    usuarios = db.collection("rifas-compradas") \
+                .where("nome", "==", dados.nome) \
+                .where("telefone", "==", dados.telefone) \
+                .stream()
+
+    validado = any(True for _ in usuarios)
+    if not validado:
+        return JSONResponse(status_code=403, content={"message": "Usuário não encontrado."})
+
+    db.collection("comentarios").add({
+        "nome": dados.nome,
+        "telefone": dados.telefone,
+        "comentario": dados.comentario,
+        "oculto": False
+    })
+
+    return {"message": "Comentário enviado com sucesso."}
+
+@app.post("/ocultar-comentario/{id}")
+async def ocultar_comentario(id: str):
+    db.collection("comentarios").document(id).update({"oculto": True})
+    return {"message": "Comentário ocultado."}
+
+@app.delete("/apagar-comentario/{id}")
+async def apagar_comentario(id: str):
+    db.collection("comentarios").document(id).delete()
+    return {"message": "Comentário apagado."}
 
 @app.get("/produtos_disponiveis")
 def index(request: Request):
