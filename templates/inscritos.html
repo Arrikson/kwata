@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>Inscritos da Rifa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #fefae0;
       color: #333;
       padding: 20px;
+      margin: 0;
     }
-    h1 {
+    h1, h2 {
       color: #2e7d32;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.5em;
     }
     .inscrito, .comentario {
       border: 2px solid #fbc02d;
@@ -29,6 +35,7 @@
       padding: 10px;
       border-radius: 8px;
       border: 1px solid #c0ca33;
+      font-size: 1em;
     }
     button {
       background-color: #43a047;
@@ -37,6 +44,7 @@
       padding: 10px 15px;
       border-radius: 8px;
       cursor: pointer;
+      font-size: 1em;
     }
     button:hover {
       background-color: #2e7d32;
@@ -46,13 +54,37 @@
       margin-left: 10px;
       background-color: #fbc02d;
     }
+
+    /* Responsivo */
+    @media (max-width: 600px) {
+      h1, h2 {
+        font-size: 1.2em;
+      }
+      button {
+        width: 100%;
+        margin-top: 5px;
+      }
+    }
+
+    .icon {
+      width: 24px;
+      height: 24px;
+      fill: #2e7d32;
+    }
   </style>
 </head>
 <body>
-  <h1>Lista de Inscritos</h1>
+  <h1>
+    <svg class="icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    Lista de Inscritos
+  </h1>
   <div id="inscritos"></div>
 
-  <h2>Deixe seu comentário</h2>
+  <h2>
+    <svg class="icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v14l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+    Comentários
+  </h2>
+
   <form id="comentarioForm">
     <input type="text" id="nome" placeholder="Seu nome" required>
     <input type="text" id="telefone" placeholder="Seu número de telefone" required>
@@ -60,7 +92,6 @@
     <button type="submit">Comentar</button>
   </form>
 
-  <h2>Comentários</h2>
   <div id="comentarios"></div>
 
   <script>
@@ -68,6 +99,7 @@
       const res = await fetch('/listar-inscritos');
       const data = await res.json();
       const div = document.getElementById('inscritos');
+      div.innerHTML = '';
       data.forEach(inscrito => {
         const el = document.createElement('div');
         el.className = 'inscrito';
@@ -130,3 +162,4 @@
   </script>
 </body>
 </html>
+
