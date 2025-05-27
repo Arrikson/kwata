@@ -114,29 +114,24 @@
     .vermelho { border-color: var(--vermelho); color: var(--vermelho); }
     .azul { border-color: var(--azul); color: var(--azul); }
 
-    .ticker-wrapper {
+    .banner-scroll {
       background-color: var(--verde);
       color: white;
-      overflow: hidden;
-      white-space: nowrap;
-      position: relative;
       padding: 0.7rem 0;
-    }
-
-    .ticker {
-      display: inline-block;
+      overflow: hidden;
+      position: relative;
       white-space: nowrap;
-      animation: ticker-scroll 25s linear infinite;
-    }
-
-    .ticker p {
-      display: inline;
-      padding-left: 100%;
       font-weight: bold;
     }
 
-    @keyframes ticker-scroll {
-      0% { transform: translateX(0); }
+    .banner-scroll span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: scroll-left 20s linear infinite;
+    }
+
+    @keyframes scroll-left {
+      0% { transform: translateX(0%); }
       100% { transform: translateX(-100%); }
     }
 
@@ -202,11 +197,9 @@
       </div>
     </header>
 
-    <!-- Faixa de publicidade tipo ticker -->
-    <div class="ticker-wrapper">
-      <div class="ticker">
-        <p>Aqui no Kwata o seu sonho pode se tornar realidade. Não pare, não desista nunca, o caminho é para frente. Aqui no Kwata o seu sonho pode se tornar realidade. Não pare, não desista nunca, o caminho é para frente.</p>
-      </div>
+    <!-- Rodapé tipo faixa com texto correndo -->
+    <div class="banner-scroll">
+      <span>Aqui no Kwata o seu sonho pode se tornar realidade. Não pare, não desista nunca, o caminho é para frente. Aqui no Kwata o seu sonho pode se tornar realidade. Não pare, não desista nunca, o caminho é para frente.</span>
     </div>
 
     <!-- Vitrine -->
@@ -239,3 +232,4 @@
 
 </body>
 </html>
+
