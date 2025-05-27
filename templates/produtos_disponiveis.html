@@ -20,7 +20,7 @@
 
   body {
     font-family: 'Segoe UI', sans-serif;
-    background: #fefee0; /* ESTA LINHA DEFINE A COR DO FUNDO */
+    background: #fefee0;
     margin: 0;
     padding: 0;
     color: #333;
@@ -209,21 +209,17 @@
 
     function moverCarrossel(direction) {
       const cards = document.querySelectorAll('.product-card');
-      currentIndex += direction;
+      const track = document.getElementById('carousel-track');
 
+      currentIndex += direction;
       if (currentIndex < 0) currentIndex = cards.length - 1;
       if (currentIndex >= cards.length) currentIndex = 0;
 
-      const track = document.getElementById('carousel-track');
-      const offset = -currentIndex * (cards[0].offsetWidth + 32); // 32 = gap
-      track.style.transform = translateX(${offset}px);
+      const offset = -currentIndex * (cards[0].offsetWidth + 32);
+      track.style.transform = `translateX(${offset}px)`;
 
       cards.forEach((card, index) => {
-        if (index === currentIndex) {
-          card.classList.add('active');
-        } else {
-          card.classList.remove('active');
-        }
+        card.classList.toggle('active', index === currentIndex);
       });
     }
 
@@ -233,7 +229,7 @@
       const horas = Math.floor((totalSegundos % 86400) / 3600);
       const minutos = Math.floor((totalSegundos % 3600) / 60);
       const segundos = totalSegundos % 60;
-      return ${dias}d ${horas}h ${minutos}m ${segundos}s;
+      return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
     }
 
     {% for produto in produtos %}
