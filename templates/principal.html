@@ -28,7 +28,6 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
     }
 
     #preloader {
@@ -63,8 +62,6 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: relative;
-      flex-direction: column;
     }
 
     .logo-container {
@@ -72,11 +69,11 @@
       align-items: center;
     }
 
-    header img {
+    .logo-container img {
       height: 50px;
     }
 
-    header h1 {
+    .logo-container h1 {
       font-size: 1.8rem;
       color: #fff;
       margin-left: 0.8rem;
@@ -124,8 +121,8 @@
     .vitrine img {
       width: 100%;
       height: auto;
-      display: none;
       object-fit: cover;
+      display: none;
     }
 
     .vitrine img.active {
@@ -178,7 +175,7 @@
     }
 
     @media (max-width: 768px) {
-      header h1 {
+      .logo-container h1 {
         font-size: 1.3rem;
       }
 
@@ -213,26 +210,21 @@
         <img src="/static/novologo.png" alt="Kwata Logo">
         <h1>Kwata</h1>
       </div>
-      <div onclick="window.location.href='perfil.html'">
-        <a href="/perfil">
-          <svg class="user-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-          </svg>
-        </a>
-      </div>
-
-      <!-- BANNER DE FRASES -->
-      <div class="scroll-banner">
-        <span id="frase-banner">🎉 Compre já a sua rifa!</span>
+      <div onclick="window.location.href='/perfil'">
+        <svg class="user-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+        </svg>
       </div>
     </header>
 
-    <!-- CARROSSEL DE PRODUTOS -->
-    <div class="vitrine">
-      <img src="/static/uploads/produto1.jpg" class="active">
-      <img src="/static/uploads/produto2.jpg">
-      <img src="/static/uploads/produto3.jpg">
-      <!-- Adicione mais imagens conforme necessário -->
+    <div class="scroll-banner">
+      <span id="frase-banner">🎉 Compre já a sua rifa!</span>
+    </div>
+
+    <div class="vitrine" id="carousel">
+      <img src="/static/produto1.jpg" class="active" alt="Produto 1">
+      <img src="/static/produto2.jpg" alt="Produto 2">
+      <img src="/static/produto3.jpg" alt="Produto 3">
     </div>
 
     <div class="grid">
@@ -251,45 +243,26 @@
       <path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6zm7 1.5L18.5 9H13V3.5zM8 13h8v2H8v-2zm0 4h8v2H8v-2zm0-8h8v2H8V9z"/>
     </svg>
     <svg onclick="window.location.href='https://wa.me/244930645395'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="..."/>
+      <path d="M16.72 13.06c-.27-.14-1.6-.79-1.85-.88-.25-.09-.43-.14-.61.14s-.7.88-.86 1.06c-.16.18-.32.2-.59.07-.27-.14-1.15-.42-2.2-1.34-.81-.72-1.36-1.61-1.52-1.88-.16-.27-.02-.42.12-.56.12-.12.27-.32.4-.48.13-.16.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.61-1.47-.84-2.02-.22-.53-.45-.46-.59-.47-.14-.01-.31-.01-.48-.01-.18 0-.42.06-.64.27s-.84.82-.84 2 .86 2.33 1.02 2.5c.14.16 1.7 2.7 4.12 3.78.58.25 1.03.4 1.38.51.58.18 1.1.15 1.51.09.46-.07 1.42-.58 1.62-1.14.2-.56.2-1.05.14-1.15-.06-.1-.25-.16-.52-.3z"/>
     </svg>
   </footer>
 
   <script>
-    // Frases do banner
-    const frases = [
-      "🎉 Compre já a sua rifa!",
-      "🎁 Participe e concorra a prêmios incríveis!",
-      "🔥 Sorteios semanais com total transparência",
-      "💰 Com apenas 1 bilhete, sua sorte pode virar!",
-      "📱 Compre fácil, rápido e online",
-      "🎯 Acompanhe os resultados em tempo real",
-      "🚀 Bilhetes limitados – garanta o seu agora",
-      "🎖️ Mais de 100 vencedores felizes",
-      "🛍️ Prêmios do seu jeito: dinheiro, produtos ou experiências",
-      "🏆 No Kwata, você joga, confia e vence!"
-    ];
+    window.addEventListener('load', () => {
+      document.getElementById('preloader').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+    });
 
-    let fraseAtual = 0;
-    setInterval(() => {
-      fraseAtual = (fraseAtual + 1) % frases.length;
-      document.getElementById('frase-banner').textContent = frases[fraseAtual];
-    }, 5000);
-
-    // Carrossel de vitrine
-    const imagens = document.querySelectorAll('.vitrine img');
+    // Carrossel simples
+    const imagens = document.querySelectorAll('#carousel img');
     let index = 0;
+
     setInterval(() => {
       imagens[index].classList.remove('active');
       index = (index + 1) % imagens.length;
       imagens[index].classList.add('active');
     }, 4000);
-
-    // Preloader
-    window.addEventListener('load', () => {
-      document.getElementById('preloader').style.display = 'none';
-      document.getElementById('main-content').style.display = 'block';
-    });
   </script>
+
 </body>
 </html>
