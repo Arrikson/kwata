@@ -189,11 +189,12 @@
       <div class="product-card{% if loop.first %} active{% endif %}">
         <div class="product-card-inner">
           <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
+          <!-- Dentro do bloco .product-info -->
           <div class="product-info">
             <h3>{{ produto.nome }}</h3>
             <p>{{ produto.descricao }}</p>
             <p><strong>Preço:</strong> {{ produto.preco_bilhete }} Kz</p>
-            <p><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
+            <p style="display: none;"><strong>Bilhetes disponíveis:</strong> {{ produto.bilhetes_disponiveis }}</p>
             <p class="contador" id="contador-{{ produto.id }}">Sorteio em breve...</p>
             <button class="button" onclick="window.location.href='/pagamento-rifa.html?produto_id={{ produto.id }}'">Comprar Bilhete</button>
           </div>
