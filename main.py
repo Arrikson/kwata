@@ -1142,42 +1142,48 @@ async def produtos_futuros(request: Request):
         })
 
 
-@app.get("/vencedor/{produto_id}")
-async def obter_vencedor(produto_id: str):
-    try:
-        produto_doc = db.collection("produtos").document(produto_id).get()
-        if not produto_doc.exists:
-            return {"erro": "Produto não encontrado."}
+@app.get("/Luck", response_class=HTMLResponse)
+async def luck_page(request: Request):
+    return templates.TemplateResponse("Luck.html", {"request": request})
 
-        produto_data = produto_doc.to_dict()
-        data_sorteio_raw = produto_data.get("data_sorteio")
-        
-        if isinstance(data_sorteio_raw, datetime):
-            data_sorteio_dt = data_sorteio_raw
-        elif isinstance(data_sorteio_raw, str):
-            if "T" not in data_sorteio_raw:
-                data_sorteio_raw = data_sorteio_raw.replace(" ", "T")
-            data_sorteio_dt = datetime.fromisoformat(data_sorteio_raw)
-        else:
-            data_sorteio_dt = datetime(2025, 12, 31, 23, 59, 59)
 
-        agora = datetime.utcnow()
-        if data_sorteio_dt > agora:
-            return {"vencedor": None}  # Sorteio ainda não finalizado
+@app.get("/api/sorteio")
+async def get_produtos_em_sorteio():
+    docs = db.collection("Dados").stream()
+    produtos_dict = {}
 
-        # Buscar nomes válidos
-        docs = db.collection("Dados").where("produto_id", "==", produto_id).stream()
-        nomes = [doc.to_dict().get("nome") for doc in docs if doc.to_dict().get("nome")]
+    for doc in docs:
+        data = doc.to_dict()
+        produto_id = data.get("produto_id")
+        if produto_id not in produtos_dict:
+            produtos_dict[produto_id] = {
+                "produto_id": produto_id,
+                "data_fim_sorteio": data.get("data_fim_sorteio"),
+                "imagem_produto": data.get("imagem_produto"),
+                "nome_produto": f"Produto {produto_id}",  # Pode ser substituído por um campo real se existir
+                "compradores": [],
+                "vencedor": None
+            }
+        produtos_dict[produto_id]["compradores"].append(data)
 
-        if not nomes:
-            return {"vencedor": None}
+    return list(produtos_dict.values())
 
-        vencedor = random.choice(nomes)
-        return {"vencedor": vencedor}
-    
-    except Exception as e:
-        return {"erro": str(e)}
-        
+
+@app.post("/api/sorteio/{produto_id}")
+async def sortear_vencedor(produto_id: str):
+    docs = db.collection("Dados").where("produto_id", "==", produto_id).stream()
+    compradores = [doc.to_dict() for doc in docs]
+
+    if not compradores:
+        return JSONResponse({"vencedor": "Sem participantes"}, status_code=404)
+
+    vencedor = random.choice(compradores)
+    return {
+        "vencedor": vencedor.get("nome", "Desconhecido"),
+        "produto_id": produto_id,
+        "imagem_produto": vencedor.get("imagem_produto")
+    }
+
 
 @app.get("/perfil", response_class=HTMLResponse)
 async def perfil_form(request: Request):
