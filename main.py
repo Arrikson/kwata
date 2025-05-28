@@ -220,10 +220,8 @@ async def processar_principal(request: Request):
 
 
 @app.get("/contrato", response_class=HTMLResponse)
-async def contrato():
-    with open("contrato.html", "r", encoding="utf-8") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
+async def contrato(request: Request):
+    return templates.TemplateResponse("contrato.html", {"request": request})
 
 
 @app.get("/sorteio", response_class=HTMLResponse)
