@@ -218,6 +218,14 @@ async def processar_principal(request: Request):
         "mensagem": "Formulário recebido!"
     })
 
+
+@app.get("/contrato", response_class=HTMLResponse)
+async def contrato():
+    with open("contrato.html", "r", encoding="utf-8") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+
+
 @app.get("/sorteio", response_class=HTMLResponse)
 async def sorteio(request: Request):
     return templates.TemplateResponse("sorte.html", {"request": request})
