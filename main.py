@@ -649,6 +649,31 @@ async def enviar_comprovativo(
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
+        # Buscar data_sorteio
+        try:
+            produto_doc = db.collection("produtos").document(produto_id).get()
+            if not produto_doc.exists:
+                return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
+
+            produto_data = produto_doc.to_dict()
+            data_sorteio_raw = produto_data.get("data_sorteio")
+
+            if isinstance(data_sorteio_raw, datetime):
+                data_sorteio = data_sorteio_raw
+            elif isinstance(data_sorteio_raw, str):
+                try:
+                    if "T" not in data_sorteio_raw:
+                        data_sorteio_raw = data_sorteio_raw.replace(" ", "T")
+                    data_sorteio = datetime.fromisoformat(data_sorteio_raw)
+                except ValueError:
+                    data_sorteio = datetime(2025, 12, 31, 23, 59, 59)
+            else:
+                data_sorteio = datetime(2025, 12, 31, 23, 59, 59)
+
+        except Exception as e:
+            data_sorteio = datetime(2025, 12, 31, 23, 59, 59)
+
+        # Salvar dados no Firestore
         dados_ref = db.collection("Dados")
 
         for bilhete in bilhetes:
@@ -668,7 +693,8 @@ async def enviar_comprovativo(
                 "produto_id": produto_id,
                 "nome": nome,
                 "bilhete": bilhete,
-                "data_registro": datetime.utcnow().isoformat()
+                "data_registro": datetime.utcnow().isoformat(),
+                "data_fim_sorteio": data_sorteio.isoformat()
             })
 
         registros_ref = db.collection("registros")
@@ -679,75 +705,21 @@ async def enviar_comprovativo(
             "data_envio": datetime.utcnow().isoformat()
         })
 
-        # === NOVA LÓGICA DE ENVIO PARA HTML ===
-        try:
-            produto_doc = db.collection("produtos").document(produto_id).get()
-            if not produto_doc.exists:
-                return HTMLResponse(content="<h2>Erro:</h2><p>Produto não encontrado.</p>", status_code=404)
-
-            produto_data = produto_doc.to_dict()
-            nome_produto = produto_data.get("nome", "Produto")
-            descricao = produto_data.get("descricao", "")
-            preco_bilhete = produto_data.get("preco_bilhete", 0)
-            imagem_produto = produto_data.get("imagem", "/static/imagem_padrao.jpg")
-
-            # Buscar os bilhetes disponíveis
-            rifa_doc = db.collection("rifas-restantes").document(produto_id).get()
-            bilhetes_disponiveis = rifa_doc.to_dict().get("bilhetes_disponiveis", 0) if rifa_doc.exists else 0
-
-            data_sorteio_raw = produto_data.get("data_sorteio")
-            if isinstance(data_sorteio_raw, datetime):
-                data_sorteio_dt = data_sorteio_raw
-            elif isinstance(data_sorteio_raw, str):
-                try:
-                    if "T" not in data_sorteio_raw:
-                        data_sorteio_raw = data_sorteio_raw.replace(" ", "T")
-                    data_sorteio_dt = datetime.fromisoformat(data_sorteio_raw)
-                except ValueError:
-                    data_sorteio_dt = datetime(2025, 12, 31, 23, 59, 59)
-            else:
-                data_sorteio_dt = datetime(2025, 12, 31, 23, 59, 59)
-
-            if data_sorteio_dt.tzinfo is not None:
-                data_sorteio_dt = data_sorteio_dt.replace(tzinfo=None)
-
-            data_limite_iso = data_sorteio_dt.isoformat()
-            meses = {
-                1: "jan.", 2: "fev.", 3: "mar.", 4: "abr.", 5: "mai.", 6: "jun.",
-                7: "jul.", 8: "ago.", 9: "set.", 10: "out.", 11: "nov.", 12: "dez."
-            }
-            data_fim_sorteio = f"{data_sorteio_dt.day} de {meses[data_sorteio_dt.month]} de {data_sorteio_dt.year}"
-
-            agora = datetime.utcnow().replace(tzinfo=None)
-            sorteio_finalizado = data_sorteio_dt <= agora
-            vencedor_nome = None
-
-            if sorteio_finalizado:
-                try:
-                    dados_filtrados = db.collection("Dados").where("produto_id", "==", produto_id).stream()
-                    nomes_possiveis = [doc.to_dict().get("nome") for doc in dados_filtrados if doc.to_dict().get("nome")]
-                    if nomes_possiveis:
-                        vencedor_nome = random.choice(nomes_possiveis)
-                except Exception as e:
-                    print(f"Erro ao buscar vencedor: {e}")
-                    vencedor_nome = None
-
-            return templates.TemplateResponse("sorte.html", {
-                "request": request,
-                "data_fim_sorteio": data_fim_sorteio,
-                "data_limite_iso": data_limite_iso,
-                "produto_id": produto_id,
-                "nome_produto": nome_produto,
-                "descricao": descricao,
-                "preco_bilhete": preco_bilhete,
-                "imagem_produto": imagem_produto,
-                "bilhetes_disponiveis": bilhetes_disponiveis,
-                "vencedor": vencedor_nome,
-                "sorteio_finalizado": sorteio_finalizado
-            })
-
-        except Exception as e:
-            return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
+        return HTMLResponse(content="""
+            <div style='
+                background-color: #f0fdf4;
+                padding: 15px;
+                border-left: 6px solid #22c55e;
+                border-radius: 8px;
+                color: #166534;
+                font-family: sans-serif;
+                max-width: 600px;
+                margin: 20px auto;
+            '>
+                <strong style='font-size: 1.1em;'>✅ Sucesso:</strong>
+                <p>Comprovativo enviado com sucesso!</p>
+            </div>
+        """, status_code=200)
 
     except Exception as e:
         return HTMLResponse(content=f"<h2>Erro Interno:</h2><pre>{str(e)}</pre>", status_code=500)
