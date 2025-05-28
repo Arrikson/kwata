@@ -567,6 +567,12 @@ async def registrar_pagamento(
         })
         
 
+from fastapi import FastAPI, Form, File, UploadFile, Request
+from fastapi.responses import HTMLResponse
+from uuid import uuid4
+from datetime import datetime
+import os
+
 @app.post("/enviar-comprovativo")
 async def enviar_comprovativo(
     request: Request,
@@ -649,7 +655,7 @@ async def enviar_comprovativo(
         with open(file_path, "wb") as f:
             f.write(await comprovativo.read())
 
-        # Buscar data_sorteio
+        # Buscar dados do produto
         try:
             produto_doc = db.collection("produtos").document(produto_id).get()
             if not produto_doc.exists:
@@ -657,6 +663,7 @@ async def enviar_comprovativo(
 
             produto_data = produto_doc.to_dict()
             data_sorteio_raw = produto_data.get("data_sorteio")
+            imagem_produto = produto_data.get("imagem", "")  # busca a imagem do produto
 
             if isinstance(data_sorteio_raw, datetime):
                 data_sorteio = data_sorteio_raw
@@ -672,6 +679,7 @@ async def enviar_comprovativo(
 
         except Exception as e:
             data_sorteio = datetime(2025, 12, 31, 23, 59, 59)
+            imagem_produto = ""
 
         # Salvar dados no Firestore
         dados_ref = db.collection("Dados")
@@ -694,7 +702,8 @@ async def enviar_comprovativo(
                 "nome": nome,
                 "bilhete": bilhete,
                 "data_registro": datetime.utcnow().isoformat(),
-                "data_fim_sorteio": data_sorteio.isoformat()
+                "data_fim_sorteio": data_sorteio.isoformat(),
+                "imagem_produto": imagem_produto
             })
 
         registros_ref = db.collection("registros")
