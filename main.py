@@ -567,12 +567,6 @@ async def registrar_pagamento(
         })
         
 
-from fastapi import FastAPI, Form, File, UploadFile, Request
-from fastapi.responses import HTMLResponse
-from uuid import uuid4
-from datetime import datetime
-import os
-
 @app.post("/enviar-comprovativo")
 async def enviar_comprovativo(
     request: Request,
