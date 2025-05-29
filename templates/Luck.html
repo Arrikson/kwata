@@ -11,6 +11,7 @@
       background: #fefee0;
       color: #333;
     }
+
     .carrossel-container {
       position: relative;
       width: 100%;
@@ -21,10 +22,12 @@
       background-color: #fff;
       padding: 2rem 0;
     }
+
     .carrossel {
       display: flex;
       transition: transform 0.5s ease-in-out;
     }
+
     .produto {
       min-width: 100vw;
       box-sizing: border-box;
@@ -32,6 +35,7 @@
       text-align: center;
       position: relative;
     }
+
     .produto img {
       width: 80%;
       max-height: 300px;
@@ -39,6 +43,7 @@
       border-radius: 12px;
       border: 4px solid #4caf50;
     }
+
     .cronometro {
       position: absolute;
       top: 10px;
@@ -52,16 +57,19 @@
       border-radius: 8px;
       font-weight: bold;
     }
+
     .vencedor {
       margin-top: 1rem;
       font-size: 1.8rem;
       font-weight: bold;
       color: #388e3c;
     }
+
     .nome-produto {
       font-size: 1.2rem;
       color: #ff9800;
     }
+
     .nav {
       position: absolute;
       top: 50%;
@@ -73,12 +81,15 @@
       font-size: 1.5rem;
       z-index: 10;
     }
+
     .nav.left {
       left: 0;
     }
+
     .nav.right {
       right: 0;
     }
+
     .roleta {
       font-size: 1.8rem;
       font-weight: bold;
@@ -89,10 +100,45 @@
       width: 100%;
       color: #555;
     }
+
     @keyframes roll {
       0% { transform: translateX(100%); }
       100% { transform: translateX(-100%); }
     }
+
+    .roleta-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 1rem;
+    }
+
+    .roleta {
+      width: 300px;
+      height: 50px;
+      overflow: hidden;
+      border: 2px solid #4caf50;
+      border-radius: 8px;
+      position: relative;
+      background-color: #fff;
+    }
+
+    .nome {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      line-height: 50px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      animation: girar 3s ease-out forwards;
+    }
+
+    @keyframes girar {
+      0% { top: 0; }
+      100% { top: -100%; }
+    }
+
     @media (max-width: 768px) {
       .produto img {
         width: 100%;
@@ -111,6 +157,12 @@
     <div class="nav left" onclick="mover(-1)">&#10094;</div>
     <div class="carrossel" id="carrossel"></div>
     <div class="nav right" onclick="mover(1)">&#10095;</div>
+  </div>
+
+  <div class="roleta-container" id="roleta-container" style="display: none;">
+    <div class="roleta" id="roleta">
+      <div class="nome" id="nome">Aguardando...</div>
+    </div>
   </div>
 
   <script>
@@ -174,25 +226,10 @@
 
         if (diff <= 0) {
           clearInterval(interval);
+          await sortearVencedor(produto);
 
-          const res = await fetch(`/api/sorteio/${produto.produto_id}`, { method: 'POST' });
-          const data = await res.json();
-          produto.vencedor = data.vencedor;
-
-          // Efeito de roleta
-          const nomes = produto.compradores.map(c => c.nome);
-          let roletaEl = document.createElement('div');
-          roletaEl.className = 'roleta';
-          roletaEl.innerText = nomes.join(' ➤ ');
-
-          const divProduto = timerEl.parentElement;
-          divProduto.appendChild(roletaEl);
-
-          setTimeout(() => {
-            divProduto.removeChild(roletaEl);
-            const vencedorEl = document.getElementById(`vencedor-${produto.produto_id}`);
-            vencedorEl.innerText = produto.vencedor;
-          }, 4000); // 4s de efeito
+          const vencedorEl = document.getElementById(`vencedor-${produto.produto_id}`);
+          vencedorEl.innerText = produto.vencedor;
 
         } else {
           const horas = String(Math.floor(diff / 1000 / 60 / 60)).padStart(2, '0');
@@ -201,6 +238,33 @@
           timerEl.innerText = `${horas}:${minutos}:${segundos}`;
         }
       }, 1000);
+    }
+
+    async function sortearVencedor(produto) {
+      const res = await fetch(`/api/sorteio/${produto.produto_id}`, { method: 'POST' });
+      const data = await res.json();
+      produto.vencedor = data.vencedor;
+
+      // Exibir a roleta
+      const roletaContainer = document.getElementById('roleta-container');
+      const nomeElemento = document.getElementById('nome');
+      roletaContainer.style.display = 'flex';
+
+      const nomes = produto.compradores.map(c => c.nome);
+      let index = 0;
+
+      const intervalo = setInterval(() => {
+        nomeElemento.innerText = nomes[index];
+        index = (index + 1) % nomes.length;
+      }, 100);
+
+      setTimeout(() => {
+        clearInterval(intervalo);
+        nomeElemento.innerText = produto.vencedor;
+        setTimeout(() => {
+          roletaContainer.style.display = 'none';
+        }, 2000);
+      }, 3000);
     }
 
     carregarProdutos();
