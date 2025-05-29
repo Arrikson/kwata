@@ -79,6 +79,20 @@
     .nav.right {
       right: 0;
     }
+    .roleta {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-top: 1rem;
+      animation: roll 1s infinite linear;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 100%;
+      color: #555;
+    }
+    @keyframes roll {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
     @media (max-width: 768px) {
       .produto img {
         width: 100%;
@@ -129,6 +143,7 @@
 
         const vencedor = document.createElement('div');
         vencedor.className = 'vencedor';
+        vencedor.id = `vencedor-${produto.produto_id}`;
         vencedor.innerText = produto.vencedor || 'Aguardando...';
         div.appendChild(vencedor);
 
@@ -159,10 +174,26 @@
 
         if (diff <= 0) {
           clearInterval(interval);
+
           const res = await fetch(`/api/sorteio/${produto.produto_id}`, { method: 'POST' });
           const data = await res.json();
           produto.vencedor = data.vencedor;
-          mostrarProduto();
+
+          // Efeito de roleta
+          const nomes = produto.compradores.map(c => c.nome);
+          let roletaEl = document.createElement('div');
+          roletaEl.className = 'roleta';
+          roletaEl.innerText = nomes.join(' ➤ ');
+
+          const divProduto = timerEl.parentElement;
+          divProduto.appendChild(roletaEl);
+
+          setTimeout(() => {
+            divProduto.removeChild(roletaEl);
+            const vencedorEl = document.getElementById(`vencedor-${produto.produto_id}`);
+            vencedorEl.innerText = produto.vencedor;
+          }, 4000); // 4s de efeito
+
         } else {
           const horas = String(Math.floor(diff / 1000 / 60 / 60)).padStart(2, '0');
           const minutos = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
