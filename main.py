@@ -1266,6 +1266,11 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
+
+from fastapi.responses import JSONResponse
+from google.cloud.firestore_v1 import DocumentSnapshot
+import datetime
+
 def serializar_produto(produto):
     produto_serializado = {}
     for chave, valor in produto.items():
@@ -1289,6 +1294,17 @@ def listar_produtos():
 
         return JSONResponse(content=lista_produtos)
 
+    except Exception as e:
+        print("❌ Erro ao buscar produtos:", e)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "erro": "Não foi possível buscar os produtos.",
+                "detalhes": str(e)
+            }
+        )
+
+    
     except Exception as e:
         print("❌ Erro ao buscar produtos:", e)
         return JSONResponse(
