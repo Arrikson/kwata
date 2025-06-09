@@ -1267,18 +1267,29 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
 
-# 📄 Rota para exibir os produtos
+def converter_produto(produto):
+    produto_dict = produto.copy()
+    if "data_sorteio" in produto_dict:
+        produto_dict["data_sorteio"] = produto_dict["data_sorteio"].isoformat()
+    return produto_dict
+
 @app.get("/produtos")
-async def get_produtos(request: Request):
-    produtos_ref = db.collection("produtos").stream()
-    produtos = []
+def listar_produtos():
+    try:
+        produtos_ref = db.collection("produtos").stream()
+        lista_produtos = []
 
-    for doc in produtos_ref:
-        data = doc.to_dict()
-        data["id"] = doc.id
-        produtos.append(data)
+        for doc in produtos_ref:
+            produto = doc.to_dict()
+            produto["id"] = doc.id
+            produto = converter_produto(produto)
+            lista_produtos.append(produto)
 
-    return templates.TemplateResponse("produtos.html", {"request": request, "produtos": produtos})
+        return JSONResponse(content=lista_produtos)
+
+    except Exception as e:
+        print("❌ Erro ao buscar produtos:", e)
+        return JSONResponse(status_code=500, content={"erro": "Erro ao buscar produtos"})
 
 
 # 💾 Rota para editar um produto
