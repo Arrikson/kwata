@@ -11,44 +11,96 @@
       margin: 0;
       padding: 2rem;
     }
+
     h1 {
       text-align: center;
       color: #006400;
+      margin-bottom: 2rem;
     }
+
     .produto {
       background-color: #ffffff;
       border: 2px solid #32CD32;
       border-radius: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
       padding: 1rem;
       box-shadow: 0 4px 8px rgba(0, 100, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
-    input, textarea {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
+
     label {
       font-weight: bold;
       color: #228B22;
+      margin-top: 10px;
     }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    img.imagem-preview {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      margin-top: 5px;
+    }
+
+    .botoes {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
     button {
+      flex: 1;
+      min-width: 150px;
       background-color: #FFD700;
       color: #000;
       border: none;
-      padding: 10px 20px;
+      padding: 10px;
       border-radius: 10px;
+      font-weight: bold;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
+
     button:hover {
       background-color: #FFA500;
     }
-    .imagem-preview {
-      max-width: 150px;
-      border-radius: 8px;
-      margin-top: 5px;
+
+    .btn-deletar {
+      background-color: red;
+      color: white;
+    }
+
+    .btn-deletar:hover {
+      background-color: darkred;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      .botoes {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -56,34 +108,55 @@
   <h1>Gestão de Produtos</h1>
 
   {% for produto in produtos %}
-  <form class="produto" method="post" action="/produtos/editar/{{ produto.id }}">
-    <label>Nome:</label>
-    <input type="text" name="nome" value="{{ produto.nome }}"/>
+  <div class="produto">
+    <form method="post" action="/produtos/editar/{{ produto.id }}">
+      <label>Nome:</label>
+      <input type="text" name="nome" value="{{ produto.nome }}" />
 
-    <label>Descrição:</label>
-    <textarea name="descricao">{{ produto.descricao }}</textarea>
+      <label>Descrição:</label>
+      <textarea name="descricao">{{ produto.descricao }}</textarea>
 
-    <label>Preço de Aquisição:</label>
-    <input type="number" step="0.01" name="preco_aquisicao" value="{{ produto.preco_aquisicao }}"/>
+      <label>Preço de Aquisição:</label>
+      <input type="number" step="0.01" name="preco_aquisicao" value="{{ produto.preco_aquisicao }}" />
 
-    <label>Preço por Bilhete:</label>
-    <input type="number" step="0.01" name="preco_bilhete" value="{{ produto.preco_bilhete }}"/>
+      <label>Preço por Bilhete:</label>
+      <input type="number" step="0.01" name="preco_bilhete" value="{{ produto.preco_bilhete }}" />
 
-    <label>Lucro Desejado:</label>
-    <input type="number" step="0.01" name="lucro_desejado" value="{{ produto.lucro_desejado }}"/>
+      <label>Lucro Desejado:</label>
+      <input type="number" step="0.01" name="lucro_desejado" value="{{ produto.lucro_desejado }}" />
 
-    <label>Data do Sorteio:</label>
-    <input type="datetime-local" name="data_sorteio" value="{{ produto.data_sorteio.strftime('%Y-%m-%dT%H:%M') if produto.data_sorteio }}"/>
+      <label>Data do Sorteio:</label>
+      <input type="datetime-local" name="data_sorteio" value="{{ produto.data_sorteio.strftime('%Y-%m-%dT%H:%M') if produto.data_sorteio }}" />
 
-    <label>Imagem (nome do arquivo):</label>
-    <input type="text" name="imagem" value="{{ produto.imagem }}"/>
-    <img src="/static/uploads/{{ produto.imagem }}" class="imagem-preview"/>
+      <label>Imagem (nome do arquivo):</label>
+      <input type="text" name="imagem" value="{{ produto.imagem }}" />
+      <img src="/static/uploads/{{ produto.imagem }}" alt="Imagem do Produto" class="imagem-preview" />
 
-    <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos }}</p>
-    <p><strong>Quantidade de Bilhetes:</strong> {{ produto.quantidade_bilhetes }}</p>
+      <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos }}</p>
+      <p><strong>Quantidade de Bilhetes:</strong> {{ produto.quantidade_bilhetes }}</p>
 
-    <button type="submit">Salvar Alterações</button>
-  </form>
+      <div class="botoes">
+        <button type="submit">💾 Salvar Alterações</button>
+    </form>
+
+        <form method="post" action="/produtos/delete/{{ produto.id }}" onsubmit="return confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita!')">
+          <button type="submit" class="btn-deletar">🗑️ Eliminar Produto</button>
+        </form>
+      </div>
+  </div>
   {% endfor %}
+
+  <script>
+    const dateInputs = document.querySelectorAll('input[type="datetime-local"]');
+    dateInputs.forEach(input => {
+      const original = input.value;
+      input.addEventListener('change', (e) => {
+        if (e.target.value < original) {
+          alert("Só é permitido aumentar a data do sorteio!");
+          e.target.value = original;
+        }
+      });
+    });
+  </script>
 </body>
 </html>
