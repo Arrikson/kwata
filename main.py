@@ -1265,7 +1265,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
-@router.get("/produtos")
+@app.get("/produtos")
 async def listar_produtos(request: Request):
     with open("produtos.json") as f:
         produtos = json.load(f)
@@ -1280,7 +1280,7 @@ async def listar_produtos(request: Request):
         "produtos": produtos
     })
 
-@router.post("/produtos/atualizar_data/{produto_id}")
+@app.post("/produtos/atualizar_data/{produto_id}")
 async def atualizar_data(produto_id: str, request: Request):
     body = await request.json()
     nova_data_iso = body.get("nova_data")
