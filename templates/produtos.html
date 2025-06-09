@@ -126,7 +126,7 @@
       <input type="number" step="0.01" name="lucro_desejado" value="{{ produto.lucro_desejado }}" />
 
       <label>Data do Sorteio:</label>
-      <input type="datetime-local" name="data_sorteio" value="{{ produto.data_sorteio.strftime('%Y-%m-%dT%H:%M') if produto.data_sorteio }}" />
+      <p><strong>{{ produto.data_sorteio }}</strong></p>
 
       <label>Imagem (nome do arquivo):</label>
       <input type="text" name="imagem" value="{{ produto.imagem }}" />
@@ -158,18 +158,6 @@
   {% endfor %}
 
   <script>
-    // Impede redução da data do sorteio
-    const dateInputs = document.querySelectorAll('input[type="datetime-local"]');
-    dateInputs.forEach(input => {
-      const original = input.value;
-      input.addEventListener('change', (e) => {
-        if (e.target.value < original) {
-          alert("Só é permitido aumentar a data do sorteio!");
-          e.target.value = original;
-        }
-      });
-    });
-
     // Script para aumentar o tempo restante
     document.querySelectorAll(".btn-aumentar").forEach(btn => {
       btn.addEventListener("click", async () => {
@@ -203,7 +191,7 @@
       });
     });
 
-    // Função para iniciar cronômetro por produto
+    // Cronômetro
     function iniciarCronometro(produtoId, dataFim) {
       const timerEl = document.getElementById(`timer-${produtoId}`);
       const fim = new Date(dataFim);
@@ -224,11 +212,9 @@
       }, 1000);
     }
 
-    // Executa cronômetro para cada produto
     {% for produto in produtos %}
-      iniciarCronometro("{{ produto.id }}", "{{ produto.data_sorteio.isoformat() }}");
+      iniciarCronometro("{{ produto.id }}", "{{ produto.data_sorteio }}");
     {% endfor %}
   </script>
 </body>
 </html>
-
