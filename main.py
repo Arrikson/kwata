@@ -38,7 +38,6 @@ from pydantic import BaseModel
 
 
 
-
 # Caminho da chave do Firebase
 FIREBASE_KEY_PATH = "firebase-key.json"
 CAMINHO_ARQUIVO = "static/produto-refletidos.json"
@@ -1266,22 +1265,8 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
-
-from fastapi.responses import JSONResponse
-from google.cloud.firestore_v1 import DocumentSnapshot
-import datetime
-
-def serializar_produto(produto):
-    produto_serializado = {}
-    for chave, valor in produto.items():
-        if isinstance(valor, datetime.datetime):
-            produto_serializado[chave] = valor.isoformat()
-        else:
-            produto_serializado[chave] = valor
-    return produto_serializado
-
-@app.get("/produtos")
-def listar_produtos():
+@app.get("/produtos", response_class=HTMLResponse)
+def listar_produtos(request: Request):
     try:
         produtos_ref = db.collection("produtos").stream()
         lista_produtos = []
@@ -1289,30 +1274,25 @@ def listar_produtos():
         for doc in produtos_ref:
             produto = doc.to_dict()
             produto["id"] = doc.id
-            produto_serializado = serializar_produto(produto)
-            lista_produtos.append(produto_serializado)
 
-        return JSONResponse(content=lista_produtos)
+            # Calcular tempo restante (em segundos)
+            data_sorteio = produto.get("data_sorteio")
+            if data_sorteio:
+                agora = datetime.now(timezone.utc)
+                tempo_restante = (data_sorteio - agora).total_seconds()
+                produto["tempo_restante"] = max(0, int(tempo_restante))  # evitar números negativos
+            else:
+                produto["tempo_restante"] = 0
+
+            lista_produtos.append(produto)
+
+        return templates.TemplateResponse("gestao-produtos.html", {"request": request, "produtos": lista_produtos})
 
     except Exception as e:
         print("❌ Erro ao buscar produtos:", e)
         return JSONResponse(
             status_code=500,
-            content={
-                "erro": "Não foi possível buscar os produtos.",
-                "detalhes": str(e)
-            }
-        )
-
-    
-    except Exception as e:
-        print("❌ Erro ao buscar produtos:", e)
-        return JSONResponse(
-            status_code=500,
-            content={
-                "erro": "Não foi possível buscar os produtos.",
-                "detalhes": str(e)
-            }
+            content={"erro": "Não foi possível buscar os produtos.", "detalhes": str(e)}
         )
 
 # 💾 Rota para editar um produto
