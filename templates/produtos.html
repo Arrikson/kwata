@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestão de Produtos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0fff0;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      color: #006400;
+    }
+    .produto {
+      background-color: #ffffff;
+      border: 2px solid #32CD32;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      padding: 1rem;
+      box-shadow: 0 4px 8px rgba(0, 100, 0, 0.2);
+    }
+    input, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    label {
+      font-weight: bold;
+      color: #228B22;
+    }
+    button {
+      background-color: #FFD700;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #FFA500;
+    }
+    .imagem-preview {
+      max-width: 150px;
+      border-radius: 8px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gestão de Produtos</h1>
+
+  {% for produto in produtos %}
+  <form class="produto" method="post" action="/produtos/editar/{{ produto.id }}">
+    <label>Nome:</label>
+    <input type="text" name="nome" value="{{ produto.nome }}"/>
+
+    <label>Descrição:</label>
+    <textarea name="descricao">{{ produto.descricao }}</textarea>
+
+    <label>Preço de Aquisição:</label>
+    <input type="number" step="0.01" name="preco_aquisicao" value="{{ produto.preco_aquisicao }}"/>
+
+    <label>Preço por Bilhete:</label>
+    <input type="number" step="0.01" name="preco_bilhete" value="{{ produto.preco_bilhete }}"/>
+
+    <label>Lucro Desejado:</label>
+    <input type="number" step="0.01" name="lucro_desejado" value="{{ produto.lucro_desejado }}"/>
+
+    <label>Data do Sorteio:</label>
+    <input type="datetime-local" name="data_sorteio" value="{{ produto.data_sorteio.strftime('%Y-%m-%dT%H:%M') if produto.data_sorteio }}"/>
+
+    <label>Imagem (nome do arquivo):</label>
+    <input type="text" name="imagem" value="{{ produto.imagem }}"/>
+    <img src="/static/uploads/{{ produto.imagem }}" class="imagem-preview"/>
+
+    <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos }}</p>
+    <p><strong>Quantidade de Bilhetes:</strong> {{ produto.quantidade_bilhetes }}</p>
+
+    <button type="submit">Salvar Alterações</button>
+  </form>
+  {% endfor %}
+</body>
+</html>
