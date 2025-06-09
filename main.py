@@ -1265,20 +1265,6 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
-
-def convert_firestore_data(obj):
-    if isinstance(obj, list):
-        return [convert_firestore_data(item) for item in obj]
-    elif isinstance(obj, dict):
-        return {
-            key: convert_firestore_data(value)
-            for key, value in obj.items()
-        }
-    elif hasattr(obj, 'isoformat'):  # Para datetime, incluindo DatetimeWithNanoseconds
-        return obj.isoformat()
-    else:
-        return obj
-
 @app.get("/produtos")
 def listar_produtos():
     try:
@@ -1290,15 +1276,11 @@ def listar_produtos():
             data["id"] = doc.id
             lista_produtos.append(data)
 
-        # Converta todos os objetos não serializáveis
-        lista_produtos_serializavel = convert_firestore_data(lista_produtos)
-
-        return JSONResponse(content=lista_produtos_serializavel)
+        return JSONResponse(content=lista_produtos)
 
     except Exception as e:
         print("❌ Erro ao buscar produtos:", e)
         return JSONResponse(content={"erro": "Erro ao buscar produtos"}, status_code=500)
-
 
 @app.post("/produtos/atualizar_data/{produto_id}")
 async def atualizar_data(produto_id: str, request: Request):
