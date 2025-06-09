@@ -135,6 +135,14 @@
       <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos }}</p>
       <p><strong>Quantidade de Bilhetes:</strong> {{ produto.quantidade_bilhetes }}</p>
 
+      <label>Tempo restante (segundos):</label>
+      <input type="number" value="{{ produto.tempo_restante }}" disabled />
+
+      <label>Aumentar tempo (minutos):</label>
+      <input type="number" class="tempo-extra" placeholder="ex: 10" />
+
+      <button type="button" class="btn-aumentar" data-id="{{ produto.id }}">⏱️ Aumentar Tempo</button>
+
       <div class="botoes">
         <button type="submit">💾 Salvar Alterações</button>
     </form>
@@ -147,6 +155,7 @@
   {% endfor %}
 
   <script>
+    // Impede redução da data do sorteio
     const dateInputs = document.querySelectorAll('input[type="datetime-local"]');
     dateInputs.forEach(input => {
       const original = input.value;
@@ -157,6 +166,40 @@
         }
       });
     });
+
+    // Script para aumentar o tempo restante
+    document.querySelectorAll(".btn-aumentar").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const produtoId = btn.dataset.id;
+        const produtoDiv = btn.closest(".produto");
+        const tempoExtraMin = parseInt(produtoDiv.querySelector(".tempo-extra").value);
+        const tempoRestanteAtual = parseInt(produtoDiv.querySelector('input[disabled]').value);
+
+        if (isNaN(tempoExtraMin) || tempoExtraMin <= 0) {
+          alert("Insira um tempo válido (minutos > 0)");
+          return;
+        }
+
+        const tempoTotalSegundos = tempoRestanteAtual + (tempoExtraMin * 60);
+        const novaData = new Date(Date.now() + tempoTotalSegundos * 1000);
+        const novaDataISO = novaData.toISOString();
+
+        const res = await fetch(`/produtos/atualizar_data/${produtoId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nova_data: novaDataISO })
+        });
+
+        const json = await res.json();
+        if (res.ok) {
+          alert("Data do sorteio atualizada!");
+          location.reload();
+        } else {
+          alert("Erro: " + json.erro);
+        }
+      });
+    });
   </script>
 </body>
 </html>
+
