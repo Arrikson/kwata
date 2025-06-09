@@ -1266,12 +1266,14 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
-
-def converter_produto(produto):
-    produto_dict = produto.copy()
-    if "data_sorteio" in produto_dict:
-        produto_dict["data_sorteio"] = produto_dict["data_sorteio"].isoformat()
-    return produto_dict
+def serializar_produto(produto):
+    produto_serializado = {}
+    for chave, valor in produto.items():
+        if isinstance(valor, datetime.datetime):
+            produto_serializado[chave] = valor.isoformat()
+        else:
+            produto_serializado[chave] = valor
+    return produto_serializado
 
 @app.get("/produtos")
 def listar_produtos():
@@ -1282,15 +1284,20 @@ def listar_produtos():
         for doc in produtos_ref:
             produto = doc.to_dict()
             produto["id"] = doc.id
-            produto = converter_produto(produto)
-            lista_produtos.append(produto)
+            produto_serializado = serializar_produto(produto)
+            lista_produtos.append(produto_serializado)
 
         return JSONResponse(content=lista_produtos)
 
     except Exception as e:
         print("❌ Erro ao buscar produtos:", e)
-        return JSONResponse(status_code=500, content={"erro": "Erro ao buscar produtos"})
-
+        return JSONResponse(
+            status_code=500,
+            content={
+                "erro": "Não foi possível buscar os produtos.",
+                "detalhes": str(e)
+            }
+        )
 
 # 💾 Rota para editar um produto
 @app.post("/produtos/editar/{produto_id}")
