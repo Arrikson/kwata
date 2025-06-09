@@ -143,6 +143,9 @@
 
       <button type="button" class="btn-aumentar" data-id="{{ produto.id }}">⏱️ Aumentar Tempo</button>
 
+      <label>Tempo restante:</label>
+      <p id="timer-{{ produto.id }}">Carregando...</p>
+
       <div class="botoes">
         <button type="submit">💾 Salvar Alterações</button>
     </form>
@@ -199,6 +202,32 @@
         }
       });
     });
+
+    // Função para iniciar cronômetro por produto
+    function iniciarCronometro(produtoId, dataFim) {
+      const timerEl = document.getElementById(`timer-${produtoId}`);
+      const fim = new Date(dataFim);
+
+      const interval = setInterval(() => {
+        const agora = new Date();
+        const diff = fim - agora;
+
+        if (diff <= 0) {
+          clearInterval(interval);
+          timerEl.innerText = "Sorteio encerrado!";
+        } else {
+          const horas = String(Math.floor(diff / 1000 / 60 / 60)).padStart(2, '0');
+          const minutos = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
+          const segundos = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+          timerEl.innerText = `${horas}:${minutos}:${segundos}`;
+        }
+      }, 1000);
+    }
+
+    // Executa cronômetro para cada produto
+    {% for produto in produtos %}
+      iniciarCronometro("{{ produto.id }}", "{{ produto.data_sorteio.isoformat() }}");
+    {% endfor %}
   </script>
 </body>
 </html>
