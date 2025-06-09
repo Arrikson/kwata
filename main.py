@@ -1266,3 +1266,55 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
+
+# 📄 Rota para exibir os produtos
+@app.get("/produtos")
+async def get_produtos(request: Request):
+    produtos_ref = db.collection("produtos").stream()
+    produtos = []
+
+    for doc in produtos_ref:
+        data = doc.to_dict()
+        data["id"] = doc.id
+        produtos.append(data)
+
+    return templates.TemplateResponse("produtos.html", {"request": request, "produtos": produtos})
+
+
+# 💾 Rota para editar um produto
+@app.post("/produtos/editar/{produto_id}")
+async def editar_produto(
+    produto_id: str,
+    nome: str = Form(...),
+    descricao: str = Form(...),
+    preco_aquisicao: float = Form(...),
+    preco_bilhete: float = Form(...),
+    lucro_desejado: float = Form(...),
+    data_sorteio: str = Form(...),
+    imagem: str = Form(...),
+):
+    produto_ref = db.collection("produtos").document(produto_id)
+
+    # Converte string de data para timestamp (ajuste conforme seu front)
+    data_formatada = datetime.datetime.strptime(data_sorteio, "%Y-%m-%dT%H:%M")
+
+    await produto_ref.update({
+        "nome": nome,
+        "descricao": descricao,
+        "preco_aquisicao": preco_aquisicao,
+        "preco_bilhete": preco_bilhete,
+        "lucro_desejado": lucro_desejado,
+        "imagem": imagem,
+        "data_sorteio": data_formatada,
+    })
+
+    return RedirectResponse("/produtos", status_code=303)
+
+@app.post("/produtos/delete/{produto_id}")
+async def delete_produto(produto_id: str):
+    produto_ref = db.collection("produtos").document(produto_id)
+    produto_ref.delete()
+    return RedirectResponse("/produtos", status_code=303)
+
+
+
