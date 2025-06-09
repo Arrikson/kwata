@@ -1265,35 +1265,47 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
-@app.get("/produtos", response_class=HTMLResponse)
-def listar_produtos(request: Request):
-    try:
-        produtos_ref = db.collection("produtos").stream()
-        lista_produtos = []
+@router.get("/produtos")
+async def listar_produtos(request: Request):
+    with open("produtos.json") as f:
+        produtos = json.load(f)
 
-        for doc in produtos_ref:
-            produto = doc.to_dict()
-            produto["id"] = doc.id
+    # Converte string -> datetime para uso no HTML
+    for p in produtos:
+        if isinstance(p["data_sorteio"], str):
+            p["data_sorteio"] = datetime.fromisoformat(p["data_sorteio"])
 
-            # Calcular tempo restante (em segundos)
-            data_sorteio = produto.get("data_sorteio")
-            if data_sorteio:
-                agora = datetime.now(timezone.utc)
-                tempo_restante = (data_sorteio - agora).total_seconds()
-                produto["tempo_restante"] = max(0, int(tempo_restante))  # evitar números negativos
-            else:
-                produto["tempo_restante"] = 0
+    return templates.TemplateResponse("produtos.html", {
+        "request": request,
+        "produtos": produtos
+    })
 
-            lista_produtos.append(produto)
+@router.post("/produtos/atualizar_data/{produto_id}")
+async def atualizar_data(produto_id: str, request: Request):
+    body = await request.json()
+    nova_data_iso = body.get("nova_data")
 
-        return templates.TemplateResponse("gestao-produtos.html", {"request": request, "produtos": lista_produtos})
+    if not nova_data_iso:
+        return JSONResponse({"erro": "Data inválida"}, status_code=400)
 
-    except Exception as e:
-        print("❌ Erro ao buscar produtos:", e)
-        return JSONResponse(
-            status_code=500,
-            content={"erro": "Não foi possível buscar os produtos.", "detalhes": str(e)}
-        )
+    with open("produtos.json", "r") as f:
+        produtos = json.load(f)
+
+    produto_encontrado = False
+    for p in produtos:
+        if str(p["id"]) == produto_id:
+            p["data_sorteio"] = nova_data_iso
+            produto_encontrado = True
+            break
+
+    if not produto_encontrado:
+        return JSONResponse({"erro": "Produto não encontrado"}, status_code=404)
+
+    with open("produtos.json", "w") as f:
+        json.dump(produtos, f, indent=2)
+
+    return {"mensagem": "Data atualizada com sucesso"}
+
 
 # 💾 Rota para editar um produto
 @app.post("/produtos/editar/{produto_id}")
