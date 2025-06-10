@@ -1183,8 +1183,15 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
 
+# Rota HTML
+@app.get("/produtos.html", response_class=HTMLResponse)
+async def exibir_html_produtos(request: Request):
+    return templates.TemplateResponse("produtos.html", {"request": request})
+
+
+# Rota de API
 @app.get("/produtos")
-def listar_produtos():
+async def listar_produtos():
     try:
         produtos_ref = db.collection("produtos").stream()
         lista_produtos = []
@@ -1193,91 +1200,20 @@ def listar_produtos():
             data = doc.to_dict()
             data["id"] = doc.id
 
-            # Verifica se há o campo 'data_sorteio' e converte para string
-            if "data_sorteio" in data and data["data_sorteio"] is not None:
+            # Converter data_sorteio para string legível, se existir
+            if "data_sorteio" in data and data["data_sorteio"]:
                 if hasattr(data["data_sorteio"], "strftime"):
-                    data["data_sorteio"] = data["data_sorteio"].strftime("%Y-%m-%d %H:%M:%S")
+                    data["data_sorteio"] = data["data_sorteio"].strftime("%d/%m/%Y %H:%M")
 
             lista_produtos.append(data)
 
         return JSONResponse(content=lista_produtos)
 
     except Exception as e:
-        print("❌ Erro ao buscar produtos:", e)
         return JSONResponse(
-            content={
-                "erro": "Não foi possível buscar os produtos.",
-                "detalhes": str(e)
-            },
+            content={"erro": "Não foi possível buscar os produtos.", "detalhes": str(e)},
             status_code=500
         )
-
-
-from datetime import datetime, timedelta
-
-@app.post("/produtos/aumentar_tempo/{produto_id}")
-async def aumentar_tempo(produto_id: str, request: Request):
-    try:
-        dados = await request.json()
-        minutos = int(dados.get("minutos", 0))
-
-        produto_ref = db.collection("produtos").document(produto_id)
-        doc = produto_ref.get()
-
-        if not doc.exists:
-            return JSONResponse(content={"erro": "Produto não encontrado"}, status_code=404)
-
-        produto = doc.to_dict()
-        data_sorteio_str = produto.get("data_sorteio")
-
-        # Converter para datetime
-        data_sorteio = datetime.strptime(data_sorteio_str, "%Y-%m-%d %H:%M:%S")
-        nova_data = data_sorteio + timedelta(minutes=minutos)
-
-        # Atualizar no Firestore
-        produto_ref.update({"data_sorteio": nova_data.strftime("%Y-%m-%d %H:%M:%S")})
-
-        return JSONResponse(content={"mensagem": "Tempo aumentado com sucesso"})
-
-    except Exception as e:
-        print("❌ Erro ao aumentar tempo:", e)
-        return JSONResponse(content={"erro": "Erro ao aumentar tempo"}, status_code=500)
-
-
-# 💾 Rota para editar um produto
-@app.post("/produtos/editar/{produto_id}")
-async def editar_produto(
-    produto_id: str,
-    nome: str = Form(...),
-    descricao: str = Form(...),
-    preco_aquisicao: float = Form(...),
-    preco_bilhete: float = Form(...),
-    lucro_desejado: float = Form(...),
-    data_sorteio: str = Form(...),
-    imagem: str = Form(...),
-):
-    produto_ref = db.collection("produtos").document(produto_id)
-
-    # Converte string de data para timestamp (ajuste conforme seu front)
-    data_formatada = datetime.datetime.strptime(data_sorteio, "%Y-%m-%dT%H:%M")
-
-    await produto_ref.update({
-        "nome": nome,
-        "descricao": descricao,
-        "preco_aquisicao": preco_aquisicao,
-        "preco_bilhete": preco_bilhete,
-        "lucro_desejado": lucro_desejado,
-        "imagem": imagem,
-        "data_sorteio": data_formatada,
-    })
-
-    return RedirectResponse("/produtos", status_code=303)
-
-@app.post("/produtos/delete/{produto_id}")
-async def delete_produto(produto_id: str):
-    produto_ref = db.collection("produtos").document(produto_id)
-    produto_ref.delete()
-    return RedirectResponse("/produtos", status_code=303)
 
 
 @app.get("/admin", response_class=HTMLResponse)
