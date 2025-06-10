@@ -1193,15 +1193,25 @@ def listar_produtos():
             data = doc.to_dict()
             data["id"] = doc.id
 
-            # Nenhum cálculo de tempo restante aqui!
-            # O cronômetro será feito no frontend com base em 'data_sorteio'
+            # Verifica se há o campo 'data_sorteio' e converte para string
+            if "data_sorteio" in data and data["data_sorteio"] is not None:
+                if hasattr(data["data_sorteio"], "strftime"):
+                    data["data_sorteio"] = data["data_sorteio"].strftime("%Y-%m-%d %H:%M:%S")
+
             lista_produtos.append(data)
 
         return JSONResponse(content=lista_produtos)
 
     except Exception as e:
         print("❌ Erro ao buscar produtos:", e)
-        return JSONResponse(content={"erro": "Erro ao buscar produtos"}, status_code=500)
+        return JSONResponse(
+            content={
+                "erro": "Não foi possível buscar os produtos.",
+                "detalhes": str(e)
+            },
+            status_code=500
+        )
+
 
 from datetime import datetime, timedelta
 
