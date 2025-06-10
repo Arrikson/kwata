@@ -2,70 +2,83 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Produtos</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Gestão de Sorteios</title>
   <style>
-    .produto {
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      padding: 16px;
-      margin: 16px;
-      max-width: 300px;
-      display: inline-block;
-      vertical-align: top;
-    }
-
-    .produto img {
-      max-width: 100%;
-      border-radius: 10px;
-    }
-
-    .info-produto {
-      margin-top: 10px;
-    }
-
-    .botao {
-      background-color: #007bff;
-      color: white;
-      padding: 8px 16px;
-      text-align: center;
-      border: none;
-      border-radius: 5px;
-      margin-top: 10px;
-      cursor: pointer;
-    }
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    .produto { border:1px solid #ccc; padding:1rem; margin-bottom:1rem; }
+    .cronometro { font-size:2rem; font-weight:bold; color:#ff9800; }
+    button { margin: 0.5rem 0.2rem; padding:0.5rem 1rem; }
+    .btn-del { background: red; color: white; }
   </style>
 </head>
 <body>
-  <h1>Produtos Disponíveis</h1>
-  <div id="produtos-container"></div>
+  <h1>Gestão de Sorteios</h1>
+  <div id="produtos"></div>
 
   <script>
-    async function carregarProdutos() {
-      const response = await fetch('/produtos');
-      const produtos = await response.json();
+    async function fetchProdutos() {
+      const resp = await fetch('/api/produtos');
+      return resp.json();
+    }
 
-      const container = document.getElementById('produtos-container');
-      container.innerHTML = '';
+    async function atualizarTempo(id, minutos) {
+      await fetch(`/api/produtos/${id}/atualizar_tempo`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ minutos })
+      });
+      load();
+    }
 
-      produtos.forEach(produto => {
-        const div = document.createElement('div');
-        div.className = 'produto';
-        div.innerHTML = `
-          <img src="${produto.imagem}" alt="${produto.nome}">
-          <div class="info-produto">
-            <h3>${produto.nome}</h3>
-            <p>${produto.descricao}</p>
-            <p><strong>Preço do bilhete:</strong> ${produto.preco_bilhete} Kz</p>
-            <p><strong>Data do sorteio:</strong> ${produto.data_sorteio || 'A definir'}</p>
-            <button class="botao">Ver mais</button>
-          </div>
-        `;
-        container.appendChild(div);
+    async function deletarProduto(id) {
+      if (!confirm('Apagar produto?')) return;
+      await fetch(`/api/produtos/${id}`, { method: 'DELETE' });
+      load();
+    }
+
+    function iniciarCronometro(id, dataFim) {
+      const el = document.getElementById(`timer-${id}`);
+      const fim = new Date(dataFim);
+
+      const iv = setInterval(() => {
+        const diff = fim - new Date();
+        if (diff <= 0) {
+          clearInterval(iv);
+          el.textContent = 'Encerrado!';
+        } else {
+          const h = String(Math.floor(diff/3600000)).padStart(2,'0');
+          const m = String(Math.floor(diff/60000)%60).padStart(2,'0');
+          const s = String(Math.floor(diff/1000)%60).padStart(2,'0');
+          el.textContent = `${h}:${m}:${s}`;
+        }
+      }, 1000);
+    }
+
+    async function load() {
+      const produtos = await fetchProdutos();
+      const div = document.getElementById('produtos');
+      div.innerHTML = '';
+
+      produtos.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'produto';
+        card.innerHTML = `
+          <img src="${p.imagem}" style="max-width:200px;"><br>
+          <strong>${p.nome}</strong><br>
+          ${p.descricao}<br>
+          Data do Sorteio: ${p.data_sorteio_str}<br>
+          <div class="cronometro" id="timer-${p.id}"></div>
+          <div>
+            <button onclick="atualizarTempo('${p.id}', 10)">+10 min</button>
+            <button onclick="atualizarTempo('${p.id}', -10)">-10 min</button>
+            <button class="btn-del" onclick="deletarProduto('${p.id}')">Apagar</button>
+          </div>`;
+        div.appendChild(card);
+        iniciarCronometro(p.id, p.data_sorteio_str);
       });
     }
 
-    carregarProdutos();
+    load();
   </script>
 </body>
 </html>
