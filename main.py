@@ -1182,6 +1182,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
+
 @app.get("/produtos")
 def listar_produtos():
     try:
@@ -1191,6 +1192,9 @@ def listar_produtos():
         for doc in produtos_ref:
             data = doc.to_dict()
             data["id"] = doc.id
+
+            # Nenhum cálculo de tempo restante aqui!
+            # O cronômetro será feito no frontend com base em 'data_sorteio'
             lista_produtos.append(data)
 
         return JSONResponse(content=lista_produtos)
@@ -1199,31 +1203,35 @@ def listar_produtos():
         print("❌ Erro ao buscar produtos:", e)
         return JSONResponse(content={"erro": "Erro ao buscar produtos"}, status_code=500)
 
-@app.post("/produtos/atualizar_data/{produto_id}")
-async def atualizar_data(produto_id: str, request: Request):
-    body = await request.json()
-    nova_data_iso = body.get("nova_data")
+from datetime import datetime, timedelta
 
-    if not nova_data_iso:
-        return JSONResponse({"erro": "Data inválida"}, status_code=400)
+@app.post("/produtos/aumentar_tempo/{produto_id}")
+async def aumentar_tempo(produto_id: str, request: Request):
+    try:
+        dados = await request.json()
+        minutos = int(dados.get("minutos", 0))
 
-    with open("produtos.json", "r") as f:
-        produtos = json.load(f)
+        produto_ref = db.collection("produtos").document(produto_id)
+        doc = produto_ref.get()
 
-    produto_encontrado = False
-    for p in produtos:
-        if str(p["id"]) == produto_id:
-            p["data_sorteio"] = nova_data_iso
-            produto_encontrado = True
-            break
+        if not doc.exists:
+            return JSONResponse(content={"erro": "Produto não encontrado"}, status_code=404)
 
-    if not produto_encontrado:
-        return JSONResponse({"erro": "Produto não encontrado"}, status_code=404)
+        produto = doc.to_dict()
+        data_sorteio_str = produto.get("data_sorteio")
 
-    with open("produtos.json", "w") as f:
-        json.dump(produtos, f, indent=2)
+        # Converter para datetime
+        data_sorteio = datetime.strptime(data_sorteio_str, "%Y-%m-%d %H:%M:%S")
+        nova_data = data_sorteio + timedelta(minutes=minutos)
 
-    return {"mensagem": "Data atualizada com sucesso"}
+        # Atualizar no Firestore
+        produto_ref.update({"data_sorteio": nova_data.strftime("%Y-%m-%d %H:%M:%S")})
+
+        return JSONResponse(content={"mensagem": "Tempo aumentado com sucesso"})
+
+    except Exception as e:
+        print("❌ Erro ao aumentar tempo:", e)
+        return JSONResponse(content={"erro": "Erro ao aumentar tempo"}, status_code=500)
 
 
 # 💾 Rota para editar um produto
