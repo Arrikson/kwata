@@ -1168,17 +1168,26 @@ async def api_listar():
         items = []
         for doc in docs:
             d = doc.to_dict()
-            d["id"] = doc.id
-            dt = d.get("data_sorteio")
+            item = {
+                "produto_id": doc.id,
+                "nome_produto": d.get("nome", "Sem nome"),
+                "imagem_produto": d.get("imagem", ""),  # URL da imagem
+                "data_fim_sorteio": None,
+                "vencedor": d.get("vencedor", ""),
+                "compradores": d.get("compradores", [])
+            }
+
+            dt = d.get("data_sorteio") or d.get("data_fim")  # suporte a ambos nomes
             if hasattr(dt, "isoformat"):
-                d["data_sorteio_str"] = dt.isoformat()
+                item["data_fim_sorteio"] = dt.isoformat()
             else:
-                d["data_sorteio_str"] = str(dt)
-            items.append(d)
+                item["data_fim_sorteio"] = str(dt)
+
+            items.append(item)
         return JSONResponse(items)
     except Exception as e:
         return JSONResponse({"erro": str(e)}, status_code=500)
-        
+
 
 @app.post("/api/produtos/{id}/atualizar_tempo")
 async def api_atualizar_tempo(id: str, request: Request):
