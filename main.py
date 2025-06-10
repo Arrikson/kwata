@@ -1187,7 +1187,7 @@ async def api_listar():
         return JSONResponse(items)
     except Exception as e:
         return JSONResponse({"erro": str(e)}, status_code=500)
-
+        
 
 @app.post("/api/produtos/{id}/atualizar_tempo")
 async def api_atualizar_tempo(id: str, request: Request):
