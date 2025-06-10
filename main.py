@@ -1186,43 +1186,6 @@ if __name__ == "__main__":
 async def exibir_html_produtos(request: Request):
     return templates.TemplateResponse("produtos.html", {"request": request})
 
-
-@app.get("/produtos.html", response_class=HTMLResponse)
-async def produtos_html(request: Request):
-    return templates.TemplateResponse("produtos.html", {"request": request})
-
-@app.get("/api/produtos")
-async def api_listar():
-    try:
-        docs = db.collection("produtos").stream()
-        items = []
-        for doc in docs:
-            d = doc.to_dict()
-            d["id"] = doc.id
-            dt = d.get("data_sorteio")
-            if hasattr(dt, "isoformat"):
-                d["data_sorteio_str"] = dt.isoformat()
-            else:
-                d["data_sorteio_str"] = str(dt)
-            items.append(d)
-        return JSONResponse(items)
-    except Exception as e:
-        return JSONResponse({"erro": str(e)}, status_code=500)
-
-@app.post("/api/produtos/{id}/atualizar_tempo")
-async def api_atualizar_tempo(id: str, request: Request):
-    data = await request.json()
-    minutos = int(data.get("minutos", 0))
-    doc_ref = db.collection("produtos").document(id)
-    doc = doc_ref.get()
-    if not doc.exists:
-        return JSONResponse({"erro": "Não encontrado"}, status_code=404)
-    d = doc.to_dict()
-    dt = d.get("data_sorteio")
-    new_dt = dt + timedelta(minutes=minutos)
-    doc_ref.update({"data_sorteio": new_dt})
-    return JSONResponse({"ok": True})
-
 @app.delete("/api/produtos/{id}")
 async def api_deletar(id: str):
     doc_ref = db.collection("produtos").document(id)
