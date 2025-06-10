@@ -1262,4 +1262,59 @@ async def delete_produto(produto_id: str):
     return RedirectResponse("/produtos", status_code=303)
 
 
+@app.get("/admin", response_class=HTMLResponse)
+async def exibir_admin(request: Request, sucesso: int = 0):
+    return templates.TemplateResponse("admin.html", {"request": request, "sucesso": sucesso})
+
+# POST: Receber dados do formulário e salvar produto
+@app.post("/admin")
+async def cadastrar_produto(
+    request: Request,
+    nome: str = Form(...),
+    descricao: str = Form(...),
+    imagem: UploadFile = File(...),
+    preco_aquisicao: float = Form(...),
+    lucro_desejado: float = Form(...),
+    preco_bilhete: float = Form(None),
+    quantidade_bilhetes: int = Form(None),
+    data_sorteio: str = Form(...)
+):
+    # Criar pasta se não existir
+    os.makedirs("static/imagens", exist_ok=True)
+
+    # Salvar imagem
+    caminho_imagem = f"static/imagens/{imagem.filename}"
+    with open(caminho_imagem, "wb") as buffer:
+        shutil.copyfileobj(imagem.file, buffer)
+
+    # Preparar dados do produto
+    produto = {
+        "nome": nome,
+        "descricao": descricao,
+        "imagem": caminho_imagem,
+        "preco_aquisicao": preco_aquisicao,
+        "lucro_desejado": lucro_desejado,
+        "preco_bilhete": preco_bilhete,
+        "quantidade_bilhetes": quantidade_bilhetes,
+        "data_sorteio": data_sorteio,
+        "criado_em": datetime.now().isoformat()
+    }
+
+    # Salvar em produtos.json
+    produtos_file = "produtos.json"
+    if os.path.exists(produtos_file):
+        with open(produtos_file, "r", encoding="utf-8") as f:
+            produtos = json.load(f)
+    else:
+        produtos = []
+
+    produtos.append(produto)
+    with open(produtos_file, "w", encoding="utf-8") as f:
+        json.dump(produtos, f, ensure_ascii=False, indent=2)
+
+    # Redirecionar com mensagem de sucesso
+    return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+
+
+
 
