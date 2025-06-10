@@ -13,32 +13,53 @@
 </head>
 <body>
   <h1>Gestão de Sorteios</h1>
-  <div id="produtos"></div>
+  <div id="produtos">Carregando produtos...</div>
 
   <script>
     async function fetchProdutos() {
-      const resp = await fetch('/api/produtos');
-      return resp.json();
+      try {
+        const resp = await fetch('/api/produtos');
+        if (!resp.ok) throw new Error(`Erro: ${resp.status}`);
+        return await resp.json();
+      } catch (err) {
+        console.error('Erro ao buscar produtos:', err);
+        return [];
+      }
     }
 
     async function atualizarTempo(id, minutos) {
-      await fetch(`/api/produtos/${id}/atualizar_tempo`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ minutos })
-      });
-      load();
+      try {
+        await fetch(`/api/produtos/${id}/atualizar_tempo`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ minutos })
+        });
+        load();
+      } catch (err) {
+        alert('Erro ao atualizar tempo.');
+        console.error(err);
+      }
     }
 
     async function deletarProduto(id) {
       if (!confirm('Apagar produto?')) return;
-      await fetch(`/api/produtos/${id}`, { method: 'DELETE' });
-      load();
+      try {
+        await fetch(`/api/produtos/${id}`, { method: 'DELETE' });
+        load();
+      } catch (err) {
+        alert('Erro ao apagar produto.');
+        console.error(err);
+      }
     }
 
-    function iniciarCronometro(id, dataFim) {
+    function iniciarCronometro(id, dataStr) {
       const el = document.getElementById(`timer-${id}`);
-      const fim = new Date(dataFim);
+      const fim = new Date(dataStr);
+
+      if (isNaN(fim.getTime())) {
+        el.textContent = "Data inválida";
+        return;
+      }
 
       const iv = setInterval(() => {
         const diff = fim - new Date();
@@ -59,22 +80,28 @@
       const div = document.getElementById('produtos');
       div.innerHTML = '';
 
+      if (!produtos.length) {
+        div.innerHTML = '<p>Nenhum produto encontrado.</p>';
+        return;
+      }
+
       produtos.forEach(p => {
+        const dataSorteio = p.data_sorteio_str || p.data_sorteio || ''; // suporte alternativo
         const card = document.createElement('div');
         card.className = 'produto';
         card.innerHTML = `
-          <img src="${p.imagem}" style="max-width:200px;"><br>
-          <strong>${p.nome}</strong><br>
-          ${p.descricao}<br>
-          Data do Sorteio: ${p.data_sorteio_str}<br>
-          <div class="cronometro" id="timer-${p.id}"></div>
+          <img src="${p.imagem || ''}" style="max-width:200px;"><br>
+          <strong>${p.nome || 'Sem nome'}</strong><br>
+          ${p.descricao || ''}<br>
+          Data do Sorteio: ${dataSorteio}<br>
+          <div class="cronometro" id="timer-${p.id}">Carregando...</div>
           <div>
             <button onclick="atualizarTempo('${p.id}', 10)">+10 min</button>
             <button onclick="atualizarTempo('${p.id}', -10)">-10 min</button>
             <button class="btn-del" onclick="deletarProduto('${p.id}')">Apagar</button>
           </div>`;
         div.appendChild(card);
-        iniciarCronometro(p.id, p.data_sorteio_str);
+        iniciarCronometro(p.id, dataSorteio);
       });
     }
 
