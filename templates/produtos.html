@@ -1,213 +1,71 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gestão de Produtos</title>
+  <meta charset="UTF-8">
+  <title>Produtos</title>
+  <link rel="stylesheet" href="/static/style.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0fff0;
-      margin: 0;
-      padding: 2rem;
-    }
-
-    h1 {
-      text-align: center;
-      color: #006400;
-      margin-bottom: 2rem;
-    }
-
     .produto {
-      background-color: #ffffff;
-      border: 2px solid #32CD32;
-      border-radius: 12px;
-      margin-bottom: 30px;
-      padding: 1rem;
-      box-shadow: 0 4px 8px rgba(0, 100, 0, 0.2);
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 16px;
+      margin: 16px;
+      max-width: 300px;
+      display: inline-block;
+      vertical-align: top;
     }
 
-    label {
-      font-weight: bold;
-      color: #228B22;
+    .produto img {
+      max-width: 100%;
+      border-radius: 10px;
+    }
+
+    .info-produto {
       margin-top: 10px;
     }
 
-    input, textarea {
-      width: 100%;
-      padding: 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-
-    textarea {
-      resize: vertical;
-    }
-
-    img.imagem-preview {
-      max-width: 100%;
-      max-height: 200px;
-      border-radius: 8px;
-      margin-top: 5px;
-    }
-
-    .botoes {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 10px;
-      margin-top: 1rem;
-    }
-
-    button {
-      flex: 1;
-      min-width: 150px;
-      background-color: #FFD700;
-      color: #000;
-      border: none;
-      padding: 10px;
-      border-radius: 10px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #FFA500;
-    }
-
-    .btn-deletar {
-      background-color: red;
+    .botao {
+      background-color: #007bff;
       color: white;
-    }
-
-    .btn-deletar:hover {
-      background-color: darkred;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 1rem;
-      }
-
-      .botoes {
-        flex-direction: column;
-      }
-
-      button {
-        width: 100%;
-      }
+      padding: 8px 16px;
+      text-align: center;
+      border: none;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>Gestão de Produtos</h1>
-
-  {% for produto in produtos %}
-  <div class="produto">
-    <form method="post" action="/produtos/editar/{{ produto.id }}">
-      <label>Nome:</label>
-      <input type="text" name="nome" value="{{ produto.nome }}" />
-
-      <label>Descrição:</label>
-      <textarea name="descricao">{{ produto.descricao }}</textarea>
-
-      <label>Preço de Aquisição:</label>
-      <input type="number" step="0.01" name="preco_aquisicao" value="{{ produto.preco_aquisicao }}" />
-
-      <label>Preço por Bilhete:</label>
-      <input type="number" step="0.01" name="preco_bilhete" value="{{ produto.preco_bilhete }}" />
-
-      <label>Lucro Desejado:</label>
-      <input type="number" step="0.01" name="lucro_desejado" value="{{ produto.lucro_desejado }}" />
-
-      <label>Data do Sorteio:</label>
-      <p><strong>{{ produto.data_sorteio }}</strong></p>
-
-      <label>Imagem (nome do arquivo):</label>
-      <input type="text" name="imagem" value="{{ produto.imagem }}" />
-      <img src="/static/uploads/{{ produto.imagem }}" alt="Imagem do Produto" class="imagem-preview" />
-
-      <p><strong>Bilhetes Vendidos:</strong> {{ produto.bilhetes_vendidos }}</p>
-      <p><strong>Quantidade de Bilhetes:</strong> {{ produto.quantidade_bilhetes }}</p>
-
-      <label>Aumentar tempo (minutos):</label>
-      <input type="number" class="tempo-extra" placeholder="ex: 10" />
-
-      <button type="button" class="btn-aumentar" data-id="{{ produto.id }}">⏱️ Aumentar Tempo</button>
-
-      <label>Tempo restante:</label>
-      <p id="timer-{{ produto.id }}">Carregando...</p>
-
-      <div class="botoes">
-        <button type="submit">💾 Salvar Alterações</button>
-    </form>
-
-        <form method="post" action="/produtos/delete/{{ produto.id }}" onsubmit="return confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita!')">
-          <button type="submit" class="btn-deletar">🗑️ Eliminar Produto</button>
-        </form>
-      </div>
-  </div>
-  {% endfor %}
+  <h1>Produtos Disponíveis</h1>
+  <div id="produtos-container"></div>
 
   <script>
-    // Cronômetro ao vivo baseado na data do sorteio
-    function iniciarCronometro(produtoId, dataFim) {
-      const timerEl = document.getElementById(`timer-${produtoId}`);
-      const fim = new Date(dataFim);
+    async function carregarProdutos() {
+      const response = await fetch('/produtos');
+      const produtos = await response.json();
 
-      const interval = setInterval(() => {
-        const agora = new Date();
-        const diff = fim - agora;
+      const container = document.getElementById('produtos-container');
+      container.innerHTML = '';
 
-        if (diff <= 0) {
-          clearInterval(interval);
-          timerEl.innerText = "Sorteio encerrado!";
-        } else {
-          const horas = String(Math.floor(diff / 1000 / 60 / 60)).padStart(2, '0');
-          const minutos = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
-          const segundos = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
-          timerEl.innerText = `${horas}:${minutos}:${segundos}`;
-        }
-      }, 1000);
+      produtos.forEach(produto => {
+        const div = document.createElement('div');
+        div.className = 'produto';
+        div.innerHTML = `
+          <img src="${produto.imagem}" alt="${produto.nome}">
+          <div class="info-produto">
+            <h3>${produto.nome}</h3>
+            <p>${produto.descricao}</p>
+            <p><strong>Preço do bilhete:</strong> ${produto.preco_bilhete} Kz</p>
+            <p><strong>Data do sorteio:</strong> ${produto.data_sorteio || 'A definir'}</p>
+            <button class="botao">Ver mais</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
     }
 
-    {% for produto in produtos %}
-      iniciarCronometro("{{ produto.id }}", "{{ produto.data_sorteio }}");
-    {% endfor %}
-
-    // Botão de aumentar tempo
-    document.querySelectorAll(".btn-aumentar").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const produtoId = btn.dataset.id;
-        const produtoDiv = btn.closest(".produto");
-        const tempoExtraMin = parseInt(produtoDiv.querySelector(".tempo-extra").value);
-
-        if (isNaN(tempoExtraMin) || tempoExtraMin <= 0) {
-          alert("Insira um tempo válido (minutos > 0)");
-          return;
-        }
-
-        const res = await fetch(`/produtos/aumentar_tempo/${produtoId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ minutos: tempoExtraMin })
-        });
-
-        const json = await res.json();
-        if (res.ok) {
-          alert("Tempo aumentado com sucesso!");
-          location.reload();
-        } else {
-          alert("Erro ao atualizar: " + json.erro);
-        }
-      });
-    });
+    carregarProdutos();
   </script>
 </body>
 </html>
-
