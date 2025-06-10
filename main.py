@@ -1182,39 +1182,54 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
 
-
-# Rota HTML
-@app.get("/produtos.html", response_class=HTMLResponse)
+@app.get("/produtos", response_class=HTMLResponse)
 async def exibir_html_produtos(request: Request):
     return templates.TemplateResponse("produtos.html", {"request": request})
 
 
-# Rota de API
-@app.get("/produtos")
-async def listar_produtos():
+@app.get("/produtos.html", response_class=HTMLResponse)
+async def produtos_html(request: Request):
+    return templates.TemplateResponse("produtos.html", {"request": request})
+
+@app.get("/api/produtos")
+async def api_listar():
     try:
-        produtos_ref = db.collection("produtos").stream()
-        lista_produtos = []
-
-        for doc in produtos_ref:
-            data = doc.to_dict()
-            data["id"] = doc.id
-
-            # Converter data_sorteio para string legível, se existir
-            if "data_sorteio" in data and data["data_sorteio"]:
-                if hasattr(data["data_sorteio"], "strftime"):
-                    data["data_sorteio"] = data["data_sorteio"].strftime("%d/%m/%Y %H:%M")
-
-            lista_produtos.append(data)
-
-        return JSONResponse(content=lista_produtos)
-
+        docs = db.collection("produtos").stream()
+        items = []
+        for doc in docs:
+            d = doc.to_dict()
+            d["id"] = doc.id
+            dt = d.get("data_sorteio")
+            if hasattr(dt, "isoformat"):
+                d["data_sorteio_str"] = dt.isoformat()
+            else:
+                d["data_sorteio_str"] = str(dt)
+            items.append(d)
+        return JSONResponse(items)
     except Exception as e:
-        return JSONResponse(
-            content={"erro": "Não foi possível buscar os produtos.", "detalhes": str(e)},
-            status_code=500
-        )
+        return JSONResponse({"erro": str(e)}, status_code=500)
 
+@app.post("/api/produtos/{id}/atualizar_tempo")
+async def api_atualizar_tempo(id: str, request: Request):
+    data = await request.json()
+    minutos = int(data.get("minutos", 0))
+    doc_ref = db.collection("produtos").document(id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        return JSONResponse({"erro": "Não encontrado"}, status_code=404)
+    d = doc.to_dict()
+    dt = d.get("data_sorteio")
+    new_dt = dt + timedelta(minutes=minutos)
+    doc_ref.update({"data_sorteio": new_dt})
+    return JSONResponse({"ok": True})
+
+@app.delete("/api/produtos/{id}")
+async def api_deletar(id: str):
+    doc_ref = db.collection("produtos").document(id)
+    if not doc_ref.get().exists:
+        return JSONResponse({"erro": "Não encontrado"}, status_code=404)
+    doc_ref.delete()
+    return JSONResponse({"ok": True})
 
 @app.get("/admin", response_class=HTMLResponse)
 async def exibir_admin(request: Request, sucesso: int = 0):
