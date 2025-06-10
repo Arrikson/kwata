@@ -690,33 +690,6 @@ async def atualizar_data_sorteio(produto_id: str = Form(...), data_sorteio: str 
         print(f"❌ Erro ao atualizar data do sorteio: {e}")
         return HTMLResponse("Erro ao atualizar data do sorteio.", status_code=500)
 
-@app.get("/produtos")
-async def listar_produtos():
-    try:
-        produtos_ref = db.collection("produtos").stream()
-
-        lista_produtos = []
-        for doc in produtos_ref:
-            produto = doc.to_dict()
-            produto["id"] = doc.id
-            produto = converter_valores_json(produto)
-            lista_produtos.append(produto)
-
-        return JSONResponse(content=lista_produtos)
-
-    except Exception as e:
-        erro_completo = traceback.format_exc()
-        print("❌ Erro ao buscar produtos:", erro_completo)
-        return JSONResponse(
-            {"erro": "Não foi possível buscar os produtos.", "detalhes": str(e)},
-            status_code=500
-        )
-
-def converter_valores_json(data_str):
-    # Aqui você pode colocar a lógica de conversão que quiser
-    # Exemplo simples: apenas retornar a data se não for None
-    return data_str if data_str else "Data inválida"
-
 @app.post("/comprovativos/")
 async def enviar_comprovativo(
     nome: str = Form(...),
@@ -1181,18 +1154,46 @@ async def perfil_resultado(
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
+    
 
 @app.get("/produtos", response_class=HTMLResponse)
 async def exibir_html_produtos(request: Request):
     return templates.TemplateResponse("produtos.html", {"request": request})
 
-@app.delete("/api/produtos/{id}")
-async def api_deletar(id: str):
+
+@app.get("/api/produtos")
+async def api_listar():
+    try:
+        docs = db.collection("produtos").stream()
+        items = []
+        for doc in docs:
+            d = doc.to_dict()
+            d["id"] = doc.id
+            dt = d.get("data_sorteio")
+            if hasattr(dt, "isoformat"):
+                d["data_sorteio_str"] = dt.isoformat()
+            else:
+                d["data_sorteio_str"] = str(dt)
+            items.append(d)
+        return JSONResponse(items)
+    except Exception as e:
+        return JSONResponse({"erro": str(e)}, status_code=500)
+        
+
+@app.post("/api/produtos/{id}/atualizar_tempo")
+async def api_atualizar_tempo(id: str, request: Request):
+    data = await request.json()
+    minutos = int(data.get("minutos", 0))
     doc_ref = db.collection("produtos").document(id)
-    if not doc_ref.get().exists:
+    doc = doc_ref.get()
+    if not doc.exists:
         return JSONResponse({"erro": "Não encontrado"}, status_code=404)
-    doc_ref.delete()
+    d = doc.to_dict()
+    dt = d.get("data_sorteio")
+    new_dt = dt + timedelta(minutes=minutos)
+    doc_ref.update({"data_sorteio": new_dt})
     return JSONResponse({"ok": True})
+
 
 @app.get("/admin", response_class=HTMLResponse)
 async def exibir_admin(request: Request, sucesso: int = 0):
