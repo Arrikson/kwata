@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sortudos do Sorteio</title>
   <style>
     body {
@@ -38,7 +38,7 @@
       border: 4px solid #4caf50;
     }
     .cronometro {
-      position: fixed;
+      position: absolute;
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
@@ -49,7 +49,7 @@
       font-family: 'Courier New', Courier, monospace;
       border-radius: 8px;
       font-weight: bold;
-      z-index: 1000;
+      z-index: 5;
     }
     .vencedor {
       margin-top: 1rem;
@@ -72,7 +72,7 @@
       border-radius: 50%;
       border: 10px solid #4caf50;
       position: relative;
-      animation: girar 5s linear infinite;
+      animation: girar 10s linear infinite;
       background: conic-gradient(
         #4caf50 0% 25%,
         #ffeb3b 25% 50%,
@@ -109,8 +109,6 @@
   </style>
 </head>
 <body>
-  <div class="cronometro" id="cronometro-global">00:00:00</div>
-
   <div class="carrossel-container">
     <div class="nav left" onclick="mover(-1)">&#10094;</div>
     <div class="carrossel" id="carrossel"></div>
@@ -120,58 +118,73 @@
   <script>
     let produtos = [];
     let indice = 0;
-    let intervalCronometro;
+    const cronometrosAtivos = {};
 
     async function carregarProdutos() {
-      const res = await fetch('/api/produtos');
+      const res = await fetch('/api/sorteio');
       produtos = await res.json();
+      gerarProdutosNaTela();
       mostrarProduto();
     }
 
-    function mostrarProduto() {
+    function gerarProdutosNaTela() {
       const container = document.getElementById('carrossel');
       container.innerHTML = '';
 
-      const produto = produtos[indice];
-      if (!produto) return;
+      produtos.forEach((produto, idx) => {
+        const div = document.createElement('div');
+        div.className = 'produto';
 
-      const div = document.createElement('div');
-      div.className = 'produto';
+        const cronometro = document.createElement('div');
+        cronometro.className = 'cronometro';
+        cronometro.id = `timer-${produto.produto_id}`;
+        div.appendChild(cronometro);
 
-      const img = document.createElement('img');
-      img.src = produto.imagem_produto;
-      div.appendChild(img);
+        const img = document.createElement('img');
+        img.src = produto.imagem_produto;
+        div.appendChild(img);
 
-      const vencedor = document.createElement('div');
-      vencedor.className = 'vencedor';
-      vencedor.innerText = produto.vencedor || 'Aguardando...';
-      div.appendChild(vencedor);
+        const vencedor = document.createElement('div');
+        vencedor.className = 'vencedor';
+        vencedor.id = `vencedor-${produto.produto_id}`;
+        vencedor.innerText = produto.vencedor || 'Aguardando...';
+        div.appendChild(vencedor);
 
-      const nomeProduto = document.createElement('div');
-      nomeProduto.className = 'nome-produto';
-      nomeProduto.innerText = produto.nome_produto;
-      div.appendChild(nomeProduto);
+        const nomeProduto = document.createElement('div');
+        nomeProduto.className = 'nome-produto';
+        nomeProduto.innerText = produto.nome_produto;
+        div.appendChild(nomeProduto);
 
-      const roletaDiv = document.createElement('div');
-      roletaDiv.className = 'roleta-container';
+        const roletaDiv = document.createElement('div');
+        roletaDiv.className = 'roleta-container';
 
-      const roleta = document.createElement('div');
-      roleta.className = 'roleta';
+        const roleta = document.createElement('div');
+        roleta.className = 'roleta';
 
-      const compradores = produto.compradores || [];
-      compradores.forEach((c, i) => {
-        const span = document.createElement('span');
-        const angle = (360 / compradores.length) * i;
-        span.style.transform = `rotate(${angle}deg) translate(120px) rotate(-${angle}deg)`;
-        span.innerText = c.nome || '???';
-        roleta.appendChild(span);
+        const compradores = produto.compradores || [];
+
+        compradores.forEach((c, i) => {
+          const span = document.createElement('span');
+          const angle = (360 / compradores.length) * i;
+          span.style.transform = `rotate(${angle}deg) translate(120px) rotate(-${angle}deg)`;
+          span.innerText = c.nome || '???';
+          roleta.appendChild(span);
+        });
+
+        roletaDiv.appendChild(roleta);
+        div.appendChild(roletaDiv);
+
+        container.appendChild(div);
+
+        if (!cronometrosAtivos[produto.produto_id]) {
+          iniciarCronometro(produto);
+        }
       });
+    }
 
-      roletaDiv.appendChild(roleta);
-      div.appendChild(roletaDiv);
-      container.appendChild(div);
-
-      iniciarCronometro(produto);
+    function mostrarProduto() {
+      const carrossel = document.querySelector('.carrossel');
+      carrossel.style.transform = `translateX(-${indice * 100}vw)`;
     }
 
     function mover(dir) {
@@ -182,25 +195,27 @@
     }
 
     function iniciarCronometro(produto) {
-      clearInterval(intervalCronometro);
-      const timerEl = document.getElementById('cronometro-global');
+      const timerEl = document.getElementById(`timer-${produto.produto_id}`);
       const fim = new Date(produto.data_fim_sorteio);
 
-      intervalCronometro = setInterval(async () => {
+      cronometrosAtivos[produto.produto_id] = setInterval(async () => {
         const agora = new Date();
         const diff = fim - agora;
 
         if (diff <= 0) {
-          clearInterval(intervalCronometro);
-          const res = await fetch(`/api/produtos/${produto.produto_id}`, { method: 'POST' });
+          clearInterval(cronometrosAtivos[produto.produto_id]);
+
+          const res = await fetch(`/api/sorteio/${produto.produto_id}`, { method: 'POST' });
           const data = await res.json();
           produto.vencedor = data.vencedor;
-          mostrarProduto();
+
+          const vencedorEl = document.getElementById(`vencedor-${produto.produto_id}`);
+          if (vencedorEl) vencedorEl.innerText = produto.vencedor;
         } else {
           const horas = String(Math.floor(diff / 1000 / 60 / 60)).padStart(2, '0');
           const minutos = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
           const segundos = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
-          timerEl.innerText = `${horas}:${minutos}:${segundos}`;
+          if (timerEl) timerEl.innerText = `${horas}:${minutos}:${segundos}`;
         }
       }, 1000);
     }
