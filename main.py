@@ -1162,41 +1162,26 @@ async def exibir_html_produtos(request: Request):
 
 
 @app.get("/api/produtos")
-async def api_listar():
-    try:
-        docs = db.collection("Dados").stream()
-        produtos_dict = {}
+async def get_produtos_em_sorteio():
+    docs = db.collection("produtos").stream()
+    produtos_list = []
 
-        for doc in docs:
-            data = doc.to_dict()
-            produto_id = data.get("produto_id")
-            if not produto_id:
-                continue
+    for doc in docs:
+        data = doc.to_dict()
+        produto_id = doc.id  # ID do documento na coleção 'produtos'
 
-            if produto_id not in produtos_dict:
-                produtos_dict[produto_id] = {
-                    "produto_id": produto_id,
-                    "data_fim_sorteio": data.get("data_fim_sorteio"),
-                    "imagem_produto": data.get("imagem_produto"),
-                    "nome_produto": data.get("nome_produto") or f"Produto {produto_id}",
-                    "compradores": [],
-                    "vencedor": data.get("vencedor", None)
-                }
-            else:
-                # Atualiza imagem se ainda não foi definida
-                if not produtos_dict[produto_id].get("imagem_produto") and data.get("imagem_produto"):
-                    produtos_dict[produto_id]["imagem_produto"] = data.get("imagem_produto")
+        produto_info = {
+            "produto_id": produto_id,
+            "data_fim_sorteio": data.get("data_fim_sorteio"),
+            "imagem_produto": data.get("imagem_produto"),
+            "nome_produto": data.get("nome_produto") or f"Produto {produto_id}",
+            "compradores": data.get("compradores", []),
+            "vencedor": data.get("vencedor")
+        }
 
-            # Adiciona comprador
-            produtos_dict[produto_id]["compradores"].append({
-                "nome": data.get("nome"),
-                "bilhete": data.get("bilhete"),
-                "data_registro": data.get("data_registro")
-            })
+        produtos_list.append(produto_info)
 
-        return JSONResponse(list(produtos_dict.values()))
-    except Exception as e:
-        return JSONResponse({"erro": str(e)}, status_code=500)
+    return produtos_list
 
 @app.post("/api/produtos/{id}/atualizar_tempo")
 async def api_atualizar_tempo(id: str, request: Request):
