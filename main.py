@@ -1211,8 +1211,8 @@ async def cadastrar_produto(
     imagem: UploadFile = File(...),
     preco_aquisicao: float = Form(...),
     lucro_desejado: float = Form(...),
-    preco_bilhete: float = Form(None),
-    quantidade_bilhetes: int = Form(None),
+    preco_bilhete: str = Form(None),
+    quantidade_bilhetes: str = Form(None),
     data_sorteio: str = Form(...)
 ):
     try:
@@ -1224,26 +1224,34 @@ async def cadastrar_produto(
         with open(caminho_imagem, "wb") as buffer:
             shutil.copyfileobj(imagem.file, buffer)
 
+        # ✅ Validar e converter dados numéricos
+        preco_bilhete_valor = float(preco_bilhete) if preco_bilhete else 0.0
+        quantidade_bilhetes_valor = int(quantidade_bilhetes) if quantidade_bilhetes else 0
+
+        # ✅ Validar data de sorteio
+        try:
+            datetime.fromisoformat(data_sorteio)  # Apenas para validar
+        except ValueError:
+            return HTMLResponse(content="<h2>Data de sorteio inválida. Use o formato ISO (yyyy-mm-dd).</h2>", status_code=400)
+
         # ✅ Criar dados do produto
         produto = {
             "nome": nome,
             "descricao": descricao,
-            "imagem": caminho_imagem,  # Caminho local
+            "imagem": caminho_imagem,
             "preco_aquisicao": preco_aquisicao,
             "lucro_desejado": lucro_desejado,
-            "preco_bilhete": preco_bilhete,
-            "quantidade_bilhetes": quantidade_bilhetes,
+            "preco_bilhete": preco_bilhete_valor,
+            "quantidade_bilhetes": quantidade_bilhetes_valor,
             "data_sorteio": data_sorteio,
             "criado_em": datetime.now().isoformat()
         }
 
-        # ✅ Salvar no Firebase Firestore (coleção 'produtos')
+        # ✅ Salvar no Firebase
         db.collection("produtos").add(produto)
 
-        # Redireciona com sucesso
         return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
     except Exception as e:
         print(f"Erro ao cadastrar produto: {e}")
         return HTMLResponse(content=f"<h2>Erro interno: {e}</h2>", status_code=500)
-
