@@ -1203,7 +1203,6 @@ async def api_atualizar_tempo(id: str, request: Request):
 async def exibir_admin(request: Request, sucesso: int = 0):
     return templates.TemplateResponse("admin.html", {"request": request, "sucesso": sucesso})
 
-# POST: Receber dados do formulário e salvar produto
 @app.post("/admin")
 async def cadastrar_produto(
     request: Request,
@@ -1217,15 +1216,19 @@ async def cadastrar_produto(
     data_sorteio: str = Form(...)
 ):
     try:
-        os.makedirs("static/imagens", exist_ok=True)
-        caminho_imagem = f"static/imagens/{imagem.filename}"
+        # ✅ Salvar imagem em static/uploads/
+        pasta_uploads = "static/uploads"
+        os.makedirs(pasta_uploads, exist_ok=True)
+        caminho_imagem = f"{pasta_uploads}/{imagem.filename}"
+
         with open(caminho_imagem, "wb") as buffer:
             shutil.copyfileobj(imagem.file, buffer)
 
+        # ✅ Criar dados do produto
         produto = {
             "nome": nome,
             "descricao": descricao,
-            "imagem": caminho_imagem,
+            "imagem": caminho_imagem,  # Caminho local
             "preco_aquisicao": preco_aquisicao,
             "lucro_desejado": lucro_desejado,
             "preco_bilhete": preco_bilhete,
@@ -1234,25 +1237,13 @@ async def cadastrar_produto(
             "criado_em": datetime.now().isoformat()
         }
 
-        produtos_file = "produtos.json"
-        produtos = []
-        if os.path.exists(produtos_file):
-            with open(produtos_file, "r", encoding="utf-8") as f:
-                try:
-                    produtos = json.load(f)
-                except json.JSONDecodeError:
-                    produtos = []  # caso o arquivo esteja vazio ou inválido
+        # ✅ Salvar no Firebase Firestore (coleção 'produtos')
+        db.collection("produtos").add(produto)
 
-        produtos.append(produto)
-
-        with open(produtos_file, "w", encoding="utf-8") as f:
-            json.dump(produtos, f, indent=2, ensure_ascii=False)
-
-        # Redirecionar com sucesso
+        # Redireciona com sucesso
         return RedirectResponse(url="/admin?sucesso=1", status_code=303)
 
     except Exception as e:
-        # Log de erro para debug
         print(f"Erro ao cadastrar produto: {e}")
         return HTMLResponse(content=f"<h2>Erro interno: {e}</h2>", status_code=500)
 
