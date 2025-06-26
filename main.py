@@ -1215,41 +1215,45 @@ async def cadastrar_produto(
     quantidade_bilhetes: int = Form(None),
     data_sorteio: str = Form(...)
 ):
-    # Criar pasta se não existir
-    os.makedirs("static/imagens", exist_ok=True)
+    try:
+        os.makedirs("static/imagens", exist_ok=True)
+        caminho_imagem = f"static/imagens/{imagem.filename}"
+        with open(caminho_imagem, "wb") as buffer:
+            shutil.copyfileobj(imagem.file, buffer)
 
-    # Salvar imagem
-    caminho_imagem = f"static/imagens/{imagem.filename}"
-    with open(caminho_imagem, "wb") as buffer:
-        shutil.copyfileobj(imagem.file, buffer)
+        produto = {
+            "nome": nome,
+            "descricao": descricao,
+            "imagem": caminho_imagem,
+            "preco_aquisicao": preco_aquisicao,
+            "lucro_desejado": lucro_desejado,
+            "preco_bilhete": preco_bilhete,
+            "quantidade_bilhetes": quantidade_bilhetes,
+            "data_sorteio": data_sorteio,
+            "criado_em": datetime.now().isoformat()
+        }
 
-    # Preparar dados do produto
-    produto = {
-        "nome": nome,
-        "descricao": descricao,
-        "imagem": caminho_imagem,
-        "preco_aquisicao": preco_aquisicao,
-        "lucro_desejado": lucro_desejado,
-        "preco_bilhete": preco_bilhete,
-        "quantidade_bilhetes": quantidade_bilhetes,
-        "data_sorteio": data_sorteio,
-        "criado_em": datetime.now().isoformat()
-    }
-
-    # Salvar em produtos.json
-    produtos_file = "produtos.json"
-    if os.path.exists(produtos_file):
-        with open(produtos_file, "r", encoding="utf-8") as f:
-            produtos = json.load(f)
-    else:
+        produtos_file = "produtos.json"
         produtos = []
+        if os.path.exists(produtos_file):
+            with open(produtos_file, "r", encoding="utf-8") as f:
+                try:
+                    produtos = json.load(f)
+                except json.JSONDecodeError:
+                    produtos = []  # caso o arquivo esteja vazio ou inválido
 
-    produtos.append(produto)
-    with open(produtos_file, "w", encoding="utf-8") as f:
-        json.dump(produtos, f, ensure_ascii=False, indent=2)
+        produtos.append(produto)
 
-    # Redirecionar com mensagem de sucesso
-    return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+        with open(produtos_file, "w", encoding="utf-8") as f:
+            json.dump(produtos, f, indent=2, ensure_ascii=False)
+
+        # Redirecionar com sucesso
+        return RedirectResponse(url="/admin?sucesso=1", status_code=303)
+
+    except Exception as e:
+        # Log de erro para debug
+        print(f"Erro ao cadastrar produto: {e}")
+        return HTMLResponse(content=f"<h2>Erro interno: {e}</h2>", status_code=500)
 
 
 
