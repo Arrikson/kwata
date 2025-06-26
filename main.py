@@ -1256,6 +1256,3 @@ async def cadastrar_produto(
         print(f"Erro ao cadastrar produto: {e}")
         return HTMLResponse(content=f"<h2>Erro interno: {e}</h2>", status_code=500)
 
-
-
-
