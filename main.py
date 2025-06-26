@@ -574,7 +574,7 @@ async def enviar_comprovativo(
 
             produto_data = produto_doc.to_dict()
             data_sorteio_raw = produto_data.get("data_sorteio")
-            imagem_produto = produto_data.get("imagem", "")
+            imagem_produto = produto_data.get("imagem", "")  # busca a imagem do produto
 
             if isinstance(data_sorteio_raw, datetime):
                 data_sorteio = data_sorteio_raw
@@ -626,28 +626,19 @@ async def enviar_comprovativo(
         })
 
         return HTMLResponse(content="""
-            <html>
-            <head>
-                <meta http-equiv="refresh" content="2;url=/Luck.html" />
-            </head>
-            <body>
-                <div style='
-                    background-color: #f0fdf4;
-                    padding: 15px;
-                    border-left: 6px solid #22c55e;
-                    border-radius: 8px;
-                    color: #166534;
-                    font-family: sans-serif;
-                    max-width: 600px;
-                    margin: 20px auto;
-                    text-align: center;
-                '>
-                    <strong style='font-size: 1.1em;'>✅ Sucesso:</strong>
-                    <p>Comprovativo enviado com sucesso!</p>
-                    <p>Você será redirecionado em instantes...</p>
-                </div>
-            </body>
-            </html>
+            <div style='
+                background-color: #f0fdf4;
+                padding: 15px;
+                border-left: 6px solid #22c55e;
+                border-radius: 8px;
+                color: #166534;
+                font-family: sans-serif;
+                max-width: 600px;
+                margin: 20px auto;
+            '>
+                <strong style='font-size: 1.1em;'>✅ Sucesso:</strong>
+                <p>Comprovativo enviado com sucesso!</p>
+            </div>
         """, status_code=200)
 
     except Exception as e:
